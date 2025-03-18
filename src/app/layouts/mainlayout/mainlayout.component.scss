@@ -1,0 +1,12 @@
+.main-layout {
+  display: flex;
+}
+
+app-sidenav {
+  width: 250px;
+}
+
+.content {
+  flex: 1;
+  padding: 16px;
+}

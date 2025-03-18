@@ -1,0 +1,12 @@
+<mat-toolbar color="surface">
+  <span>{{appName}}</span>
+  <span class="spacer"></span>
+  <button mat-button class="nav-button" routerLink="/create" routerLinkActive="active">Create</button>
+  <button mat-button class="nav-button" routerLink="/brand" routerLinkActive="active">Brand</button>
+  <button mat-button class="nav-button" routerLink="/upload" routerLinkActive="active">Upload</button>
+  <button mat-button class="nav-button" routerLink="/generate" routerLinkActive="active">Generate</button>
+  <button mat-icon-button class="settings-btn" routerLink="/settings" routerLinkActive="active">
+    <mat-icon>settings</mat-icon>
+  </button>
+  <button mat-flat-button color="primary" (click)="onSignOut()">Sign Out</button>
+</mat-toolbar>

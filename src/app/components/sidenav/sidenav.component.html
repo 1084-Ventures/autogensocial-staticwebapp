@@ -1,0 +1,5 @@
+<ul>
+  <li *ngFor="let file of files" (click)="selectFile(file)">
+    <a [routerLink]="file.route">{{ file.name }}</a>
+  </li>
+</ul>
