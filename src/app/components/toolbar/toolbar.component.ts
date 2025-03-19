@@ -2,7 +2,7 @@ import { Component, Output, EventEmitter, Input } from '@angular/core';
 import { MaterialModule } from '../../material.module';
 import { RouterModule } from '@angular/router';
 
-export type NavItem = 'create' | 'brand' | 'upload' | 'generate' | 'settings' | null;
+export type NavItem = 'brand' | 'upload' | 'generate' | 'settings' | null;
 
 @Component({
   selector: 'app-toolbar',

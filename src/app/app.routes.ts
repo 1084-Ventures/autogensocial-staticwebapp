@@ -5,17 +5,13 @@ import { SimplelayoutComponent } from './layouts/simplelayout/simplelayout.compo
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/create',
+    redirectTo: '/brand',
     pathMatch: 'full'
   },
   {
     path: '',
     component: SimplelayoutComponent,
     children: [
-      {
-        path: 'create',
-        loadChildren: () => import('./pages/create-page/create-page.module').then(m => m.CreatePageModule)
-      },
       {
         path: 'settings',
         loadChildren: () => import('./pages/settings-page/settings-page.module').then(m => m.SettingsPageModule)

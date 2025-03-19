@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CreatePageComponent } from './create-page.component';
+import { BrandModalComponent } from './brand-modal.component';
 
-describe('CreatePageComponent', () => {
-  let component: CreatePageComponent;
-  let fixture: ComponentFixture<CreatePageComponent>;
+describe('BrandModalComponent', () => {
+  let component: BrandModalComponent;
+  let fixture: ComponentFixture<BrandModalComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CreatePageComponent]
+      imports: [BrandModalComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CreatePageComponent);
+    fixture = TestBed.createComponent(BrandModalComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -1,5 +1,22 @@
-<ul>
-  <li *ngFor="let file of files" (click)="selectFile(file)">
-    <a [routerLink]="file.route">{{ file.name }}</a>
-  </li>
-</ul>
+<div class="sidenav-content">
+  <h2 class="sidenav-header">Brands</h2>
+  <button mat-flat-button color="primary" class="add-brand-button" (click)="toggleForm()">
+    <mat-icon>add</mat-icon>
+    New Brand
+  </button>
+  <div *ngIf="showForm" class="brand-form">
+    <mat-form-field appearance="fill">
+      <mat-label>Brand Name</mat-label>
+      <input matInput [(ngModel)]="newBrandName">
+    </mat-form-field>
+    <button mat-flat-button color="primary" (click)="submitBrand()">Submit</button>
+  </div>
+  <mat-nav-list>
+    <mat-list-item *ngFor="let brand of brands"
+       [class.selected]="selectedBrand === brand"
+       (click)="selectBrand(brand)">
+      <mat-icon matListItemIcon>business</mat-icon>
+      <span matListItemTitle>{{brand}}</span>
+    </mat-list-item>
+  </mat-nav-list>
+</div>
