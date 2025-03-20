@@ -21,6 +21,6 @@ export class ToolbarComponent {
   }
 
   onSignOut() {
-    window.location.href = '/.auth/logout';
+    window.location.href = "https://login.microsoftonline.com/common/oauth2/logout";
   }
 }
