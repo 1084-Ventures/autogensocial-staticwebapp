@@ -19,10 +19,12 @@ export async function brand_management(request: HttpRequest, context: Invocation
         context.log('Parsed brandName:', brandName);
 
         // Extract userId from the x-ms-client-principal header
-        const clientPrincipal = request.headers['x-ms-client-principal'];
+        const clientPrincipal = request.headers.get('x-ms-client-principal');
+        context.log('Client principal:', clientPrincipal);
         let userId = 'anonymous';
         if (clientPrincipal) {
             const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
+            context.log('Decoded principal:', decodedPrincipal);
             const principalObject = JSON.parse(decodedPrincipal);
             userId = principalObject.userId || 'anonymous';
         }
