@@ -6,13 +6,9 @@ const database = client.database(process.env.COSMOS_DB_NAME || '');
 const container = database.container(process.env.COSMOS_DB_CONTAINER || '');
 
 export async function brand_management(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`Http function processed request for url "${request.url}"`);
-    context.log('Request method:', request.method);
-    context.log('Request URL:', request.url);
-    context.log('Request headers:', JSON.stringify(request.headers));
-    context.log('COSMOS_DB_CONNECTION_STRING:', process.env.COSMOS_DB_CONNECTION_STRING);
-    context.log('COSMOS_DB_NAME:', process.env.COSMOS_DB_NAME);
-    context.log('COSMOS_DB_CONTAINER:', process.env.COSMOS_DB_CONTAINER);
+    for (const [key, value] of request.headers.entries()) {
+      context.log(`${key}: ${value}`);
+    }
 
     if (request.method === 'POST') {
       try {
