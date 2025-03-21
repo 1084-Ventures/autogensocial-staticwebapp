@@ -24,7 +24,7 @@ export class SidenavComponent {
   @Input() selectedBrand: string | null = null;
   @Output() brandSelected = new EventEmitter<string>();
   
-  brands = ['Brand 1', 'Brand 2', 'Brand 3']; // Temporary sample data
+  brands: { id: any; brandName: string }[] = []; // Initialize with correct type
   showForm = false;
   newBrandName = '';
 
@@ -32,6 +32,21 @@ export class SidenavComponent {
     private apiUrl = environment.apiBaseUrl;
 
   constructor(private dialog: MatDialog, private http: HttpClient) {}
+
+  ngOnInit(): void {
+    const url = `${this.apiUrl}/brand_management`;
+    this.http.get<any[]>(url).subscribe({
+      next: (data) => {
+        console.log('Fetched brands:', data);
+        // Store both id and brandName
+        this.brands = data.map(brand => ({
+          id: brand.id,
+          brandName: brand.brandName
+        }));
+      },
+      error: (err) => console.error('Error fetching brands:', err)
+    });
+  }
 
   toggleForm() {
     this.showForm = !this.showForm;
@@ -41,10 +56,10 @@ export class SidenavComponent {
     if (this.newBrandName.trim()) {
       const brandName = this.newBrandName.trim();
       const url = `${this.apiUrl}/brand_management`;
-      this.http.post(url, { brandName }).subscribe({
+      this.http.post<{ id: any }>(url, { brandName }).subscribe({
         next: (response) => {
           console.log('Brand created:', response);
-          this.brands.push(brandName);
+          this.brands.push({ id: response.id, brandName });
           this.newBrandName = '';
           this.showForm = false;
         },
