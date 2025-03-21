@@ -47,8 +47,28 @@ export async function brand_management(request: HttpRequest, context: Invocation
       }
     }
 
-    const name = request.query.get('name') || await request.text() || 'world';
-    return { body: `Hello, ${name}!` };
+    if (request.method === 'GET') {
+      try {
+        // Extract userId from the x-ms-client-principal header
+        const clientPrincipal = request.headers.get('x-ms-client-principal');
+        let userId = 'anonymous';
+        if (clientPrincipal) {
+          const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
+          const principalObject = JSON.parse(decodedPrincipal);
+          userId = principalObject.userId || 'anonymous';
+        }
+    
+        const querySpec = {
+          query: 'SELECT * FROM c WHERE c.userId = @userId',
+          parameters: [{ name: '@userId', value: userId }]
+        };
+        const { resources } = await container.items.query(querySpec).fetchAll();
+        return { body: JSON.stringify(resources), status: 200 };
+      } catch (error) {
+        context.log('Error querying brands:', error);
+        return { body: 'Error retrieving brands', status: 500 };
+      }
+    }
 }
 
 app.http('brand_management', {
