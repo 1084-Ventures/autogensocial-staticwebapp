@@ -4,11 +4,18 @@ import { MaterialModule } from '../../material.module';
 import { MatDialog } from '@angular/material/dialog';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms'; // Import FormsModule
+import { HttpClientModule, HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [CommonModule, MaterialModule, RouterModule, FormsModule], // Add FormsModule to imports
+  imports: [
+    CommonModule, 
+    MaterialModule, 
+    RouterModule, 
+    FormsModule, 
+    HttpClientModule
+  ], 
   templateUrl: './sidenav.component.html',
   styleUrl: './sidenav.component.scss'
 })
@@ -20,7 +27,7 @@ export class SidenavComponent {
   showForm = false;
   newBrandName = '';
 
-  constructor(private dialog: MatDialog) {}
+  constructor(private dialog: MatDialog, private http: HttpClient) {}
 
   toggleForm() {
     this.showForm = !this.showForm;
@@ -28,9 +35,16 @@ export class SidenavComponent {
 
   submitBrand() {
     if (this.newBrandName.trim()) {
-      this.brands.push(this.newBrandName.trim());
-      this.newBrandName = '';
-      this.showForm = false;
+      const brandName = this.newBrandName.trim();
+      this.http.post('/api/brand_management', { brandName }).subscribe({
+        next: (response) => {
+          console.log('Brand created:', response);
+          this.brands.push(brandName);
+          this.newBrandName = '';
+          this.showForm = false;
+        },
+        error: (error) => console.error('Error creating brand:', error)
+      });
     }
   }
 
