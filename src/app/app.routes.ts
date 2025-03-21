@@ -1,11 +1,12 @@
 import { Routes } from '@angular/router';
 import { MainlayoutComponent } from './layouts/mainlayout/mainlayout.component';
 import { SimplelayoutComponent } from './layouts/simplelayout/simplelayout.component';
+import { BrandemptyPageComponent } from './pages/brandempty-page/brandempty-page.component';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/brand',
+    redirectTo: 'brandempty',
     pathMatch: 'full'
   },
   {
@@ -19,7 +20,17 @@ export const routes: Routes = [
     ]
   },
   {
-    path: '',
+    path: 'brandempty',
+    component: MainlayoutComponent,
+    children: [
+      {
+        path: '',
+        component: BrandemptyPageComponent
+      }
+    ]
+  },
+  {
+    path: ':brandId',
     component: MainlayoutComponent,
     children: [
       {
