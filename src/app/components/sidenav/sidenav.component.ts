@@ -28,6 +28,9 @@ export class SidenavComponent {
   showForm = false;
   newBrandName = '';
 
+    // Define apiUrl using environment.apiBaseUrl
+    private apiUrl = environment.apiBaseUrl;
+
   constructor(private dialog: MatDialog, private http: HttpClient) {}
 
   toggleForm() {
@@ -37,7 +40,7 @@ export class SidenavComponent {
   submitBrand() {
     if (this.newBrandName.trim()) {
       const brandName = this.newBrandName.trim();
-      const url = `${environment.apiBaseUrl}/brand_management`;
+      const url = `${this.apiUrl}/brand_management`;
       this.http.post(url, { brandName }).subscribe({
         next: (response) => {
           console.log('Brand created:', response);
