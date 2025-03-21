@@ -1,5 +1,4 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { v4 as uuidv4 } from 'uuid';
 import { CosmosClient } from "@azure/cosmos";
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
@@ -14,17 +13,6 @@ export async function brand_management(request: HttpRequest, context: Invocation
     context.log('COSMOS_DB_CONNECTION_STRING:', process.env.COSMOS_DB_CONNECTION_STRING);
     context.log('COSMOS_DB_NAME:', process.env.COSMOS_DB_NAME);
     context.log('COSMOS_DB_CONTAINER:', process.env.COSMOS_DB_CONTAINER);
-  
-    if (request.method === 'OPTIONS') {
-      return {
-          status: 204,
-          headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type'
-          }
-      };
-  }
 
     if (request.method === 'POST') {
       try {
@@ -33,11 +21,22 @@ export async function brand_management(request: HttpRequest, context: Invocation
         }
         const { brandName } = await request.json() as BrandRequest;
         context.log('Parsed brandName:', brandName);
+
+        // Extract userId from the x-ms-client-principal header
+        const clientPrincipal = request.headers['x-ms-client-principal'];
+        let userId = 'anonymous';
+        if (clientPrincipal) {
+            const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
+            const principalObject = JSON.parse(decodedPrincipal);
+            userId = principalObject.userId || 'anonymous';
+        }
+        context.log('Extracted userId:', userId);
+
         const newBrand = {
-          "Brand Name": brandName,
-          "User ID": "someUserId", // Replace with real user ID if needed
-          "CreatedDate": new Date().toISOString(),
-          "UpdatedDate": new Date().toISOString()
+          "brandName": brandName,
+          "userId": userId,
+          "createdDate": new Date().toISOString(),
+          "updatedDate": new Date().toISOString()
         };
         context.log('New brand object:', JSON.stringify(newBrand));
         
