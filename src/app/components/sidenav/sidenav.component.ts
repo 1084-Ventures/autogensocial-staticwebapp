@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-sidenav',
@@ -36,7 +37,8 @@ export class SidenavComponent {
   submitBrand() {
     if (this.newBrandName.trim()) {
       const brandName = this.newBrandName.trim();
-      this.http.post('/api/brand_management', { brandName }).subscribe({
+      const url = `${environment.apiBaseUrl}/brand_management`;
+      this.http.post(url, { brandName }).subscribe({
         next: (response) => {
           console.log('Brand created:', response);
           this.brands.push(brandName);
