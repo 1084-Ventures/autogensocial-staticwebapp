@@ -35,7 +35,6 @@ export async function brand_management(request: HttpRequest, context: Invocation
         context.log('Parsed brandName:', brandName);
         const newBrand = {
           "Brand Name": brandName,
-          "ID": uuidv4(),
           "User ID": "someUserId", // Replace with real user ID if needed
           "CreatedDate": new Date().toISOString(),
           "UpdatedDate": new Date().toISOString()
