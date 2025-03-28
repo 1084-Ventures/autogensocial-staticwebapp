@@ -1,26 +1,49 @@
-import { Component, Output, EventEmitter, Input } from '@angular/core';
+import { Component, Output, EventEmitter, Input, OnInit, OnDestroy } from '@angular/core';
+import { NavigationService } from '../../services/navigation.service';
 import { MaterialModule } from '../../material.module';
-import { RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
 
-export type NavItem = 'brand' | 'upload' | 'generate' | 'settings' | null;
+export type NavItem = 'brand_details' | 'upload' | 'generate' | 'settings' | null;
 
 @Component({
   selector: 'app-toolbar',
-  standalone: true,
-  imports: [MaterialModule, RouterModule],
   templateUrl: './toolbar.component.html',
-  styleUrl: './toolbar.component.scss'
+  styleUrls: ['./toolbar.component.scss'],
+  imports: [MaterialModule]
 })
-export class ToolbarComponent {
+export class ToolbarComponent implements OnInit, OnDestroy {
   @Input() appName = 'AutoGen Social';
   @Output() toggleMenu = new EventEmitter<void>();
   @Output() navSelected = new EventEmitter<NavItem>();
+
+  currentRoute: NavItem = null;
+  private subscription: Subscription;
+
+  constructor(private navigationService: NavigationService) {
+    this.subscription = this.navigationService.currentRoute$.subscribe(
+      route => this.currentRoute = route
+    );
+  }
+
+  ngOnInit() {}
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
+  }
+
+  isSelected(route: NavItem): boolean {
+    return this.currentRoute === route;
+  }
 
   onNavSelect(item: NavItem) {
     this.navSelected.emit(item);
   }
 
+  onSettingsClick() {
+    this.navigationService.navigateToSettings();
+  }
+
   onSignOut() {
-    window.location.href = "https://login.microsoftonline.com/common/oauth2/logout";
+    this.navigationService.signOut();
   }
 }

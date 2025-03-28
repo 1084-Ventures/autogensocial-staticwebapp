@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../material.module';
 import { MatDialog } from '@angular/material/dialog';
@@ -6,7 +6,8 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { Router } from '@angular/router';
+import { NavigationService, BrandRoute } from '../../services/navigation.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-sidenav',
@@ -19,9 +20,9 @@ import { Router } from '@angular/router';
     HttpClientModule
   ], 
   templateUrl: './sidenav.component.html',
-  styleUrl: './sidenav.component.scss'
+  styleUrls: ['./sidenav.component.scss']
 })
-export class SidenavComponent {
+export class SidenavComponent implements OnInit, OnDestroy {
   @Input() selectedBrand: string | null = null;
   @Output() brandSelected = new EventEmitter<string>();
   
@@ -31,11 +32,21 @@ export class SidenavComponent {
 
     // Define apiUrl using environment.apiBaseUrl
     private apiUrl = environment.apiBaseUrl;
+    private subscription: Subscription;
+    selectedBrandId: string | null = null;
 
-  constructor(private dialog: MatDialog, private http: HttpClient, private router: Router) {}
+  constructor(private dialog: MatDialog, private http: HttpClient, private navigationService: NavigationService) {
+    this.subscription = this.navigationService.currentBrand$.subscribe(
+      brandId => this.selectedBrandId = brandId
+    );
+  }
 
   ngOnInit(): void {
     this.reloadBrands();
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   toggleForm() {
@@ -80,8 +91,8 @@ export class SidenavComponent {
     });
   }
 
-  selectBrand(brand: { id: any; brandName: string }) {
+  selectBrand(brand: { id: any; brandName: string }, route: BrandRoute = 'brand_details') {
     this.brandSelected.emit(brand.brandName);
-    this.router.navigate([brand.id, 'brand']);
+    this.navigationService.navigateToBrand(brand.id, route);
   }
 }
