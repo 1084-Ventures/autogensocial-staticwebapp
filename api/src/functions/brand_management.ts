@@ -1,74 +1,88 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { CosmosClient } from "@azure/cosmos";
+import { Brand, BrandRequest } from '../../../shared/models/brand.model';
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
 const database = client.database(process.env.COSMOS_DB_NAME || '');
 const container = database.container(process.env.COSMOS_DB_CONTAINER || '');
 
 export async function brand_management(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    for (const [key, value] of request.headers.entries()) {
-      context.log(`${key}: ${value}`);
-    }
-
     if (request.method === 'POST') {
       try {
-        interface BrandRequest {
-            brandName: string;
-        }
-        const { brandName } = await request.json() as BrandRequest;
-        context.log('Parsed brandName:', brandName);
+        const { name, description } = await request.json() as BrandRequest;
+        const userId = await extractUserId(request);
 
-        // Extract userId from the x-ms-client-principal header
-        const clientPrincipal = request.headers.get('x-ms-client-principal');
-        context.log('Client principal:', clientPrincipal);
-        let userId = 'anonymous';
-        if (clientPrincipal) {
-            const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
-            context.log('Decoded principal:', decodedPrincipal);
-            const principalObject = JSON.parse(decodedPrincipal);
-            userId = principalObject.userId || 'anonymous';
-        }
-        context.log('Extracted userId:', userId);
-
-        const newBrand = {
-          "brandName": brandName,
-          "userId": userId,
-          "createdDate": new Date().toISOString(),
-          "updatedDate": new Date().toISOString()
+        const newBrand: Brand = {
+          metadata: {
+            createdDate: new Date().toISOString(),
+            updatedDate: new Date().toISOString(),
+            isActive: true
+          },
+          brandInfo: {
+            name,
+            description,
+            userId
+          },
+          socialAccounts: {
+            instagram: { enabled: false, username: '', accessToken: '' },
+            facebook: { enabled: false, username: '', accessToken: '' },
+            tiktok: { enabled: false, username: '', accessToken: '' }
+          }
         };
-        context.log('New brand object:', JSON.stringify(newBrand));
-        
-        const { resource: createdBrand } = await container.items.create(newBrand);
-        context.log('Created brand:', JSON.stringify(createdBrand));
-        return { body: JSON.stringify(createdBrand), status: 201 };
+
+        const { resource: createdBrand } = await container.items.create<Brand>(newBrand);
+        return { 
+          body: JSON.stringify(createdBrand),
+          headers: { 'Content-Type': 'application/json' },
+          status: 201 
+        };
       } catch (error) {
         context.log('Error creating brand:', error);
-        return { body: 'Error creating brand', status: 500 };
+        return { 
+          body: JSON.stringify({ error: 'Error creating brand' }),
+          headers: { 'Content-Type': 'application/json' },
+          status: 500 
+        };
       }
     }
 
     if (request.method === 'GET') {
       try {
-        // Extract userId from the x-ms-client-principal header
-        const clientPrincipal = request.headers.get('x-ms-client-principal');
-        let userId = 'anonymous';
-        if (clientPrincipal) {
-          const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
-          const principalObject = JSON.parse(decodedPrincipal);
-          userId = principalObject.userId || 'anonymous';
-        }
-    
+        const userId = await extractUserId(request);
         const querySpec = {
-          query: 'SELECT * FROM c WHERE c.userId = @userId',
+          query: 'SELECT * FROM c WHERE c.brandInfo.userId = @userId',
           parameters: [{ name: '@userId', value: userId }]
         };
         const { resources } = await container.items.query(querySpec).fetchAll();
-        return { body: JSON.stringify(resources), status: 200 };
+        return { 
+          body: JSON.stringify(resources),
+          headers: { 'Content-Type': 'application/json' },
+          status: 200 
+        };
       } catch (error) {
         context.log('Error querying brands:', error);
-        return { body: 'Error retrieving brands', status: 500 };
+        return { 
+          body: JSON.stringify({ error: 'Error retrieving brands' }),
+          headers: { 'Content-Type': 'application/json' },
+          status: 500 
+        };
       }
     }
+
+    return {
+        status: 405,
+        body: JSON.stringify({ error: 'Method not allowed' }),
+        headers: { 'Content-Type': 'application/json' }
+    };
+}
+
+async function extractUserId(request: HttpRequest): Promise<string> {
+    const clientPrincipal = request.headers.get('x-ms-client-principal');
+    if (!clientPrincipal) return 'anonymous';
+
+    const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
+    const principalObject = JSON.parse(decodedPrincipal);
+    return principalObject.userId || 'anonymous';
 }
 
 app.http('brand_management', {
