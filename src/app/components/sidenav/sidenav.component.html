@@ -14,10 +14,9 @@
   <mat-nav-list>
     <mat-list-item
       *ngFor="let brand of brands"
-      [class.selected]="selectedBrand === brand.id"
-      (click)="selectBrand(brand.id)">
+      [class.selected]="brand.id === selectedBrandId"
+      (click)="selectBrand(brand)">
       <mat-icon matListItemIcon>business</mat-icon>
-      <!-- Only display brandName here -->
       <span matListItemTitle>{{ brand.brandName }}</span>
     </mat-list-item>
   </mat-nav-list>
