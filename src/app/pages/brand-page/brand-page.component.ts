@@ -1,9 +1,11 @@
 import { Component, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../services/navigation.service';
+import { MaterialModule } from '../../material.module';
 
 @Component({
   selector: 'app-brand-page',
-  imports: [],
+  imports: [CommonModule, MaterialModule],
   templateUrl: './brand-page.component.html',
   styleUrl: './brand-page.component.scss'
 })

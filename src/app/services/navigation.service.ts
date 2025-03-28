@@ -16,14 +16,20 @@ export class NavigationService {
 
   constructor(private router: Router) {}
 
-  navigateToBrand(brandId: string, route: BrandRoute) {
+  navigateToBrand(brandId: string | null, route: BrandRoute) {
     this.currentBrandId.next(brandId);
     this.currentRoute.next(route);
-    return this.router.navigate(['brand', brandId, route]);
+    
+    if (brandId) {
+      return this.router.navigate(['brand', brandId, route]);
+    } else {
+      return this.router.navigate(['/', route]);
+    }
   }
 
   navigateToSettings() {
     this.currentRoute.next('settings');
+    this.currentBrandId.next(null); // Reset the brand ID when navigating to settings
     return this.router.navigate(['/settings']);
   }
 

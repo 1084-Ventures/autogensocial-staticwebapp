@@ -1,1 +1,10 @@
-<p>brand-page works! Selected brand: {{ brandId }}</p>
+<div *ngIf="brandId; else emptyState">
+    <p>brand-page works! Selected brand: {{ brandId }}</p>
+  </div>
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <mat-icon>business</mat-icon>
+      <h2>No Brand Selected</h2>
+      <p>Please select a brand from the sidebar to view its details</p>
+    </div>
+  </ng-template>

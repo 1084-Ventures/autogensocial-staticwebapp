@@ -9,24 +9,21 @@ export const routes: Routes = [
     path: '',
     component: MainlayoutComponent,
     children: [
-      { path: '', loadChildren: () => import('./pages/brandempty-page/brandempty-page.module').then(m => m.BrandemptyPageModule) },
+      // Empty state routes (no brand selected)
+      { path: '', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule) },
+      { path: 'brand_details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule) },
+      { path: 'upload', loadChildren: () => import('./pages/upload-page/upload-page.module').then(m => m.UploadPageModule) },
+      { path: 'generate', loadChildren: () => import('./pages/generate-page/generate-page.module').then(m => m.GeneratePageModule) },
       { path: 'brands', component: SidenavComponent },
+      
+      // Brand-specific routes
       {
-        path: 'brand',
+        path: 'brand/:id',
+        canActivate: [BrandGuard],
         children: [
-          {
-            path: '',
-            loadChildren: () => import('./pages/brandempty-page/brandempty-page.module').then(m => m.BrandemptyPageModule)
-          },
-          {
-            path: ':id',
-            canActivate: [BrandGuard],
-            children: [
-              { path: 'brand_details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule), data: { type: 'brand_details' } },
-              { path: 'upload', loadChildren: () => import('./pages/upload-page/upload-page.module').then(m => m.UploadPageModule), data: { type: 'upload' } },
-              { path: 'generate', loadChildren: () => import('./pages/generate-page/generate-page.module').then(m => m.GeneratePageModule), data: { type: 'generate' } }
-            ]
-          }
+          { path: 'brand_details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule), data: { type: 'brand_details' } },
+          { path: 'upload', loadChildren: () => import('./pages/upload-page/upload-page.module').then(m => m.UploadPageModule), data: { type: 'upload' } },
+          { path: 'generate', loadChildren: () => import('./pages/generate-page/generate-page.module').then(m => m.GeneratePageModule), data: { type: 'generate' } }
         ]
       }
     ]

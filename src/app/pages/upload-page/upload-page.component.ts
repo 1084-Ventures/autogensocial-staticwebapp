@@ -1,9 +1,11 @@
 import { Component, OnDestroy } from '@angular/core';
 import { NavigationService } from '../../services/navigation.service';
+import { CommonModule } from '@angular/common';
+import { MaterialModule } from '../../material.module';
 
 @Component({
   selector: 'app-upload-page',
-  imports: [],
+  imports: [CommonModule, MaterialModule],
   templateUrl: './upload-page.component.html',
   styleUrl: './upload-page.component.scss'
 })

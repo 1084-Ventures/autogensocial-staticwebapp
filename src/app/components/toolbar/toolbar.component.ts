@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter, Input, OnInit, OnDestroy } from '@angular/core';
-import { NavigationService } from '../../services/navigation.service';
+import { NavigationService, BrandRoute } from '../../services/navigation.service';
 import { MaterialModule } from '../../material.module';
+import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 export type NavItem = 'brand_details' | 'upload' | 'generate' | 'settings' | null;
@@ -9,7 +10,8 @@ export type NavItem = 'brand_details' | 'upload' | 'generate' | 'settings' | nul
   selector: 'app-toolbar',
   templateUrl: './toolbar.component.html',
   styleUrls: ['./toolbar.component.scss'],
-  imports: [MaterialModule]
+  standalone: true,
+  imports: [MaterialModule, RouterModule]
 })
 export class ToolbarComponent implements OnInit, OnDestroy {
   @Input() appName = 'AutoGen Social';
@@ -17,26 +19,33 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   @Output() navSelected = new EventEmitter<NavItem>();
 
   currentRoute: NavItem = null;
-  private subscription: Subscription;
+  currentBrandId: string | null = null;
+  private routeSubscription: Subscription;
+  private brandSubscription: Subscription;
 
   constructor(private navigationService: NavigationService) {
-    this.subscription = this.navigationService.currentRoute$.subscribe(
+    this.routeSubscription = this.navigationService.currentRoute$.subscribe(
       route => this.currentRoute = route
+    );
+    this.brandSubscription = this.navigationService.currentBrand$.subscribe(
+      brandId => this.currentBrandId = brandId
     );
   }
 
   ngOnInit() {}
 
   ngOnDestroy() {
-    this.subscription.unsubscribe();
+    this.routeSubscription.unsubscribe();
+    this.brandSubscription.unsubscribe();
   }
 
   isSelected(route: NavItem): boolean {
     return this.currentRoute === route;
   }
 
-  onNavSelect(item: NavItem) {
-    this.navSelected.emit(item);
+  onNavSelect(route: BrandRoute) {
+    // Always navigate with current brandId (which may be null)
+    this.navigationService.navigateToBrand(this.currentBrandId, route);
   }
 
   onSettingsClick() {
