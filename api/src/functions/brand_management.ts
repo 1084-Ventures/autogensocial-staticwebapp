@@ -8,133 +8,82 @@ const database = client.database(process.env.COSMOS_DB_NAME || '');
 const container = database.container(process.env.COSMOS_DB_CONTAINER || '');
 
 export async function brand_management(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (request.method === 'POST') {
-    try {
-      const rawBody = await request.text();
-      context.log("Raw request body:", rawBody);
+  try {
+    const userId = await extractUserId(request);
 
-      const body = JSON.parse(rawBody) as BrandCreate;
-      context.log("Parsed request:", JSON.stringify(body, null, 2));
-
+    if (request.method === 'POST') {
+      const body = await request.json() as BrandCreate;
       if (!body.name) {
-        return {
-          status: 400,
-          body: JSON.stringify({ error: 'Brand name is required' }),
-          headers: { 'Content-Type': 'application/json' }
-        };
+        return createResponse(400, { error: 'Brand name is required' });
       }
 
-      const userId = await extractUserId(request);
-      
-      const currentDate = new Date().toISOString();
-      const newBrand: BrandDocument = {
-        id: randomUUID(),
-        metadata: {
-          createdDate: currentDate,
-          updatedDate: currentDate,
-          isActive: true
-        },
-        brandInfo: {
-          name: body.name,
-          userId,
-          description: body.description || undefined
-        },
-        socialAccounts: {
-          instagram: {
-            enabled: false,
-            username: '',
-            accessToken: '',
-            refreshToken: undefined,
-            expiresAt: undefined
-          },
-          facebook: {
-            enabled: false,
-            username: '',
-            accessToken: '',
-            refreshToken: undefined,
-            expiresAt: undefined
-          },
-          tiktok: {
-            enabled: false,
-            username: '',
-            accessToken: '',
-            refreshToken: undefined,
-            expiresAt: undefined
-          }
-        }
-      };
-
-      context.log("New brand object:", JSON.stringify(newBrand, null, 2));
+      const newBrand: BrandDocument = createBrandDocument(body, userId);
       const { resource: createdBrand } = await container.items.create(newBrand);
-      context.log("Created brand:", JSON.stringify(createdBrand, null, 2));
-
-      return {
-        status: 201,
-        body: JSON.stringify(createdBrand),
-        headers: { 'Content-Type': 'application/json' }
-      };
-    } catch (error) {
-      context.log("Error creating brand:", error);
-      return {
-        status: 500,
-        body: JSON.stringify({ error: 'Internal Server Error' }),
-        headers: { 'Content-Type': 'application/json' }
-      };
+      return createResponse(201, createdBrand);
     }
-  }
 
-  if (request.method === 'GET') {
-    try {
-      const userId = await extractUserId(request);
-      const querySpec = {
-        query: 'SELECT * FROM c WHERE c.brandInfo.userId = @userId',
-        parameters: [{ name: '@userId', value: userId }]
-      };
-
-      const { resources: brands } = await container.items
-        .query<BrandDocument>(querySpec)
-        .fetchAll();
-
-      const response = brands.map(brand => ({
-        id: brand.id,
-        metadata: brand.metadata,
-        brandInfo: brand.brandInfo,
-        socialAccounts: brand.socialAccounts
-      }));
-
-      return { 
-        body: JSON.stringify(response),
-        headers: { 'Content-Type': 'application/json' },
-        status: 200 
-      };
-    } catch (error) {
-      context.log('Error querying brands:', error);
-      return { 
-        body: JSON.stringify({ error: 'Error retrieving brands' }),
-        headers: { 'Content-Type': 'application/json' },
-        status: 500 
-      };
+    if (request.method === 'GET') {
+      const brands = await getBrandsByUserId(userId);
+      return createResponse(200, brands);
     }
-  }
 
+    return createResponse(405, { error: 'Method not allowed' });
+  } catch (error) {
+    context.log("Error:", error);
+    return createResponse(500, { error: 'Internal Server Error' });
+  }
+}
+
+function createBrandDocument(body: BrandCreate, userId: string): BrandDocument {
+  const currentDate = new Date().toISOString();
   return {
-      status: 405,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-      headers: { 'Content-Type': 'application/json' }
+    id: randomUUID(),
+    metadata: {
+      createdDate: currentDate,
+      updatedDate: currentDate,
+      isActive: true
+    },
+    brandInfo: {
+      name: body.name,
+      userId,
+      description: body.description || undefined
+    },
+    socialAccounts: {
+      instagram: { enabled: false, username: '', accessToken: '' },
+      facebook: { enabled: false, username: '', accessToken: '' },
+      tiktok: { enabled: false, username: '', accessToken: '' }
+    }
+  };
+}
+
+async function getBrandsByUserId(userId: string): Promise<BrandDocument[]> {
+  const querySpec = {
+    query: 'SELECT * FROM c WHERE c.brandInfo.userId = @userId',
+    parameters: [{ name: '@userId', value: userId }]
+  };
+  const { resources: brands } = await container.items.query<BrandDocument>(querySpec).fetchAll();
+  return brands;
+}
+
+function createResponse(status: number, body: any): HttpResponseInit {
+  return {
+    status,
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' }
   };
 }
 
 async function extractUserId(request: HttpRequest): Promise<string> {
-    const clientPrincipal = request.headers.get('x-ms-client-principal');
-    if (!clientPrincipal) return 'anonymous';
+  const clientPrincipal = request.headers.get('x-ms-client-principal');
+  if (!clientPrincipal) return 'anonymous';
 
-    const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
-    const principalObject = JSON.parse(decodedPrincipal);
-    return principalObject.userId || 'anonymous';
+  const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
+  const principalObject = JSON.parse(decodedPrincipal);
+  return principalObject.userId || 'anonymous';
 }
 
 app.http('brand_management', {
-    methods: ['GET', 'POST'],
-    authLevel: 'anonymous',
-    handler: brand_management
+  methods: ['GET', 'POST'],
+  authLevel: 'anonymous',
+  handler: brand_management
 });
