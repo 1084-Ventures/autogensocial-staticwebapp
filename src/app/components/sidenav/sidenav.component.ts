@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NavigationService, BrandRoute } from '../../services/navigation.service';
+import { Brand, BrandCreate } from '../../../../shared/models/brand.model';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -55,19 +56,21 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   submitBrand() {
     if (this.newBrandName.trim()) {
-      const brandName = this.newBrandName.trim();
+      const brandRequest: BrandCreate = {
+        name: this.newBrandName.trim()
+      };
+    
       const url = `${this.apiUrl}/brand_management`;
-      this.http.post<{ id: any }>(url, { brandName }).subscribe({
+      this.http.post<Brand>(url, brandRequest).subscribe({
         next: (response) => {
           console.log('Brand created:', response);
-          // Do not update the local brands list here
-          if (!response || !response.id) {
+          if (!response || !response.brandInfo) {
             console.error('Unexpected create response:', response);
           } else {
-            this.reloadBrands(); // Reload the sidenav list from server
+            this.reloadBrands();
+            this.newBrandName = '';
+            this.showForm = false;
           }
-          this.newBrandName = '';
-          this.showForm = false;
         },
         error: (error) => {
           console.error('Error creating brand:', error);
@@ -79,12 +82,12 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   private reloadBrands() {
     const url = `${this.apiUrl}/brand_management`;
-    this.http.get<any[]>(url).subscribe({
+    this.http.get<Brand[]>(url).subscribe({
       next: (data) => {
         console.log('Fetched brands:', data);
         this.brands = data.map(brand => ({
           id: brand.id,
-          brandName: brand.brandName
+          brandName: brand.brandInfo.name  // Changed from brand.brandName to brand.brandInfo.name
         }));
       },
       error: (err) => console.error('Error fetching brands:', err)
