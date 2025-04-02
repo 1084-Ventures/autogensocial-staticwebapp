@@ -1,16 +1,20 @@
 {
   "compilerOptions": {
-    "target": "es2019",
+    "target": "es2019",                          // More modern target
     "module": "commonjs",
     "outDir": "dist",
-    "rootDir": "..",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "rootDir": ".",                            // Changed to allow shared folder access
+    "strict": true,                             // Better type safety
+    "sourceMap": true,
+    "esModuleInterop": true,                    // Better module compatibility
+    "skipLibCheck": true,                       // Faster builds
+    "forceConsistentCasingInFileNames": true    // Prevents case-sensitivity issues
   },
   "include": [
-    "src/**/*",
-    "../shared/**/*"
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }

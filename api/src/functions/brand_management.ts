@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { CosmosClient } from "@azure/cosmos";
-import { BrandDocument, BrandCreate } from '../../../shared/models/brand.model';
+import { BrandDocument, BrandCreate } from '../models/brand.model';
 import { randomUUID } from 'crypto';
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');

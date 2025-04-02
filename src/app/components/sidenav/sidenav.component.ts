@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NavigationService, BrandRoute } from '../../services/navigation.service';
-import { Brand, BrandCreate } from '../../../../shared/models/brand.model';
+import { Brand, BrandCreate } from '../../../../api/models/brand.model';
 import { Subscription } from 'rxjs';
 
 @Component({
