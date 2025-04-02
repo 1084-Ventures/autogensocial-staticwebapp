@@ -8,15 +8,27 @@ export interface SocialAccount {
   expiresAt?: string;
 }
 
-export interface Brand extends BaseModel {
-  // Core brand information
+// Document structure for Cosmos DB extending BaseModel
+export interface BrandDocument extends BaseModel {
   brandInfo: {
     name: string;
     description?: string;
     userId: string;
   };
+  socialAccounts: {
+    instagram: SocialAccount;
+    facebook: SocialAccount;
+    tiktok: SocialAccount;
+  };
+}
 
-  // Social media configuration
+// API interface extending BaseModel
+export interface Brand extends BaseModel {
+  brandInfo: {
+    name: string;
+    description?: string;
+    userId: string;
+  };
   socialAccounts?: {
     instagram?: SocialAccount;
     facebook?: SocialAccount;
@@ -24,7 +36,7 @@ export interface Brand extends BaseModel {
   };
 }
 
-export interface BrandRequest {
+export interface BrandCreate {
   name: string;
   description?: string;
 }
