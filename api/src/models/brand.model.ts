@@ -40,3 +40,13 @@ export interface BrandCreate {
   name: string;
   description?: string;
 }
+
+export interface BrandUpdate {
+  name?: string;
+  description?: string;
+  socialAccounts?: {
+    instagram?: Partial<SocialAccount>;
+    facebook?: Partial<SocialAccount>;
+    tiktok?: Partial<SocialAccount>;
+  };
+}

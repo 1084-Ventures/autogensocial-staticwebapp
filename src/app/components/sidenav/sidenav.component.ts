@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NavigationService, BrandRoute } from '../../services/navigation.service';
-import { Brand, BrandCreate } from '../../../../api/models/brand.model';
+import { Brand, BrandCreate } from '../../../../api/src/models/brand.model';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -27,14 +27,14 @@ export class SidenavComponent implements OnInit, OnDestroy {
   @Input() selectedBrand: string | null = null;
   @Output() brandSelected = new EventEmitter<string>();
   
-  brands: { id: any; brandName: string }[] = []; // Initialize with correct type
+  brands: Pick<Brand, 'id' | 'brandInfo'>[] = []; // Use Pick for type safety
   showForm = false;
   newBrandName = '';
 
-    // Define apiUrl using environment.apiBaseUrl
-    private apiUrl = environment.apiBaseUrl;
-    private subscription: Subscription;
-    selectedBrandId: string | null = null;
+  // Define apiUrl using environment.apiBaseUrl
+  private apiUrl = environment.apiBaseUrl;
+  private subscription: Subscription;
+  selectedBrandId: string | null = null;
 
   constructor(private dialog: MatDialog, private http: HttpClient, private navigationService: NavigationService) {
     this.subscription = this.navigationService.currentBrand$.subscribe(
@@ -56,12 +56,12 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   submitBrand() {
     if (this.newBrandName.trim()) {
-      const brandRequest: BrandCreate = {
+      const brandCreate: BrandCreate = {
         name: this.newBrandName.trim()
       };
-    
+
       const url = `${this.apiUrl}/brand_management`;
-      this.http.post<Brand>(url, brandRequest).subscribe({
+      this.http.post<Brand>(url, brandCreate).subscribe({
         next: (response) => {
           console.log('Brand created:', response);
           if (!response || !response.brandInfo) {
@@ -83,19 +83,19 @@ export class SidenavComponent implements OnInit, OnDestroy {
   private reloadBrands() {
     const url = `${this.apiUrl}/brand_management`;
     this.http.get<Brand[]>(url).subscribe({
-      next: (data) => {
-        console.log('Fetched brands:', data);
-        this.brands = data.map(brand => ({
+      next: (brands) => {
+        console.log('Fetched brands:', brands);
+        this.brands = brands.map(brand => ({
           id: brand.id,
-          brandName: brand.brandInfo.name  // Changed from brand.brandName to brand.brandInfo.name
+          brandInfo: brand.brandInfo
         }));
       },
       error: (err) => console.error('Error fetching brands:', err)
     });
   }
 
-  selectBrand(brand: { id: any; brandName: string }, route: BrandRoute = 'brand_details') {
-    this.brandSelected.emit(brand.brandName);
+  selectBrand(brand: Pick<Brand, 'id' | 'brandInfo'>, route: BrandRoute = 'brand_details') {
+    this.brandSelected.emit(brand.brandInfo.name);
     this.navigationService.navigateToBrand(brand.id, route);
   }
 }

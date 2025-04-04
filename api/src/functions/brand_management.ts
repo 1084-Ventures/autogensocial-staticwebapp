@@ -1,7 +1,13 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { CosmosClient } from "@azure/cosmos";
-import { BrandDocument, BrandCreate } from '../models/brand.model';
+import { BrandDocument, BrandCreate, BrandUpdate } from '../models/brand.model';
 import { randomUUID } from 'crypto';
+
+// Add this interface for simplified brand response
+interface BrandNameResponse {
+  id: string;
+  name: string;
+}
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
 const database = client.database(process.env.COSMOS_DB_NAME || '');
@@ -23,8 +29,42 @@ export async function brand_management(request: HttpRequest, context: Invocation
     }
 
     if (request.method === 'GET') {
-      const brands = await getBrandsByUserId(userId);
-      return createResponse(200, brands);
+      const brandId = request.url.split('/').pop();
+      
+      // If no brandId is provided, return all brand names for the user
+      if (!brandId || brandId === 'brand_management') {
+        const brandNames = await getBrandNamesByUserId(userId);
+        return createResponse(200, brandNames);
+      }
+
+      // If brandId is provided, return full brand details
+      const brand = await getBrandById(brandId, userId);
+      if (!brand) {
+        return createResponse(404, { error: 'Brand not found' });
+      }
+      return createResponse(200, brand);
+    }
+
+    if (request.method === 'PUT') {
+      // Extract ID from URL path
+      const brandId = request.url.split('/').pop();
+      if (!brandId) {
+        return createResponse(400, { error: 'Brand ID is required' });
+      }
+
+      // Log for debugging
+      context.log('BrandId:', brandId);
+
+      const updateData = await request.json() as BrandUpdate;
+      context.log('UpdateData:', JSON.stringify(updateData));
+
+      const updatedBrand = await updateBrand(brandId, userId, updateData);
+
+      if (!updatedBrand) {
+        return createResponse(404, { error: 'Brand not found' });
+      }
+
+      return createResponse(200, updatedBrand);
     }
 
     return createResponse(405, { error: 'Method not allowed' });
@@ -65,6 +105,62 @@ async function getBrandsByUserId(userId: string): Promise<BrandDocument[]> {
   return brands;
 }
 
+// Add this new function to fetch only brand names
+async function getBrandNamesByUserId(userId: string): Promise<BrandNameResponse[]> {
+  const querySpec = {
+    query: 'SELECT c.id, c.brandInfo.name FROM c WHERE c.brandInfo.userId = @userId',
+    parameters: [{ name: '@userId', value: userId }]
+  };
+  const { resources: brands } = await container.items.query<BrandNameResponse>(querySpec).fetchAll();
+  return brands;
+}
+
+async function getBrandById(brandId: string, userId: string): Promise<BrandDocument | undefined> {
+  const { resource: brand } = await container.item(brandId, brandId).read<BrandDocument>();
+  if (!brand || brand.brandInfo.userId !== userId) {
+    return undefined;
+  }
+  return brand;
+}
+
+async function updateBrand(brandId: string, userId: string, updateData: BrandUpdate): Promise<BrandDocument | undefined> {
+  const { resource: existingBrand } = await container.item(brandId, brandId).read<BrandDocument>();
+  
+  if (!existingBrand || existingBrand.brandInfo.userId !== userId) {
+    return undefined;
+  }
+
+  const updatedBrand: BrandDocument = {
+    ...existingBrand,
+    metadata: {
+      ...existingBrand.metadata,
+      updatedDate: new Date().toISOString()
+    },
+    brandInfo: {
+      ...existingBrand.brandInfo,
+      name: updateData.name ?? existingBrand.brandInfo.name,
+      description: updateData.description ?? existingBrand.brandInfo.description
+    },
+    socialAccounts: {
+      instagram: {
+        ...existingBrand.socialAccounts.instagram,
+        ...updateData.socialAccounts?.instagram
+      },
+      facebook: {
+        ...existingBrand.socialAccounts.facebook,
+        ...updateData.socialAccounts?.facebook
+      },
+      tiktok: {
+        ...existingBrand.socialAccounts.tiktok,
+        ...updateData.socialAccounts?.tiktok
+      }
+    }
+  };
+
+  const { resource: savedBrand } = await container.item(brandId, brandId).replace(updatedBrand);
+  return savedBrand;
+}
+
 function createResponse(status: number, body: any): HttpResponseInit {
   return {
     status,
@@ -83,7 +179,8 @@ async function extractUserId(request: HttpRequest): Promise<string> {
 }
 
 app.http('brand_management', {
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PUT'],
   authLevel: 'anonymous',
+  route: 'brand_management/{id?}', // Ensure route parameter is defined
   handler: brand_management
 });

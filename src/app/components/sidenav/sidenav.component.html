@@ -17,7 +17,7 @@
       [class.selected]="brand.id === selectedBrandId"
       (click)="selectBrand(brand)">
       <mat-icon matListItemIcon>business</mat-icon>
-      <span matListItemTitle>{{ brand.brandName }}</span>
+      <span matListItemTitle>{{ brand.brandInfo.name }}</span>
     </mat-list-item>
   </mat-nav-list>
 </div>

@@ -1,10 +1,70 @@
 <div *ngIf="brandId; else emptyState">
-    <p>brand-page works! Selected brand: {{ brandId }}</p>
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Edit Brand</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="brandForm" (ngSubmit)="onSubmit()">
+        <div class="form-container">
+          <h3>Basic Information</h3>
+          <div formGroupName="brandInfo">
+            <mat-form-field appearance="outline">
+              <mat-label>Brand Name</mat-label>
+              <input matInput formControlName="name" required>
+              <mat-error *ngIf="brandForm.get('brandInfo.name')?.hasError('required')">
+                Brand name is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="3"></textarea>
+            </mat-form-field>
+          </div>
+
+          <h3>Social Media Accounts</h3>
+          <div formGroupName="socialAccounts">
+            <div formGroupName="instagram" class="social-account">
+              <mat-slide-toggle formControlName="enabled">Instagram</mat-slide-toggle>
+              <mat-form-field appearance="outline" *ngIf="brandForm.get('socialAccounts.instagram.enabled')?.value">
+                <mat-label>Instagram Username</mat-label>
+                <input matInput formControlName="username">
+              </mat-form-field>
+            </div>
+
+            <div formGroupName="facebook" class="social-account">
+              <mat-slide-toggle formControlName="enabled">Facebook</mat-slide-toggle>
+              <mat-form-field appearance="outline" *ngIf="brandForm.get('socialAccounts.facebook.enabled')?.value">
+                <mat-label>Facebook Username</mat-label>
+                <input matInput formControlName="username">
+              </mat-form-field>
+            </div>
+
+            <div formGroupName="tiktok" class="social-account">
+              <mat-slide-toggle formControlName="enabled">TikTok</mat-slide-toggle>
+              <mat-form-field appearance="outline" *ngIf="brandForm.get('socialAccounts.tiktok.enabled')?.value">
+                <mat-label>TikTok Username</mat-label>
+                <input matInput formControlName="username">
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" type="submit" [disabled]="!brandForm.valid || loading">
+              <mat-icon>save</mat-icon>
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<ng-template #emptyState>
+  <div class="empty-state">
+    <mat-icon>business</mat-icon>
+    <h2>No Brand Selected</h2>
+    <p>Please select a brand from the sidebar to view its details</p>
   </div>
-  <ng-template #emptyState>
-    <div class="empty-state">
-      <mat-icon>business</mat-icon>
-      <h2>No Brand Selected</h2>
-      <p>Please select a brand from the sidebar to view its details</p>
-    </div>
-  </ng-template>
+</ng-template>
