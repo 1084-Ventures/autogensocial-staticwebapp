@@ -53,3 +53,15 @@
   .mat-nav-list {
     flex: 1;
   }
+
+  :host ::ng-deep {
+    .success-snackbar {
+      background: #4caf50;
+      color: white;
+    }
+  
+    .error-snackbar {
+      background: #f44336;
+      color: white;
+    }
+  }

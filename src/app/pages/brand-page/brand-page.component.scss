@@ -15,15 +15,34 @@
 
 .social-account {
   margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
 
   mat-slide-toggle {
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  mat-form-field {
+    width: 100%;
     margin-bottom: 8px;
+  }
+
+  .social-account-fields {
+    padding: 16px;
+
+    mat-form-field {
+      width: 100%;
+      margin-bottom: 16px;
+    }
   }
 }
 
 .form-actions {
   margin-top: 24px;
   display: flex;
+  gap: 16px;
   justify-content: flex-end;
 
   button {
@@ -52,4 +71,9 @@
 
 mat-card {
   margin: 16px;
+}
+
+mat-expansion-panel {
+  margin-top: 8px;
+  margin-left: 24px;
 }

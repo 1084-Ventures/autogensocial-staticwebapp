@@ -13,6 +13,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @NgModule({
   imports: [
@@ -28,6 +30,8 @@ import { MatMenuModule } from '@angular/material/menu';
     MatDialogModule,
     MatSnackBarModule,
     MatMenuModule,
+    MatExpansionModule,
+    MatCheckboxModule,
   ],
   exports: [
     MatButtonModule,
@@ -41,6 +45,8 @@ import { MatMenuModule } from '@angular/material/menu';
     MatDialogModule,
     MatSnackBarModule,
     MatMenuModule,
+    MatExpansionModule,
+    MatCheckboxModule,
   ]
 })
 export class MaterialModule { }

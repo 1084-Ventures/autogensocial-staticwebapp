@@ -2,15 +2,24 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../services/navigation.service';
 import { MaterialModule } from '../../material.module';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule, AbstractControl, FormControl } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { Brand, BrandUpdate } from '../../../../api/src/models/brand.model';
+import { Brand, BrandUpdate, BrandDocument } from '../../../../api/src/models/brand.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-brand-page',
   standalone: true,
-  imports: [CommonModule, MaterialModule, ReactiveFormsModule, HttpClientModule],
+  imports: [
+    CommonModule, 
+    MaterialModule, 
+    ReactiveFormsModule,
+    FormsModule,
+    HttpClientModule,
+    MatCheckboxModule
+  ],
   templateUrl: './brand-page.component.html',
   styleUrl: './brand-page.component.scss'
 })
@@ -23,25 +32,29 @@ export class BrandPageComponent implements OnInit, OnDestroy {
   constructor(
     private navigationService: NavigationService,
     private fb: FormBuilder,
-    private http: HttpClient
+    private http: HttpClient,
+    private snackBar: MatSnackBar
   ) {
     this.brandForm = this.fb.group({
       brandInfo: this.fb.group({
-        name: ['', Validators.required],
+        name: ['', [Validators.required]],
         description: ['']
       }),
       socialAccounts: this.fb.group({
         instagram: this.fb.group({
           enabled: [false],
-          username: ['']
+          username: [''],
+          accessToken: ['']
         }),
         facebook: this.fb.group({
           enabled: [false],
-          username: ['']
+          username: [''],
+          accessToken: ['']
         }),
         tiktok: this.fb.group({
           enabled: [false],
-          username: ['']
+          username: [''],
+          accessToken: ['']
         })
       })
     });
@@ -66,35 +79,45 @@ export class BrandPageComponent implements OnInit, OnDestroy {
     try {
       this.loading = true;
       const response = await firstValueFrom(
-        this.http.get<Brand>(`/api/api/brand_management/${brandId}`)
+        this.http.get<BrandDocument>(`/api/brand_management/${brandId}`)
       );
       
-      // Reset form with new values
+      // Update form with all brand data
       this.brandForm.patchValue({
         brandInfo: {
           name: response.brandInfo.name,
-          description: response.brandInfo.description
+          description: response.brandInfo.description || ''
         },
         socialAccounts: {
-          instagram: response.socialAccounts?.instagram ?? {
-            enabled: false,
-            username: ''
+          instagram: {
+            enabled: response.socialAccounts.instagram.enabled,
+            username: response.socialAccounts.instagram.username,
+            accessToken: response.socialAccounts.instagram.accessToken
           },
-          facebook: response.socialAccounts?.facebook ?? {
-            enabled: false,
-            username: ''
+          facebook: {
+            enabled: response.socialAccounts.facebook.enabled,
+            username: response.socialAccounts.facebook.username,
+            accessToken: response.socialAccounts.facebook.accessToken
           },
-          tiktok: response.socialAccounts?.tiktok ?? {
-            enabled: false,
-            username: ''
+          tiktok: {
+            enabled: response.socialAccounts.tiktok.enabled,
+            username: response.socialAccounts.tiktok.username,
+            accessToken: response.socialAccounts.tiktok.accessToken
           }
         }
       });
       this.brandForm.markAsPristine();
     } catch (error) {
       console.error('Error loading brand:', error);
+      // TODO: Add error handling/notification
     } finally {
       this.loading = false;
+    }
+  }
+
+  cancelChanges() {
+    if (this.brandId) {
+      this.loadBrandData(this.brandId);
     }
   }
 
@@ -114,17 +137,46 @@ export class BrandPageComponent implements OnInit, OnDestroy {
           }
         };
 
-        await firstValueFrom(
-          this.http.put(`/api/api/brand_management/${this.brandId}`, updateData)
+        const response = await firstValueFrom(
+          this.http.put<BrandDocument>(`/api/brand_management/${this.brandId}`, updateData)
         );
+
         // Show success message
+        this.snackBar.open('Brand updated successfully', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top'
+        });
+
+        // Update form with response data to ensure sync
+        this.loadBrandData(this.brandId);
       } catch (error) {
         console.error('Error updating brand:', error);
-        // Show error message
+        this.snackBar.open('Error updating brand', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top'
+        });
       } finally {
         this.loading = false;
       }
     }
+  }
+
+  get brandNameControl(): FormControl {
+    return this.brandForm.get('brandInfo.name') as FormControl;
+  }
+
+  get instagramEnabled(): FormControl {
+    return this.brandForm.get('socialAccounts.instagram.enabled') as FormControl;
+  }
+
+  get facebookEnabled(): FormControl {
+    return this.brandForm.get('socialAccounts.facebook.enabled') as FormControl;
+  }
+
+  get tiktokEnabled(): FormControl {
+    return this.brandForm.get('socialAccounts.tiktok.enabled') as FormControl;
   }
 
   ngOnDestroy() {

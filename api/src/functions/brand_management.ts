@@ -1,13 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { CosmosClient } from "@azure/cosmos";
-import { BrandDocument, BrandCreate, BrandUpdate } from '../models/brand.model';
+import { BrandDocument, BrandCreate, BrandUpdate, BrandNameResponse } from '../models/brand.model';
 import { randomUUID } from 'crypto';
-
-// Add this interface for simplified brand response
-interface BrandNameResponse {
-  id: string;
-  name: string;
-}
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
 const database = client.database(process.env.COSMOS_DB_NAME || '');
@@ -94,15 +88,6 @@ function createBrandDocument(body: BrandCreate, userId: string): BrandDocument {
       tiktok: { enabled: false, username: '', accessToken: '' }
     }
   };
-}
-
-async function getBrandsByUserId(userId: string): Promise<BrandDocument[]> {
-  const querySpec = {
-    query: 'SELECT * FROM c WHERE c.brandInfo.userId = @userId',
-    parameters: [{ name: '@userId', value: userId }]
-  };
-  const { resources: brands } = await container.items.query<BrandDocument>(querySpec).fetchAll();
-  return brands;
 }
 
 // Add this new function to fetch only brand names

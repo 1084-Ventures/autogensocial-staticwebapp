@@ -7,8 +7,14 @@ import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NavigationService, BrandRoute } from '../../services/navigation.service';
-import { Brand, BrandCreate } from '../../../../api/src/models/brand.model';
 import { Subscription } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+// Add this interface to match the backend response
+interface BrandNameResponse {
+  id: string;
+  name: string;
+}
 
 @Component({
   selector: 'app-sidenav',
@@ -27,7 +33,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
   @Input() selectedBrand: string | null = null;
   @Output() brandSelected = new EventEmitter<string>();
   
-  brands: Pick<Brand, 'id' | 'brandInfo'>[] = []; // Use Pick for type safety
+  brands: BrandNameResponse[] = []; // Update the brands type to use BrandNameResponse
   showForm = false;
   newBrandName = '';
 
@@ -36,7 +42,12 @@ export class SidenavComponent implements OnInit, OnDestroy {
   private subscription: Subscription;
   selectedBrandId: string | null = null;
 
-  constructor(private dialog: MatDialog, private http: HttpClient, private navigationService: NavigationService) {
+  constructor(
+    private dialog: MatDialog, 
+    private http: HttpClient, 
+    private navigationService: NavigationService,
+    private snackBar: MatSnackBar
+  ) {
     this.subscription = this.navigationService.currentBrand$.subscribe(
       brandId => this.selectedBrandId = brandId
     );
@@ -56,25 +67,35 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   submitBrand() {
     if (this.newBrandName.trim()) {
-      const brandCreate: BrandCreate = {
+      const brandCreate = {
         name: this.newBrandName.trim()
       };
 
       const url = `${this.apiUrl}/brand_management`;
-      this.http.post<Brand>(url, brandCreate).subscribe({
+      this.http.post<BrandNameResponse>(url, brandCreate).subscribe({
         next: (response) => {
-          console.log('Brand created:', response);
-          if (!response || !response.brandInfo) {
-            console.error('Unexpected create response:', response);
+          if (!response || !response.name) {
+            this.snackBar.open('Error: Invalid response from server', 'Close', {
+              duration: 3000,
+              panelClass: ['error-snackbar']
+            });
           } else {
-            this.reloadBrands();
+            this.snackBar.open('Brand created successfully!', 'Close', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.brands = [...this.brands, response]; // Immediately add new brand
             this.newBrandName = '';
             this.showForm = false;
+            this.reloadBrands(); // Refresh the full list
           }
         },
         error: (error) => {
           console.error('Error creating brand:', error);
-          alert('An error occurred while creating the brand.');
+          this.snackBar.open('Failed to create brand', 'Close', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
         }
       });
     }
@@ -82,20 +103,17 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   private reloadBrands() {
     const url = `${this.apiUrl}/brand_management`;
-    this.http.get<Brand[]>(url).subscribe({
+    this.http.get<BrandNameResponse[]>(url).subscribe({
       next: (brands) => {
         console.log('Fetched brands:', brands);
-        this.brands = brands.map(brand => ({
-          id: brand.id,
-          brandInfo: brand.brandInfo
-        }));
+        this.brands = brands;
       },
       error: (err) => console.error('Error fetching brands:', err)
     });
   }
 
-  selectBrand(brand: Pick<Brand, 'id' | 'brandInfo'>, route: BrandRoute = 'brand_details') {
-    this.brandSelected.emit(brand.brandInfo.name);
+  selectBrand(brand: BrandNameResponse, route: BrandRoute = 'brand_details') {
+    this.brandSelected.emit(brand.name);
     this.navigationService.navigateToBrand(brand.id, route);
   }
 }
