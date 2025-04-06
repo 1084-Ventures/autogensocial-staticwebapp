@@ -1,10 +1,10 @@
 <mat-toolbar color="surface">
   <span>{{appName}}</span>
   <span class="spacer"></span>
-  <button mat-button class="nav-button" (click)="onNavSelect('brand_details')" [class.selected]="isSelected('brand_details')">Brand Details</button>
-  <button mat-button class="nav-button" (click)="onNavSelect('upload')" [class.selected]="isSelected('upload')">Upload</button>
-  <button mat-button class="nav-button" (click)="onNavSelect('generate')" [class.selected]="isSelected('generate')">Generate</button>
-  <button mat-icon-button class="settings-btn" (click)="onSettingsClick()" [class.selected]="isSelected('settings')">
+  <button mat-button class="nav-button" (click)="onNavSelect('brand_details')" [class.active]="isSelected('brand_details')">Brand Details</button>
+  <button mat-button class="nav-button" (click)="onNavSelect('upload')" [class.active]="isSelected('upload')">Upload</button>
+  <button mat-button class="nav-button" (click)="onNavSelect('generate')" [class.active]="isSelected('generate')">Generate</button>
+  <button mat-icon-button class="settings-btn" (click)="onSettingsClick()" [class.active]="isSelected('settings')">
     <mat-icon>settings</mat-icon>
   </button>
   <button mat-flat-button color="primary" (click)="onSignOut()">Sign Out</button>

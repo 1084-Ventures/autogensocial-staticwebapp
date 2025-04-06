@@ -15,6 +15,8 @@ mat-toolbar {
   
   &.active {
     color: var(--md-sys-color-primary);
+    background-color: rgba(0, 0, 0, 0.1);
+    font-weight: 500;
   }
 }
 
@@ -25,9 +27,12 @@ button[mat-button] {
 
 .nav-button {
   position: relative;
+  transition: color 0.2s ease-in-out;
   
   &.active {
     color: var(--md-sys-color-primary);
+    font-weight: 500;
+    background-color: rgba(0, 0, 0, 0.1);
     
     &::after {
       content: '';
@@ -38,6 +43,16 @@ button[mat-button] {
       height: 3px;
       background-color: var(--md-sys-color-primary);
       border-radius: 2px 2px 0 0;
+      animation: slideIn 0.2s ease-in-out;
     }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }

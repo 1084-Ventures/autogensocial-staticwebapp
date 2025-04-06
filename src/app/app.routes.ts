@@ -9,8 +9,8 @@ export const routes: Routes = [
     path: '',
     component: MainlayoutComponent,
     children: [
+      { path: '', redirectTo: 'brand_details', pathMatch: 'full' },
       // Empty state routes (no brand selected)
-      { path: '', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule) },
       { path: 'brand_details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule) },
       { path: 'upload', loadChildren: () => import('./pages/upload-page/upload-page.module').then(m => m.UploadPageModule) },
       { path: 'generate', loadChildren: () => import('./pages/generate-page/generate-page.module').then(m => m.GeneratePageModule) },

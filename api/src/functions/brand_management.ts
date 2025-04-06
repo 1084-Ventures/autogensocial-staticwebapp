@@ -19,7 +19,17 @@ export async function brand_management(request: HttpRequest, context: Invocation
 
       const newBrand: BrandDocument = createBrandDocument(body, userId);
       const { resource: createdBrand } = await container.items.create(newBrand);
-      return createResponse(201, createdBrand);
+      
+      if (!createdBrand) {
+        return createResponse(500, { error: 'Failed to create brand' });
+      }
+
+      const response: BrandNameResponse = {
+        id: createdBrand.id,
+        name: createdBrand.brandInfo.name
+      };
+
+      return createResponse(201, response);
     }
 
     if (request.method === 'GET') {
@@ -80,7 +90,7 @@ function createBrandDocument(body: BrandCreate, userId: string): BrandDocument {
     brandInfo: {
       name: body.name,
       userId,
-      description: body.description || undefined
+      description: ''
     },
     socialAccounts: {
       instagram: { enabled: false, username: '', accessToken: '' },
@@ -147,6 +157,19 @@ async function updateBrand(brandId: string, userId: string, updateData: BrandUpd
 }
 
 function createResponse(status: number, body: any): HttpResponseInit {
+  // Add validation for BrandNameResponse
+  if (status === 201 && body && 'id' in body && 'name' in body) {
+    const brandResponse: BrandNameResponse = {
+      id: body.id,
+      name: body.name
+    };
+    return {
+      status,
+      body: JSON.stringify(brandResponse),
+      headers: { 'Content-Type': 'application/json' }
+    };
+  }
+  
   return {
     status,
     body: JSON.stringify(body),

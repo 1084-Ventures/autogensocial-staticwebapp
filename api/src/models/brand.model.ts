@@ -43,7 +43,6 @@ export interface BrandNameResponse {
 
 export interface BrandCreate {
   name: string;
-  description?: string;
 }
 
 export interface BrandUpdate {

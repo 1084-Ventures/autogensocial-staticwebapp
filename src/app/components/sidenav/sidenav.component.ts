@@ -67,52 +67,64 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   submitBrand() {
     if (this.newBrandName.trim()) {
-      const brandCreate = {
-        name: this.newBrandName.trim()
-      };
+        const brandCreate = {
+            name: this.newBrandName.trim()
+        };
 
-      const url = `${this.apiUrl}/brand_management`;
-      this.http.post<BrandNameResponse>(url, brandCreate).subscribe({
-        next: (response) => {
-          if (!response || !response.name) {
-            this.snackBar.open('Error: Invalid response from server', 'Close', {
-              duration: 3000,
-              panelClass: ['error-snackbar']
-            });
-          } else {
-            this.snackBar.open('Brand created successfully!', 'Close', {
-              duration: 3000,
-              panelClass: ['success-snackbar']
-            });
-            this.brands = [...this.brands, response]; // Immediately add new brand
-            this.newBrandName = '';
-            this.showForm = false;
-            this.reloadBrands(); // Refresh the full list
-          }
-        },
-        error: (error) => {
-          console.error('Error creating brand:', error);
-          this.snackBar.open('Failed to create brand', 'Close', {
-            duration: 3000,
-            panelClass: ['error-snackbar']
-          });
-        }
-      });
+        const url = `${this.apiUrl}/brand_management`;
+        this.http.post<BrandNameResponse>(url, brandCreate).subscribe({
+            next: (response: BrandNameResponse) => {
+                if (!response || !response.id || !response.name) {
+                    this.snackBar.open('Error: Invalid response from server', 'Close', {
+                        duration: 3000,
+                        panelClass: ['error-snackbar']
+                    });
+                    return;
+                }
+
+                // Reset form first
+                this.newBrandName = '';
+                this.showForm = false;
+
+                // Reload brands first, then select the new brand
+                this.reloadBrands().then(() => {
+                    this.snackBar.open('Brand created successfully!', 'Close', {
+                        duration: 3000,
+                        panelClass: ['success-snackbar']
+                    });
+                    this.selectBrand(response);
+                });
+            },
+            error: (error) => {
+                console.error('Error creating brand:', error);
+                this.snackBar.open('Failed to create brand', 'Close', {
+                    duration: 3000,
+                    panelClass: ['error-snackbar']
+                });
+            }
+        });
     }
-  }
+}
 
-  private reloadBrands() {
+// Update reloadBrands to return a Promise
+private reloadBrands(): Promise<void> {
     const url = `${this.apiUrl}/brand_management`;
-    this.http.get<BrandNameResponse[]>(url).subscribe({
-      next: (brands) => {
-        console.log('Fetched brands:', brands);
-        this.brands = brands;
-      },
-      error: (err) => console.error('Error fetching brands:', err)
+    return new Promise((resolve, reject) => {
+        this.http.get<BrandNameResponse[]>(url).subscribe({
+            next: (brands) => {
+                this.brands = brands;
+                resolve();
+            },
+            error: (err) => {
+                console.error('Error fetching brands:', err);
+                reject(err);
+            }
+        });
     });
-  }
+}
 
   selectBrand(brand: BrandNameResponse, route: BrandRoute = 'brand_details') {
+    this.selectedBrandId = brand.id;
     this.brandSelected.emit(brand.name);
     this.navigationService.navigateToBrand(brand.id, route);
   }
