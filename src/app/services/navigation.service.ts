@@ -43,4 +43,8 @@ export class NavigationService {
     // Handle sign out logic
     window.location.href = "https://login.microsoftonline.com/common/oauth2/logout";
   }
+
+  getCurrentPath(): string {
+    return this.router.url;
+  }
 }

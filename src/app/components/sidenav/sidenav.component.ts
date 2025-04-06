@@ -7,8 +7,14 @@ import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NavigationService, BrandRoute } from '../../services/navigation.service';
-import { Brand, BrandCreate } from '../../../../shared/models/brand.model';
 import { Subscription } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+// Add this interface to match the backend response
+interface BrandNameResponse {
+  id: string;
+  name: string;
+}
 
 @Component({
   selector: 'app-sidenav',
@@ -27,16 +33,21 @@ export class SidenavComponent implements OnInit, OnDestroy {
   @Input() selectedBrand: string | null = null;
   @Output() brandSelected = new EventEmitter<string>();
   
-  brands: { id: any; brandName: string }[] = []; // Initialize with correct type
+  brands: BrandNameResponse[] = []; // Update the brands type to use BrandNameResponse
   showForm = false;
   newBrandName = '';
 
-    // Define apiUrl using environment.apiBaseUrl
-    private apiUrl = environment.apiBaseUrl;
-    private subscription: Subscription;
-    selectedBrandId: string | null = null;
+  // Define apiUrl using environment.apiBaseUrl
+  private apiUrl = environment.apiBaseUrl;
+  private subscription: Subscription;
+  selectedBrandId: string | null = null;
 
-  constructor(private dialog: MatDialog, private http: HttpClient, private navigationService: NavigationService) {
+  constructor(
+    private dialog: MatDialog, 
+    private http: HttpClient, 
+    private navigationService: NavigationService,
+    private snackBar: MatSnackBar
+  ) {
     this.subscription = this.navigationService.currentBrand$.subscribe(
       brandId => this.selectedBrandId = brandId
     );
@@ -56,46 +67,65 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   submitBrand() {
     if (this.newBrandName.trim()) {
-      const brandRequest: BrandCreate = {
-        name: this.newBrandName.trim()
-      };
-    
-      const url = `${this.apiUrl}/brand_management`;
-      this.http.post<Brand>(url, brandRequest).subscribe({
-        next: (response) => {
-          console.log('Brand created:', response);
-          if (!response || !response.brandInfo) {
-            console.error('Unexpected create response:', response);
-          } else {
-            this.reloadBrands();
-            this.newBrandName = '';
-            this.showForm = false;
-          }
-        },
-        error: (error) => {
-          console.error('Error creating brand:', error);
-          alert('An error occurred while creating the brand.');
-        }
-      });
+        const brandCreate = {
+            name: this.newBrandName.trim()
+        };
+
+        const url = `${this.apiUrl}/brand_management`;
+        this.http.post<BrandNameResponse>(url, brandCreate).subscribe({
+            next: (response: BrandNameResponse) => {
+                if (!response || !response.id || !response.name) {
+                    this.snackBar.open('Error: Invalid response from server', 'Close', {
+                        duration: 3000,
+                        panelClass: ['error-snackbar']
+                    });
+                    return;
+                }
+
+                // Reset form first
+                this.newBrandName = '';
+                this.showForm = false;
+
+                // Reload brands first, then select the new brand
+                this.reloadBrands().then(() => {
+                    this.snackBar.open('Brand created successfully!', 'Close', {
+                        duration: 3000,
+                        panelClass: ['success-snackbar']
+                    });
+                    this.selectBrand(response);
+                });
+            },
+            error: (error) => {
+                console.error('Error creating brand:', error);
+                this.snackBar.open('Failed to create brand', 'Close', {
+                    duration: 3000,
+                    panelClass: ['error-snackbar']
+                });
+            }
+        });
     }
-  }
+}
 
-  private reloadBrands() {
+// Update reloadBrands to return a Promise
+private reloadBrands(): Promise<void> {
     const url = `${this.apiUrl}/brand_management`;
-    this.http.get<Brand[]>(url).subscribe({
-      next: (data) => {
-        console.log('Fetched brands:', data);
-        this.brands = data.map(brand => ({
-          id: brand.id,
-          brandName: brand.brandInfo.name  // Changed from brand.brandName to brand.brandInfo.name
-        }));
-      },
-      error: (err) => console.error('Error fetching brands:', err)
+    return new Promise((resolve, reject) => {
+        this.http.get<BrandNameResponse[]>(url).subscribe({
+            next: (brands) => {
+                this.brands = brands;
+                resolve();
+            },
+            error: (err) => {
+                console.error('Error fetching brands:', err);
+                reject(err);
+            }
+        });
     });
-  }
+}
 
-  selectBrand(brand: { id: any; brandName: string }, route: BrandRoute = 'brand_details') {
-    this.brandSelected.emit(brand.brandName);
+  selectBrand(brand: BrandNameResponse, route: BrandRoute = 'brand_details') {
+    this.selectedBrandId = brand.id;
+    this.brandSelected.emit(brand.name);
     this.navigationService.navigateToBrand(brand.id, route);
   }
 }

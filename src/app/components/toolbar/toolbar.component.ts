@@ -18,7 +18,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   @Output() toggleMenu = new EventEmitter<void>();
   @Output() navSelected = new EventEmitter<NavItem>();
 
-  currentRoute: NavItem = null;
+  currentRoute: NavItem = 'brand_details';
   currentBrandId: string | null = null;
   private routeSubscription: Subscription;
   private brandSubscription: Subscription;

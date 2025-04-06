@@ -36,7 +36,21 @@ export interface Brand extends BaseModel {
   };
 }
 
+export interface BrandNameResponse {
+  id: string;
+  name: string;
+}
+
 export interface BrandCreate {
   name: string;
+}
+
+export interface BrandUpdate {
+  name?: string;
   description?: string;
+  socialAccounts?: {
+    instagram?: Partial<SocialAccount>;
+    facebook?: Partial<SocialAccount>;
+    tiktok?: Partial<SocialAccount>;
+  };
 }

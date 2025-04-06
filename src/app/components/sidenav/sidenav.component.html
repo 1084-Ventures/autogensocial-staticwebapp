@@ -12,12 +12,12 @@
     <button mat-flat-button color="primary" (click)="submitBrand()">Submit</button>
   </div>
   <mat-nav-list>
-    <mat-list-item
+    <a mat-list-item
       *ngFor="let brand of brands"
-      [class.selected]="brand.id === selectedBrandId"
+      [activated]="brand.id === selectedBrandId"
       (click)="selectBrand(brand)">
       <mat-icon matListItemIcon>business</mat-icon>
-      <span matListItemTitle>{{ brand.brandName }}</span>
-    </mat-list-item>
+      <span matListItemTitle>{{ brand.name }}</span>
+    </a>
   </mat-nav-list>
 </div>

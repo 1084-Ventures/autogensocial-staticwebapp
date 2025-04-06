@@ -1,0 +1,79 @@
+.form-container {
+  padding: 16px;
+
+  mat-form-field {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    color: rgba(0, 0, 0, 0.87);
+  }
+}
+
+.social-account {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+
+  mat-slide-toggle {
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  mat-form-field {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .social-account-fields {
+    padding: 16px;
+
+    mat-form-field {
+      width: 100%;
+      margin-bottom: 16px;
+    }
+  }
+}
+
+.form-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+
+  button {
+    min-width: 120px;
+
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+
+  mat-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: rgba(0, 0, 0, 0.54);
+  }
+}
+
+mat-card {
+  margin: 16px;
+}
+
+mat-expansion-panel {
+  margin-top: 8px;
+  margin-left: 24px;
+}
