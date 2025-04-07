@@ -4,7 +4,7 @@ export enum ContentType {
     POST = 'post',
     REEL = 'reel',
     CAROUSEL = 'carousel',
-    STORY = 'story'
+    STORY = 'story',
 }
 
 export enum DayOfWeek {
@@ -88,22 +88,23 @@ export interface TemplateSettings {
     };
 }
 
-// Document structure for Cosmos DB
-export interface ContentGenerationTemplateDocument extends BaseModel {
+export interface TemplateInfo {
     name: string;
     description?: string;
     brandId: string;
     contentType: ContentType;
+}
+
+// Document structure for Cosmos DB
+export interface ContentGenerationTemplateDocument extends BaseModel {
+    templateInfo: TemplateInfo;
     schedule: Schedule;
     settings: TemplateSettings;
 }
 
 // API interface
 export interface ContentGenerationTemplate extends BaseModel {
-    name: string;
-    description?: string;
-    brandId: string;
-    contentType: ContentType;
+    templateInfo: TemplateInfo;
     schedule: Schedule;
     settings: TemplateSettings;
 }
@@ -112,9 +113,11 @@ export interface ContentTemplateCreate
     extends Omit<ContentGenerationTemplate, keyof BaseModel> {}
 
 export interface ContentTemplateUpdate {
-    name?: string;
-    description?: string;
-    contentType?: ContentType;
+    templateInfo?: {
+        name?: string;
+        description?: string;
+        contentType?: ContentType;
+    };
     schedule?: Partial<Schedule>;
     settings?: {
         promptTemplate?: Partial<TemplateSettings['promptTemplate']>;

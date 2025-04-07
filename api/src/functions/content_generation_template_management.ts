@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
 const database = client.database(process.env.COSMOS_DB_NAME || '');
 const container = database.container(process.env.COSMOS_DB_CONTAINER_TEMPLATE || '');
+const brandsContainer = database.container(process.env.COSMOS_DB_CONTAINER_BRAND || '');
 
 export async function content_generation_template_management(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -30,7 +31,7 @@ export async function content_generation_template_management(request: HttpReques
 async function handleCreate(request: HttpRequest, userId: string): Promise<HttpResponseInit> {
     const body = await request.json() as ContentTemplateCreate;
     
-    const brandExists = await verifyBrandOwnership(body.brandId, userId);
+    const brandExists = await verifyBrandOwnership(body.templateInfo.brandId, userId);
     if (!brandExists) {
         return { status: 403, body: JSON.stringify({ error: 'Not authorized to create templates for this brand' }) };
     }
@@ -42,33 +43,12 @@ async function handleCreate(request: HttpRequest, userId: string): Promise<HttpR
             updatedDate: new Date().toISOString(),
             isActive: true
         },
-        name: body.name,
-        description: body.description,
-        brandId: body.brandId,
-        contentType: body.contentType,
+        templateInfo: body.templateInfo,
         schedule: body.schedule,
-        settings: {
-            promptTemplate: {
-                systemPrompt: body.settings.promptTemplate.systemPrompt,
-                userPrompt: body.settings.promptTemplate.userPrompt,
-                temperature: body.settings.promptTemplate.temperature,
-                maxTokens: body.settings.promptTemplate.maxTokens,
-                model: body.settings.promptTemplate.model,
-                variables: body.settings.promptTemplate.variables
-            },
-            visualStyle: body.settings.visualStyle,
-            contentStrategy: {
-                targetAudience: body.settings.contentStrategy?.targetAudience,
-                tone: body.settings.contentStrategy?.tone,
-                keywords: body.settings.contentStrategy?.keywords,
-                hashtagStrategy: body.settings.contentStrategy?.hashtagStrategy,
-                callToAction: body.settings.contentStrategy?.callToAction
-            },
-            platformSpecific: body.settings.platformSpecific
-        }
+        settings: body.settings
     };
 
-    const { resource: created } = await container.items.create(template);
+    const { resource: created } = await container.items.create<ContentGenerationTemplate>(template);
     return { status: 201, body: JSON.stringify(created) };
 }
 
@@ -113,13 +93,13 @@ async function verifyBrandOwnership(brandId: string, userId: string): Promise<bo
             { name: '@userId', value: userId }
         ]
     };
-    const { resources } = await container.items.query(querySpec).fetchAll();
+    const { resources } = await brandsContainer.items.query(querySpec).fetchAll();
     return resources.length > 0;
 }
 
 async function getTemplateById(templateId: string, userId: string): Promise<ContentGenerationTemplate | null> {
     const { resource: template } = await container.item(templateId, templateId).read<ContentGenerationTemplate>();
-    if (!template || !await verifyBrandOwnership(template.brandId, userId)) {
+    if (!template || !await verifyBrandOwnership(template.templateInfo.brandId, userId)) {
         return null;
     }
     return template;
@@ -131,7 +111,7 @@ async function getTemplatesByBrandId(brandId: string, userId: string): Promise<C
     }
 
     const querySpec = {
-        query: 'SELECT * FROM c WHERE c.brandId = @brandId',
+        query: 'SELECT * FROM c WHERE c.templateInfo.brandId = @brandId',
         parameters: [{ name: '@brandId', value: brandId }]
     };
     const { resources } = await container.items.query<ContentGenerationTemplate>(querySpec).fetchAll();
@@ -144,9 +124,10 @@ async function updateTemplate(templateId: string, userId: string, updateData: Co
 
     const updatedTemplate: ContentGenerationTemplate = {
         ...template,
-        name: updateData.name ?? template.name,
-        description: updateData.description ?? template.description,
-        contentType: updateData.contentType ?? template.contentType,
+        templateInfo: updateData.templateInfo ? {
+            ...template.templateInfo,
+            ...updateData.templateInfo
+        } : template.templateInfo,
         schedule: updateData.schedule ? {
             ...template.schedule,
             ...updateData.schedule
