@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
 const database = client.database(process.env.COSMOS_DB_NAME || '');
-const container = database.container(process.env.COSMOS_DB_CONTAINER || '');
+const container = database.container(process.env.COSMOS_DB_CONTAINER_BRAND || '');
 
 export async function brand_management(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
