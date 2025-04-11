@@ -37,6 +37,7 @@ yarn-error.log
 testem.log
 /typings
 project_structure.txt
+!/specs
 
 # System files
 .DS_Store
