@@ -15,6 +15,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @NgModule({
   imports: [
@@ -32,6 +33,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatMenuModule,
     MatExpansionModule,
     MatCheckboxModule,
+    MatProgressSpinnerModule,
   ],
   exports: [
     MatButtonModule,
@@ -47,6 +49,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatMenuModule,
     MatExpansionModule,
     MatCheckboxModule,
+    MatProgressSpinnerModule,
   ]
 })
 export class MaterialModule { }
