@@ -80,7 +80,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
         this.selectBrand(response);
       }
     } catch (error) {
-      // Error handler service will handle the error display
+      this.errorHandler.handleError(error as any);
     }
   }
 
@@ -105,7 +105,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
         this.hasMoreBrands = newBrands.length === this.pageSize;
       }
     } catch (error) {
-      // Error handler service will handle the error display
+      this.errorHandler.handleError(error as any);
     } finally {
       this.loading = false;
     }

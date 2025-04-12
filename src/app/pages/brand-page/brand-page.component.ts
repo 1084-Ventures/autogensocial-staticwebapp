@@ -8,9 +8,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BrandService } from '../../services/brand.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
-import { BrandDocument, BrandUpdate } from '../../../../api/src/models/brand.model';
+import { BrandDocument, BrandUpdate, validateBrandName, validateBrandDescription } from '../../../../api/src/models/brand.model';
 import { Subscription } from 'rxjs';
-import { validateBrandName, validateBrandDescription } from '../../../../api/src/models/brand.model';
 
 @Component({
   selector: 'app-brand-page',
@@ -156,17 +155,21 @@ export class BrandPageComponent implements OnInit, OnDestroy {
         }
       };
 
-      await this.brandService.updateBrand(this.brandId, updateData).toPromise();
-      this.snackBar.open('Brand updated successfully', 'Close', {
-        duration: 3000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top'
-      });
+      const result = await this.brandService.updateBrand(this.brandId, updateData).toPromise();
       
-      // Refresh form with latest data
-      await this.loadBrandData(this.brandId);
+      // Only show success message if update was successful
+      if (result) {
+        this.snackBar.open('Brand updated successfully', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top'
+        });
+        
+        // Refresh form with latest data
+        await this.loadBrandData(this.brandId);
+      }
     } catch (error) {
-      // Error handler service will handle the error display
+      this.errorHandler.handleError(error as any);
     } finally {
       this.loading = false;
     }
