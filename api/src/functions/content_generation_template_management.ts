@@ -9,11 +9,13 @@ import {
     validateTemplateSettings
 } from '../models/content_generation_template.model';
 import { ErrorResponse, PaginationParams } from '../models/base.model';
+import { BrandDocument } from '../models/brand.model';
 import { randomUUID } from 'crypto';
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
 const database = client.database(process.env.COSMOS_DB_NAME || '');
 const container = database.container(process.env.COSMOS_DB_CONTAINER_TEMPLATE || '');
+const brandContainer = database.container(process.env.COSMOS_DB_CONTAINER_BRAND || '');
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -41,8 +43,23 @@ export async function content_generation_template_management(request: HttpReques
     }
 }
 
+async function verifyBrandOwnership(brandId: string, userId: string): Promise<boolean> {
+    try {
+        const { resource: brand } = await brandContainer.item(brandId, brandId).read<BrandDocument>();
+        return brand?.brandInfo.userId === userId;
+    } catch (error) {
+        return false;
+    }
+}
+
 async function handleCreate(request: HttpRequest, userId: string): Promise<HttpResponseInit> {
     const body = await request.json() as ContentTemplateCreate;
+    
+    // Verify brand ownership
+    const hasBrandAccess = await verifyBrandOwnership(body.templateInfo.brandId, userId);
+    if (!hasBrandAccess) {
+        return createErrorResponse(403, 'Not authorized to create templates for this brand', 'UNAUTHORIZED_BRAND_ACCESS');
+    }
     
     // Validate input
     const validationErrors: Array<{ field: string; message: string }> = [];
@@ -102,8 +119,19 @@ async function handleGet(request: HttpRequest, userId: string): Promise<HttpResp
     const templateId = request.params.id;
 
     if (!templateId) {
+        const brandId = request.query.get('brandId');
+        if (!brandId) {
+            return createErrorResponse(400, 'Brand ID is required', 'MISSING_BRAND_ID');
+        }
+
+        // Verify brand ownership for listing templates
+        const hasBrandAccess = await verifyBrandOwnership(brandId, userId);
+        if (!hasBrandAccess) {
+            return createErrorResponse(403, 'Not authorized to view templates for this brand', 'UNAUTHORIZED_BRAND_ACCESS');
+        }
+
         const pagination = extractPaginationParams(request);
-        const templates = await getTemplatesByBrandId(request.query.get('brandId'), userId, pagination);
+        const templates = await getTemplatesByBrandId(brandId, userId, pagination);
         return createResponse(200, templates);
     }
 
@@ -111,6 +139,13 @@ async function handleGet(request: HttpRequest, userId: string): Promise<HttpResp
     if (!template) {
         return createErrorResponse(404, 'Template not found', 'RESOURCE_NOT_FOUND');
     }
+
+    // Verify brand ownership for getting single template
+    const hasBrandAccess = await verifyBrandOwnership(template.templateInfo.brandId, userId);
+    if (!hasBrandAccess) {
+        return createErrorResponse(403, 'Not authorized to view this template', 'UNAUTHORIZED_BRAND_ACCESS');
+    }
+
     return createResponse(200, template);
 }
 
@@ -125,7 +160,22 @@ async function handleUpdate(request: HttpRequest, userId: string): Promise<HttpR
         return createErrorResponse(404, 'Template not found', 'RESOURCE_NOT_FOUND');
     }
 
+    // Verify brand ownership
+    const hasBrandAccess = await verifyBrandOwnership(existingTemplate.templateInfo.brandId, userId);
+    if (!hasBrandAccess) {
+        return createErrorResponse(403, 'Not authorized to modify templates for this brand', 'UNAUTHORIZED_BRAND_ACCESS');
+    }
+
     const updateData = await request.json() as ContentTemplateUpdate;
+    
+    // If trying to change brandId, verify ownership of new brand
+    if (updateData.templateInfo?.brandId && updateData.templateInfo.brandId !== existingTemplate.templateInfo.brandId) {
+        const hasNewBrandAccess = await verifyBrandOwnership(updateData.templateInfo.brandId, userId);
+        if (!hasNewBrandAccess) {
+            return createErrorResponse(403, 'Not authorized to move template to specified brand', 'UNAUTHORIZED_BRAND_ACCESS');
+        }
+    }
+
     const validationErrors: Array<{ field: string; message: string }> = [];
 
     if (updateData.templateInfo) {

@@ -115,6 +115,7 @@ export interface ContentTemplateUpdate {
         name?: string;
         description?: string;
         contentType?: ContentType;
+        brandId?: string;  // Allow brand transfers
     };
     schedule?: Partial<Schedule>;
     settings?: {
