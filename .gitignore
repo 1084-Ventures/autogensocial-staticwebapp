@@ -42,3 +42,8 @@ project_structure.txt
 # System files
 .DS_Store
 Thumbs.db
+
+# Azure Development
+__azurite_db*
+__blobstorage__
+__queuestorage__
