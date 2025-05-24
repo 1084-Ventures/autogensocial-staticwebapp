@@ -1,16 +1,25 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { BehaviorSubject } from 'rxjs';
 import { SettingsPageComponent } from './settings-page.component';
+import { NavigationService } from '../../services/navigation.service';
 
 describe('SettingsPageComponent', () => {
   let component: SettingsPageComponent;
   let fixture: ComponentFixture<SettingsPageComponent>;
+  let navigationService: jasmine.SpyObj<NavigationService>;
+  const currentBrand$ = new BehaviorSubject<string | null>(null);
 
   beforeEach(async () => {
+    navigationService = jasmine.createSpyObj('NavigationService', [], {
+      currentBrand$
+    });
+
     await TestBed.configureTestingModule({
-      imports: [SettingsPageComponent]
-    })
-    .compileComponents();
+      imports: [SettingsPageComponent],
+      providers: [
+        { provide: NavigationService, useValue: navigationService }
+      ]
+    }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsPageComponent);
     component = fixture.componentInstance;
@@ -19,5 +28,22 @@ describe('SettingsPageComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should track brand ID changes', () => {
+    expect(component.brandId).toBeNull();
+    
+    const testBrandId = 'test-brand-123';
+    currentBrand$.next(testBrandId);
+    expect(component.brandId).toBe(testBrandId);
+
+    currentBrand$.next(null);
+    expect(component.brandId).toBeNull();
+  });
+
+  it('should clean up subscription on destroy', () => {
+    const subscriptionSpy = spyOn(component['subscription'], 'unsubscribe');
+    component.ngOnDestroy();
+    expect(subscriptionSpy).toHaveBeenCalled();
   });
 });

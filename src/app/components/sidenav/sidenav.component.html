@@ -1,17 +1,31 @@
 <div class="sidenav-content">
   <h2 class="sidenav-header">Brands</h2>
-  <button mat-flat-button color="primary" class="add-brand-button" (click)="toggleForm()">
+  <button mat-flat-button color="primary" class="add-brand-button" (click)="toggleForm()" [disabled]="loading">
     <mat-icon>add</mat-icon>
     New Brand
   </button>
+
   <div *ngIf="showForm" class="brand-form">
     <mat-form-field appearance="fill">
       <mat-label>Brand Name</mat-label>
-      <input matInput [(ngModel)]="newBrandName">
+      <input matInput [(ngModel)]="newBrandName" maxlength="100">
+      <mat-hint align="end">{{newBrandName.length}} / 100</mat-hint>
     </mat-form-field>
-    <button mat-flat-button color="primary" (click)="submitBrand()">Submit</button>
+    <div class="form-actions">
+      <button mat-flat-button (click)="toggleForm()">Cancel</button>
+      <button mat-flat-button color="primary" 
+              (click)="submitBrand()" 
+              [disabled]="!newBrandName.trim()">
+        Submit
+      </button>
+    </div>
   </div>
-  <mat-nav-list>
+
+  <mat-nav-list class="brand-list">
+    <div *ngIf="loading && !brands.length" class="loading-spinner">
+      <mat-spinner diameter="24"></mat-spinner>
+    </div>
+
     <a mat-list-item
       *ngFor="let brand of brands"
       [activated]="brand.id === selectedBrandId"
@@ -19,5 +33,14 @@
       <mat-icon matListItemIcon>business</mat-icon>
       <span matListItemTitle>{{ brand.name }}</span>
     </a>
+
+    <div *ngIf="hasMoreBrands" class="load-more">
+      <button mat-button (click)="loadMoreBrands()" [disabled]="loading">
+        <mat-icon *ngIf="loading" class="loading-icon">
+          <mat-spinner diameter="20"></mat-spinner>
+        </mat-icon>
+        <span *ngIf="!loading">Load More</span>
+      </button>
+    </div>
   </mat-nav-list>
 </div>
