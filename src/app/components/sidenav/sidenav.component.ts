@@ -1,20 +1,15 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../material.module';
-import { MatDialog } from '@angular/material/dialog';
 import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms'; // Import FormsModule
-import { HttpClientModule, HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 import { NavigationService, BrandRoute } from '../../services/navigation.service';
+import { BrandService } from '../../services/brand.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 import { Subscription } from 'rxjs';
-import { MatSnackBar } from '@angular/material/snack-bar';
-
-// Add this interface to match the backend response
-interface BrandNameResponse {
-  id: string;
-  name: string;
-}
+import { BrandNameResponse } from '../../../../api/src/models/brand.model';
+import { PaginationParams } from '../../../../api/src/models/base.model';
 
 @Component({
   selector: 'app-sidenav',
@@ -25,28 +20,28 @@ interface BrandNameResponse {
     RouterModule, 
     FormsModule, 
     HttpClientModule
-  ], 
+  ],
   templateUrl: './sidenav.component.html',
   styleUrls: ['./sidenav.component.scss']
 })
 export class SidenavComponent implements OnInit, OnDestroy {
-  @Input() selectedBrand: string | null = null;
   @Output() brandSelected = new EventEmitter<string>();
   
-  brands: BrandNameResponse[] = []; // Update the brands type to use BrandNameResponse
+  brands: BrandNameResponse[] = [];
   showForm = false;
   newBrandName = '';
+  loading = false;
+  hasMoreBrands = true;
+  currentPage = 0;
+  pageSize = 20;
 
-  // Define apiUrl using environment.apiBaseUrl
-  private apiUrl = environment.apiBaseUrl;
   private subscription: Subscription;
   selectedBrandId: string | null = null;
 
   constructor(
-    private dialog: MatDialog, 
-    private http: HttpClient, 
     private navigationService: NavigationService,
-    private snackBar: MatSnackBar
+    private brandService: BrandService,
+    private errorHandler: ErrorHandlerService
   ) {
     this.subscription = this.navigationService.currentBrand$.subscribe(
       brandId => this.selectedBrandId = brandId
@@ -54,74 +49,73 @@ export class SidenavComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.reloadBrands();
+    this.loadBrands();
   }
 
   ngOnDestroy() {
-    this.subscription.unsubscribe();
+    this.subscription?.unsubscribe();
   }
 
   toggleForm() {
     this.showForm = !this.showForm;
+    if (!this.showForm) {
+      this.newBrandName = '';
+    }
   }
 
-  submitBrand() {
-    if (this.newBrandName.trim()) {
-        const brandCreate = {
-            name: this.newBrandName.trim()
-        };
+  async submitBrand() {
+    if (!this.newBrandName.trim()) return;
 
-        const url = `${this.apiUrl}/brand_management`;
-        this.http.post<BrandNameResponse>(url, brandCreate).subscribe({
-            next: (response: BrandNameResponse) => {
-                if (!response || !response.id || !response.name) {
-                    this.snackBar.open('Error: Invalid response from server', 'Close', {
-                        duration: 3000,
-                        panelClass: ['error-snackbar']
-                    });
-                    return;
-                }
+    try {
+      const brandCreate = { name: this.newBrandName.trim() };
+      const response = await this.brandService.createBrand(brandCreate).toPromise();
+      
+      // Reset form
+      this.newBrandName = '';
+      this.showForm = false;
 
-                // Reset form first
-                this.newBrandName = '';
-                this.showForm = false;
-
-                // Reload brands first, then select the new brand
-                this.reloadBrands().then(() => {
-                    this.snackBar.open('Brand created successfully!', 'Close', {
-                        duration: 3000,
-                        panelClass: ['success-snackbar']
-                    });
-                    this.selectBrand(response);
-                });
-            },
-            error: (error) => {
-                console.error('Error creating brand:', error);
-                this.snackBar.open('Failed to create brand', 'Close', {
-                    duration: 3000,
-                    panelClass: ['error-snackbar']
-                });
-            }
-        });
+      // Reload brands and select the new one
+      await this.loadBrands();
+      if (response) {
+        this.selectBrand(response);
+      }
+    } catch (error) {
+      this.errorHandler.handleError(error as any);
     }
-}
+  }
 
-// Update reloadBrands to return a Promise
-private reloadBrands(): Promise<void> {
-    const url = `${this.apiUrl}/brand_management`;
-    return new Promise((resolve, reject) => {
-        this.http.get<BrandNameResponse[]>(url).subscribe({
-            next: (brands) => {
-                this.brands = brands;
-                resolve();
-            },
-            error: (err) => {
-                console.error('Error fetching brands:', err);
-                reject(err);
-            }
-        });
-    });
-}
+  async loadBrands(loadMore = false) {
+    try {
+      this.loading = true;
+      if (!loadMore) {
+        this.currentPage = 0;
+        this.brands = [];
+      }
+
+      const params: PaginationParams = {
+        offset: this.currentPage * this.pageSize,
+        limit: this.pageSize,
+        sortBy: 'name',
+        sortOrder: 'asc'
+      };
+
+      const newBrands = await this.brandService.getBrands(params).toPromise();
+      if (newBrands) {
+        this.brands = loadMore ? [...this.brands, ...newBrands] : newBrands;
+        this.hasMoreBrands = newBrands.length === this.pageSize;
+      }
+    } catch (error) {
+      this.errorHandler.handleError(error as any);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  async loadMoreBrands() {
+    if (!this.hasMoreBrands || this.loading) return;
+    this.currentPage++;
+    await this.loadBrands(true);
+  }
 
   selectBrand(brand: BrandNameResponse, route: BrandRoute = 'brand_details') {
     this.selectedBrandId = brand.id;

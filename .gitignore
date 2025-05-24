@@ -37,7 +37,13 @@ yarn-error.log
 testem.log
 /typings
 project_structure.txt
+!/specs
 
 # System files
 .DS_Store
 Thumbs.db
+
+# Azure Development
+__azurite_db_*
+__blobstorage__
+__queuestorage__
