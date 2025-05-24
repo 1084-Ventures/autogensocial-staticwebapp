@@ -1,10 +1,16 @@
-<div *ngIf="brandId; else emptyState">
-    <p>generate-page works! Selected brand: {{ brandId }}</p>
+<div *ngIf="loading; else contentState" class="loading-state" aria-busy="true">
+    <mat-spinner></mat-spinner>
+    <span>Loading...</span>
   </div>
-  <ng-template #emptyState>
-    <div class="empty-state">
-      <mat-icon>auto_awesome</mat-icon>
-      <h2>No Brand Selected</h2>
-      <p>Select a brand to start generating content</p>
+  <ng-template #contentState>
+    <div *ngIf="brandId; else emptyState" aria-live="polite">
+      <p>generate-page works! Selected brand: {{ brandId }}</p>
     </div>
+    <ng-template #emptyState>
+      <div class="empty-state" aria-label="No Brand Selected">
+        <mat-icon>auto_awesome</mat-icon>
+        <h2>No Brand Selected</h2>
+        <p>Select a brand to start generating content</p>
+      </div>
+    </ng-template>
   </ng-template>
