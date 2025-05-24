@@ -1,5 +1,189 @@
 <div *ngIf="brandId; else emptyState">
     <p>generate-page works! Selected brand: {{ brandId }}</p>
+
+    <form #templateForm="ngForm" (ngSubmit)="onSubmit()" class="template-form">
+      <section class="form-section">
+        <h3>Template Info</h3>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Name</mat-label>
+            <input matInput name="name" [(ngModel)]="templateData.templateInfo.name" required placeholder="e.g. Positive Affirmations Instagram Post" />
+            <mat-hint>Give your template a descriptive name.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Description</mat-label>
+            <textarea matInput name="description" [(ngModel)]="templateData.templateInfo.description" placeholder="Describe what this template is for."></textarea>
+            <mat-hint>Explain the purpose or focus of this template.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Content Type</mat-label>
+            <mat-select name="contentType" [(ngModel)]="templateData.templateInfo.contentType" required *ngIf="contentTypeOptions">
+              <mat-option *ngFor="let type of contentTypeOptions" [value]="type.value">{{ type.label }}</mat-option>
+            </mat-select>
+            <mat-hint>Select the type of content this template generates.</mat-hint>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>Schedule</h3>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Days of Week</mat-label>
+            <mat-select name="daysOfWeek" [(ngModel)]="templateData.schedule.daysOfWeek" multiple>
+              <mat-option *ngFor="let day of daysOfWeekOptions" [value]="day">{{ day | titlecase }}</mat-option>
+            </mat-select>
+            <mat-hint>Choose which days to schedule content for.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Frequency</mat-label>
+            <mat-select name="frequency" [(ngModel)]="templateData.schedule.frequency" *ngIf="frequencyOptions">
+              <mat-option *ngFor="let freq of frequencyOptions" [value]="freq.value">{{ freq.label }}</mat-option>
+            </mat-select>
+            <mat-hint>How often should content be generated?</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Max Posts Per Day</mat-label>
+            <input matInput type="number" name="maxPostsPerDay" [(ngModel)]="templateData.schedule.maxPostsPerDay" min="1" placeholder="e.g. 1" />
+            <mat-hint>Limit the number of posts per day.</mat-hint>
+          </mat-form-field>
+        </div>
+        <div class="form-row time-slots-row">
+          <label><strong>Time Slots</strong> <span class="field-desc">(When should posts be published?)</span></label>
+          <div *ngFor="let slot of templateData.schedule.timeSlots; let i = index" class="time-slot-row">
+            <mat-form-field appearance="outline" class="form-field small-field">
+              <mat-label>Hour</mat-label>
+              <input matInput type="number" [(ngModel)]="slot.hour" name="hour{{i}}" min="0" max="23" placeholder="9" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="form-field small-field">
+              <mat-label>Minute</mat-label>
+              <input matInput type="number" [(ngModel)]="slot.minute" name="minute{{i}}" min="0" max="59" placeholder="0" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Timezone</mat-label>
+              <input matInput [(ngModel)]="slot.timezone" name="timezone{{i}}" placeholder="America/New_York" />
+            </mat-form-field>
+            <button mat-icon-button color="warn" type="button" (click)="removeTimeSlot(i)" aria-label="Remove time slot"><mat-icon>delete</mat-icon></button>
+          </div>
+          <button mat-stroked-button type="button" (click)="addTimeSlot()">Add Time Slot</button>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>Prompt Template</h3>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>System Prompt</mat-label>
+            <textarea matInput name="systemPrompt" [(ngModel)]="templateData.settings.promptTemplate.systemPrompt" placeholder="e.g. You are a helpful assistant creating uplifting Instagram posts."></textarea>
+            <mat-hint>Instructions for the AI's behavior.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>User Prompt</mat-label>
+            <textarea matInput name="userPrompt" [(ngModel)]="templateData.settings.promptTemplate.userPrompt" placeholder="Write a user prompt"></textarea>
+            <mat-hint>Prompt for the AI to generate content. Use <span style="font-family:monospace">{{'{{variable}}'}}</span> for dynamic values.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Model</mat-label>
+            <mat-select name="model" [(ngModel)]="templateData.settings.promptTemplate.model" *ngIf="modelOptions">
+              <mat-option *ngFor="let model of modelOptions" [value]="model.value">{{ model.label }}</mat-option>
+            </mat-select>
+            <mat-hint>Choose the AI model to use.</mat-hint>
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+          <label><strong>Variables</strong> <span class="field-desc">(Dynamic values for prompts, e.g. depth, content)</span></label>
+          <div *ngFor="let variable of templateData.settings.promptTemplate.variables; let vi = index" class="variable-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Variable Name</mat-label>
+              <input matInput [(ngModel)]="variable.name" name="varName{{vi}}" placeholder="e.g. depth" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Values (comma separated)</mat-label>
+              <input matInput [(ngModel)]="variable.valuesString" name="varValues{{vi}}" (ngModelChange)="updateVariableValues(vi)" placeholder="e.g. surface, profound, deep" />
+            </mat-form-field>
+            <button mat-icon-button color="warn" type="button" (click)="removeVariable(vi)" aria-label="Remove variable"><mat-icon>delete</mat-icon></button>
+          </div>
+          <button mat-stroked-button type="button" (click)="addVariable()">Add Variable</button>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>Visual Style</h3>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Primary Font</mat-label>
+            <input matInput name="primaryFont" [(ngModel)]="templateData.settings.visualStyle.fonts.primary" placeholder="e.g. Helvetica" />
+            <mat-hint>Font for generated images or text.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Primary Color</mat-label>
+            <input matInput name="primaryColor" [(ngModel)]="templateData.settings.visualStyle.colors.primary" type="color" />
+            <mat-hint>Main color for visuals.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Text Color</mat-label>
+            <input matInput name="textColor" [(ngModel)]="templateData.settings.visualStyle.colors.text" type="color" />
+            <mat-hint>Color for text in visuals.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Image Layout</mat-label>
+            <mat-select name="imageLayout" [(ngModel)]="templateData.settings.visualStyle.imageLayout" *ngIf="imageLayoutOptions">
+              <mat-option *ngFor="let layout of imageLayoutOptions" [value]="layout.value">{{ layout.label }}</mat-option>
+            </mat-select>
+            <mat-hint>Choose the layout for images.</mat-hint>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>Content Strategy</h3>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Tone</mat-label>
+            <input matInput name="tone" [(ngModel)]="templateData.settings.contentStrategy.tone" placeholder="e.g. uplifting" />
+            <mat-hint>Overall tone for generated content.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Target Audience</mat-label>
+            <input matInput name="targetAudience" [(ngModel)]="templateData.settings.contentStrategy.targetAudience" placeholder="e.g. people seeking joy" />
+            <mat-hint>Who is this content for?</mat-hint>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>Platform Specific (Instagram)</h3>
+        <div class="form-row">
+          <mat-checkbox [(ngModel)]="templateData.settings.platformSpecific.instagram.useReels" name="useReels">Use Reels</mat-checkbox>
+          <mat-checkbox [(ngModel)]="templateData.settings.platformSpecific.instagram.useCarousel" name="useCarousel">Use Carousel</mat-checkbox>
+          <mat-checkbox [(ngModel)]="templateData.settings.platformSpecific.instagram.useStories" name="useStories">Use Stories</mat-checkbox>
+          <div class="field-desc">Enable features for Instagram posts.</div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit">Create Template</button>
+        <button mat-raised-button color="accent" type="button" (click)="onUpdate()" [disabled]="!templateId">Update Template</button>
+      </div>
+    </form>
+
+    <div *ngIf="apiResponse" class="api-response">
+      <h3>API Response</h3>
+      <pre>{{ apiResponse | json }}</pre>
+    </div>
+    <div *ngIf="apiError" class="api-error">
+      <h3>Error</h3>
+      <pre>{{ apiError | json }}</pre>
+    </div>
+
+    <div *ngIf="brandId && templates.length > 0" class="template-list">
+      <h3>Existing Templates</h3>
+      <mat-list>
+        <mat-list-item *ngFor="let template of templates" (click)="selectTemplate(template)">
+          <span>{{ template.templateInfo.name }}</span>
+        </mat-list-item>
+      </mat-list>
+    </div>
   </div>
   <ng-template #emptyState>
     <div class="empty-state">
