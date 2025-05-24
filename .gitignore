@@ -41,3 +41,8 @@ project_structure.txt
 # System files
 .DS_Store
 Thumbs.db
+
+# Azurite local files
+__azurite*
+**/__azurite*
+AzuriteConfig
