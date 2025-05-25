@@ -65,7 +65,7 @@ const baseMockRequestProps: Partial<HttpRequest> = {
   query: new URLSearchParams(),
   params: {},
   user: {
-    type: 'clientPrincipal',
+    type: undefined as any, // workaround for HttpRequestUserType type error in test
     id: 'test-user',
     username: 'test-user',
     identityProvider: 'test',
@@ -77,8 +77,7 @@ const baseMockRequestProps: Partial<HttpRequest> = {
   blob: () => Promise.resolve(new Blob() as any),
   formData: () => Promise.resolve(new FormData() as any),
   json: () => Promise.resolve({}),
-  text: () => Promise.resolve(''),
-  rawBody: undefined
+  text: () => Promise.resolve('')
 };
 
 // Helper function to create mock headers
@@ -106,7 +105,7 @@ describe('Content Generation Template Management', () => {
       name: 'Test Template',
       description: 'Test Description',
       brandId: '12345678-1234-4123-9abc-123456789abc',
-      contentType: ContentType.POST
+      contentType: ContentType.TEXT
     },
     schedule: {
       daysOfWeek: [DayOfWeek.MONDAY],
@@ -126,9 +125,6 @@ describe('Content Generation Template Management', () => {
         colors: {
           primary: '#000000'
         }
-      },
-      contentStrategy: {
-        keywords: ['test']
       }
     }
   };

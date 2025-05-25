@@ -117,9 +117,15 @@ export class SidenavComponent implements OnInit, OnDestroy {
     await this.loadBrands(true);
   }
 
-  selectBrand(brand: BrandNameResponse, route: BrandRoute = 'brand_details') {
+  selectBrand(brand: BrandNameResponse, route?: BrandRoute) {
     this.selectedBrandId = brand.id;
     this.brandSelected.emit(brand.name);
-    this.navigationService.navigateToBrand(brand.id, route);
+    // Use the current route from NavigationService if not explicitly provided
+    let navRoute: BrandRoute = route as BrandRoute;
+    if (!navRoute) {
+      const current = (this.navigationService as any).currentRoute?.getValue?.();
+      navRoute = (current === 'generate' || current === 'upload' || current === 'brand_details') ? current : 'brand_details';
+    }
+    this.navigationService.navigateToBrand(brand.id, navRoute);
   }
 }
