@@ -19,6 +19,18 @@ const database = client.database(process.env.COSMOS_DB_NAME || '');
 const container = database.container(process.env.COSMOS_DB_CONTAINER_TEMPLATE || '');
 const brandContainer = database.container(process.env.COSMOS_DB_CONTAINER_BRAND || '');
 
+// Startup diagnostics
+try {
+    const cosmosPkg = require('@azure/cosmos/package.json');
+    // eslint-disable-next-line no-console
+    console.log('[Startup] Cosmos DB SDK version:', cosmosPkg.version);
+} catch (e) {
+    // eslint-disable-next-line no-console
+    console.log('[Startup] Could not determine Cosmos DB SDK version:', e);
+}
+// eslint-disable-next-line no-console
+console.log('[Startup] COSMOS_DB_CONNECTION_STRING present:', !!process.env.COSMOS_DB_CONNECTION_STRING);
+
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
@@ -30,21 +42,26 @@ export async function content_generation_template_management(request: HttpReques
             context.log('User not authenticated');
             return createErrorResponse(401, 'User not authenticated', 'UNAUTHENTICATED');
         }
-        let body: any;
-        try {
-            body = await request.json();
-        } catch (jsonErr) {
-            context.log('Invalid JSON in request body', jsonErr);
-            return createErrorResponse(400, 'Invalid JSON in request body', 'INVALID_JSON');
+        let body: any = undefined;
+        if (request.method === 'POST' || request.method === 'PUT') {
+            try {
+                body = await request.json();
+            } catch (jsonErr) {
+                context.log('Invalid JSON in request body', jsonErr);
+                return createErrorResponse(400, 'Invalid JSON in request body', 'INVALID_JSON');
+            }
+            context.log('Parsed request body:', JSON.stringify(body));
         }
-        context.log('Parsed request body:', JSON.stringify(body));
         switch (request.method) {
             case 'POST':
-                return handleCreate(request, userId, context);
+                context.log('[main] Dispatching to handleCreate');
+                const postResp = await handleCreate(request, userId, context, body);
+                context.log('[main] handleCreate returned, about to return response');
+                return postResp;
             case 'GET':
                 return handleGet(request, userId, context);
             case 'PUT':
-                return handleUpdate(request, userId, context);
+                return handleUpdate(request, userId, context, body);
             default:
                 context.log('Unsupported HTTP method:', request.method);
                 return createErrorResponse(405, 'Method Not Allowed', 'METHOD_NOT_ALLOWED');
@@ -52,49 +69,87 @@ export async function content_generation_template_management(request: HttpReques
     } catch (error) {
         context.log('Unhandled error in content_generation_template_management:', error);
         if (error instanceof Error) {
+            context.log('[main] Returning 500 error response');
             return createErrorResponse(500, error.message, 'INTERNAL_ERROR');
         }
+        context.log('[main] Returning generic 500 error response');
         return createErrorResponse(500, 'Internal Server Error', 'INTERNAL_ERROR');
     }
 }
 
-async function handleCreate(request: HttpRequest, userId: string, context: InvocationContext): Promise<HttpResponseInit> {
+async function handleCreate(request: HttpRequest, userId: string, context: InvocationContext, body: ContentTemplateCreate): Promise<HttpResponseInit> {
     const start = Date.now();
-    const body = await request.json() as ContentTemplateCreate;
+    context.log('[handleCreate] ENV:', {
+        COSMOS_DB_CONNECTION_STRING: (process.env.COSMOS_DB_CONNECTION_STRING || '').slice(0, 20) + '...',
+        COSMOS_DB_NAME: process.env.COSMOS_DB_NAME,
+        COSMOS_DB_CONTAINER_TEMPLATE: process.env.COSMOS_DB_CONTAINER_TEMPLATE,
+        COSMOS_DB_CONTAINER_BRAND: process.env.COSMOS_DB_CONTAINER_BRAND
+    });
+    // Early validation for required fields
+    const earlyValidationErrors: Array<{ field: string; message: string }> = [];
+    if (!body.templateInfo) {
+        earlyValidationErrors.push({ field: 'templateInfo', message: 'templateInfo is required' });
+    } else if (!body.templateInfo.brandId) {
+        earlyValidationErrors.push({ field: 'templateInfo.brandId', message: 'brandId is required' });
+    }
+    if (earlyValidationErrors.length > 0) {
+        context.log('[handleCreate] Early validation errors:', JSON.stringify(earlyValidationErrors));
+        return createErrorResponse(422, 'Validation failed', 'VALIDATION_ERROR', earlyValidationErrors);
+    }
     context.log('[handleCreate] userId:', userId, 'brandId:', body?.templateInfo?.brandId);
-    // Verify brand ownership
+    context.log('[handleCreate] Awaiting verifyBrandOwnership...');
     const hasBrandAccess = await verifyBrandOwnership(body.templateInfo.brandId, userId, context);
     context.log('[handleCreate] hasBrandAccess:', hasBrandAccess);
     if (!hasBrandAccess) {
         context.log(`[handleCreate] Elapsed: ${Date.now() - start}ms (authorization failed)`);
         return createErrorResponse(403, 'Not authorized to create templates for this brand', 'UNAUTHORIZED_BRAND_ACCESS');
     }
-    // Validate input
+    // Always run all validation functions and collect all errors
     const validationErrors: Array<{ field: string; message: string }> = [];
-    const templateInfoValidation = validateTemplateInfo(body.templateInfo);
-    if (!templateInfoValidation.isValid) {
-        validationErrors.push(...templateInfoValidation.errors.map(error => ({
-            field: 'templateInfo',
-            message: error
-        })));
+    // TemplateInfo validation
+    let templateInfoValidation;
+    try {
+        templateInfoValidation = validateTemplateInfo(body.templateInfo);
+        context.log('[handleCreate] templateInfoValidation:', JSON.stringify(templateInfoValidation));
+        if (!templateInfoValidation.isValid) {
+            validationErrors.push(...templateInfoValidation.errors.map(error => ({
+                field: 'templateInfo',
+                message: error
+            })));
+        }
+    } catch (err) {
+        context.log('[handleCreate] Exception in validateTemplateInfo:', err);
+        validationErrors.push({ field: 'templateInfo', message: 'Exception during templateInfo validation' });
     }
-    if (body.schedule && Object.keys(body.schedule).length > 0) {
-        const scheduleValidation = validateSchedule(body.schedule as Schedule);
+    // Schedule validation
+    let scheduleValidation;
+    try {
+        scheduleValidation = validateSchedule(body.schedule as Schedule);
+        context.log('[handleCreate] scheduleValidation:', JSON.stringify(scheduleValidation));
         if (!scheduleValidation.isValid) {
             validationErrors.push(...scheduleValidation.errors.map(error => ({
                 field: 'schedule',
                 message: error
             })));
         }
+    } catch (err) {
+        context.log('[handleCreate] Exception in validateSchedule:', err);
+        validationErrors.push({ field: 'schedule', message: 'Exception during schedule validation' });
     }
-    if (body.settings && Object.keys(body.settings).length > 0) {
-        const settingsValidation = validateTemplateSettings(body.settings as TemplateSettings);
+    // Settings validation
+    let settingsValidation;
+    try {
+        settingsValidation = validateTemplateSettings(body.settings as TemplateSettings);
+        context.log('[handleCreate] settingsValidation:', JSON.stringify(settingsValidation));
         if (!settingsValidation.isValid) {
             validationErrors.push(...settingsValidation.errors.map(error => ({
                 field: 'settings',
                 message: error
             })));
         }
+    } catch (err) {
+        context.log('[handleCreate] Exception in validateTemplateSettings:', err);
+        validationErrors.push({ field: 'settings', message: 'Exception during settings validation' });
     }
     if (validationErrors.length > 0) {
         context.log(`[handleCreate] Elapsed: ${Date.now() - start}ms (validation failed)`);
@@ -114,27 +169,31 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
         schedule: body.schedule ?? {},
         settings: body.settings ?? {}
     };
-    context.log('[handleCreate] Document to be created:', JSON.stringify(newTemplate));
+    console.log('[handleCreate] Document to be created:', JSON.stringify(newTemplate));
     let createdTemplate;
     try {
-        context.log('[handleCreate] About to call container.items.create...');
+        console.log('[handleCreate] About to call container.items.create...');
         const result = await container.items.create(newTemplate);
+        console.log('[handleCreate] container.items.create resolved');
         createdTemplate = result.resource;
-        context.log(`[handleCreate] After DB write: ${Date.now() - start}ms`);
-        context.log('[handleCreate] DB write result:', JSON.stringify(result));
+        console.log(`[handleCreate] After DB write: ${Date.now() - start}ms`);
+        // Avoid circular structure error by only logging the resource
+        console.log('[handleCreate] DB write resource:', JSON.stringify(result.resource));
     } catch (err) {
-        context.log(`[handleCreate] DB error after ${Date.now() - start}ms`, err);
+        console.log(`[handleCreate] DB error after ${Date.now() - start}ms`, err);
         return createErrorResponse(500, 'Failed to create template');
     }
     if (!createdTemplate) {
-        context.log(`[handleCreate] No resource returned after DB write: ${Date.now() - start}ms`);
+        console.log(`[handleCreate] No resource returned after DB write: ${Date.now() - start}ms`);
         return createErrorResponse(500, 'Failed to create template');
     }
-    context.log(`[handleCreate] End: ${Date.now() - start}ms`);
-    return createResponse(201, { 
+    context.log(`[handleCreate] End: ${Date.now() - start}ms, about to return 201 response`);
+    const resp = createResponse(201, { 
         id: createdTemplate.id, 
         name: createdTemplate.templateInfo.name 
     });
+    context.log('[handleCreate] Returning response:', JSON.stringify(resp));
+    return resp;
 }
 
 async function verifyBrandOwnership(brandId: string, userId: string, context?: InvocationContext): Promise<boolean> {
@@ -182,7 +241,7 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
     return createResponse(200, template);
 }
 
-async function handleUpdate(request: HttpRequest, userId: string, context: InvocationContext): Promise<HttpResponseInit> {
+async function handleUpdate(request: HttpRequest, userId: string, context: InvocationContext, body?: ContentTemplateUpdate): Promise<HttpResponseInit> {
     const start = Date.now();
     const templateId = request.params.id;
     if (!templateId) {
@@ -209,7 +268,12 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
         context.log(`[handleUpdate] Elapsed: ${Date.now() - start}ms (authorization failed)`);
         return createErrorResponse(403, 'Not authorized to modify templates for this brand', 'UNAUTHORIZED_BRAND_ACCESS');
     }
-    const updateData = await request.json() as ContentTemplateUpdate;
+    let updateData: ContentTemplateUpdate;
+    if (body) {
+        updateData = body;
+    } else {
+        updateData = await request.json() as ContentTemplateUpdate;
+    }
     // If trying to change brandId, verify ownership of new brand
     if (updateData.templateInfo?.brandId && updateData.templateInfo.brandId !== existingTemplate.templateInfo.brandId) {
         const hasNewBrandAccess = await verifyBrandOwnership(updateData.templateInfo.brandId, userId, context);
@@ -260,11 +324,8 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
             visualStyle: {
                 ...(existingTemplate.settings && 'visualStyle' in existingTemplate.settings ? (existingTemplate.settings as any).visualStyle : {}),
                 ...updateData.settings.visualStyle
-            },
-            platformSpecific: {
-                ...(existingTemplate.settings && 'platformSpecific' in existingTemplate.settings ? (existingTemplate.settings as any).platformSpecific : {}),
-                ...updateData.settings.platformSpecific
             }
+            // platformSpecific removed
         };
         const settingsValidation = validateTemplateSettings(settingsToValidate);
         if (!settingsValidation.isValid) {
@@ -372,10 +433,6 @@ async function updateTemplate(templateId: string, userId: string, updateData: Co
             visualStyle: {
                 ...(safeSettings && 'visualStyle' in safeSettings ? (safeSettings as any).visualStyle : {}),
                 ...updateData.settings.visualStyle
-            },
-            platformSpecific: {
-                ...(safeSettings && 'platformSpecific' in safeSettings ? (safeSettings as any).platformSpecific : {}),
-                ...updateData.settings.platformSpecific
             }
         } : (existingTemplate.settings ?? {})
     };

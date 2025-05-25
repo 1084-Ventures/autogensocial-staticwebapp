@@ -60,21 +60,6 @@ export interface TemplateSettings {
         variables?: PromptVariable[];
     };
     visualStyle: VisualStyle;
-    platformSpecific?: {
-        instagram?: {
-            useReels?: boolean;
-            useCarousel?: boolean;
-            useStories?: boolean;
-        };
-        facebook?: {
-            useReels?: boolean;
-            groupIds?: string[];
-        };
-        tiktok?: {
-            useDuets?: boolean;
-            useStitches?: boolean;
-        };
-    };
 }
 
 export interface TemplateInfo {
@@ -114,7 +99,6 @@ export interface ContentTemplateUpdate {
     settings?: {
         promptTemplate?: Partial<TemplateSettings['promptTemplate']>;
         visualStyle?: Partial<VisualStyle>;
-        platformSpecific?: Partial<TemplateSettings['platformSpecific']>;
     };
 }
 

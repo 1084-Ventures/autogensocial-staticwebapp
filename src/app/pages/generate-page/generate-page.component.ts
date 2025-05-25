@@ -278,16 +278,13 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
 
   // Map display values to backend enum values
   mapContentType(input: string): string {
-    switch (input.toLowerCase().replace(/ /g, '-')) {
+    const normalized = input.toLowerCase().replace(/ /g, '-');
+    switch (normalized) {
       case 'text':
-        return 'text';
       case 'video':
-        return 'video';
       case 'multi-image':
-      case 'multiimage':
-        return 'multi-image';
       case 'image':
-        return 'image';
+        return normalized;
       default:
         throw new Error(`Unknown content type: ${input}`);
     }
@@ -295,8 +292,22 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
 
   onSubmit() {
     this.loading = true;
+    // Ensure all variable values are up to date from valuesString
+    this.templateData.settings.promptTemplate.variables.forEach((v: any, i: number) => this.updateVariableValues(i));
+    let backendContentType: string;
+    try {
+      backendContentType = this.mapContentType(this.templateData.templateInfo.contentType);
+    } catch (err: any) {
+      this.snackBar.open('Invalid content type selected. Please choose a valid type.', 'Close', {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top'
+      });
+      this.loading = false;
+      return;
+    }
     // Set systemPrompt dynamically based on contentType
-    const contentType = this.templateData.templateInfo.contentType;
+    const contentType = backendContentType;
     let systemPrompt = '';
     if (contentType === 'multi-image') {
       systemPrompt = `You are a helpful assistant creating social content for multiple images.  \nAlways respond with a single JSON object containing exactly three keys (all lowercase):\n  • "comment": a brief caption for the entire post, as a string  \n  • "hashtags": an array of hashtag strings for the entire post  \n  • "images": an array of objects, each with exactly one key:\n      – "text": the main content for that image, as a string  \nThe number of entries in "images" must exactly match the number of images requested.  \nDo not include any extra fields, wrapping objects, or explanatory text—only the JSON object.`;
@@ -315,7 +326,6 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
         values: v.values
       }))
     };
-    const backendContentType = this.mapContentType(this.templateData.templateInfo.contentType);
     const data: any = {
       ...this.templateData,
       templateInfo: {
@@ -378,8 +388,22 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   onUpdate() {
     if (!this.templateId) return;
     this.loading = true;
+    // Ensure all variable values are up to date from valuesString
+    this.templateData.settings.promptTemplate.variables.forEach((v: any, i: number) => this.updateVariableValues(i));
+    let backendContentType: string;
+    try {
+      backendContentType = this.mapContentType(this.templateData.templateInfo.contentType);
+    } catch (err: any) {
+      this.snackBar.open('Invalid content type selected. Please choose a valid type.', 'Close', {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top'
+      });
+      this.loading = false;
+      return;
+    }
     // Set systemPrompt dynamically based on contentType
-    const contentType = this.templateData.templateInfo.contentType;
+    const contentType = backendContentType;
     let systemPrompt = '';
     if (contentType === 'multi-image') {
       systemPrompt = `You are a helpful assistant creating social content for multiple images.  \nAlways respond with a single JSON object containing exactly three keys (all lowercase):\n  • "comment": a brief caption for the entire post, as a string  \n  • "hashtags": an array of hashtag strings for the entire post  \n  • "images": an array of objects, each with exactly one key:\n      – "text": the main content for that image, as a string  \nThe number of entries in "images" must exactly match the number of images requested.  \nDo not include any extra fields, wrapping objects, or explanatory text—only the JSON object.`;
@@ -398,7 +422,6 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
         values: v.values
       }))
     };
-    const backendContentType = this.mapContentType(this.templateData.templateInfo.contentType);
     const data: any = {
       ...this.templateData,
       templateInfo: {
