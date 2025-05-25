@@ -1,10 +1,10 @@
 import { BaseModel } from './base.model';
 
 export enum ContentType {
-    POST = 'post',
-    REEL = 'reel',
-    CAROUSEL = 'carousel',
-    STORY = 'story',
+    TEXT = 'text',
+    VIDEO = 'video',
+    MULTI_IMAGE = 'multi-image',
+    IMAGE = 'image',
 }
 
 export enum DayOfWeek {
@@ -26,8 +26,6 @@ export interface TimeSlot {
 export interface Schedule {
     daysOfWeek: DayOfWeek[];
     timeSlots: TimeSlot[];
-    frequency?: 'daily' | 'weekly' | 'monthly';
-    maxPostsPerDay?: number;
 }
 
 export interface PromptVariable {
@@ -37,21 +35,19 @@ export interface PromptVariable {
 }
 
 export interface VisualStyle {
-    fonts?: {
-        primary?: string;
-        secondary?: string;
-    };
-    colors?: {
-        primary?: string;
-        secondary?: string;
-        background?: string;
-        text?: string;
-    };
-    imageLayout?: 'square' | 'portrait' | 'landscape';
-    overlayStyle?: {
-        opacity?: number;
-        position?: 'top' | 'bottom' | 'full';
-    };
+  container: {
+    align: 'left' | 'center' | 'right';
+    vertical: 'top' | 'middle' | 'bottom';
+    opacity?: number;
+  };
+  themes: Array<{
+    font: string;
+    fontSize: string;
+    fontWeight: 'normal' | 'bold';
+    fontStyle: 'normal' | 'italic';
+    fontColor: string;
+    backgroundColor: string;
+  }>;
 }
 
 export interface TemplateSettings {
@@ -64,28 +60,6 @@ export interface TemplateSettings {
         variables?: PromptVariable[];
     };
     visualStyle: VisualStyle;
-    contentStrategy: {
-        targetAudience?: string;
-        tone?: string;
-        keywords?: string[];
-        hashtagStrategy?: string;
-        callToAction?: string;
-    };
-    platformSpecific?: {
-        instagram?: {
-            useReels?: boolean;
-            useCarousel?: boolean;
-            useStories?: boolean;
-        };
-        facebook?: {
-            useReels?: boolean;
-            groupIds?: string[];
-        };
-        tiktok?: {
-            useDuets?: boolean;
-            useStitches?: boolean;
-        };
-    };
 }
 
 export interface TemplateInfo {
@@ -93,22 +67,26 @@ export interface TemplateInfo {
     description?: string;
     brandId: string;
     contentType: ContentType;
+    targetPlatforms: string[];
 }
 
 export interface ContentGenerationTemplateDocument extends BaseModel {
     templateInfo: TemplateInfo;
-    schedule: Schedule;
-    settings: TemplateSettings;
+    schedule: Schedule | {};
+    settings: TemplateSettings | {};
 }
 
 export interface ContentGenerationTemplate extends BaseModel {
     templateInfo: TemplateInfo;
-    schedule: Schedule;
-    settings: TemplateSettings;
+    schedule: Schedule | {};
+    settings: TemplateSettings | {};
 }
 
-export interface ContentTemplateCreate 
-    extends Omit<ContentGenerationTemplate, keyof BaseModel> {}
+export interface ContentTemplateCreate {
+    templateInfo: TemplateInfo;
+    schedule?: Schedule | {};
+    settings?: TemplateSettings | {};
+}
 
 export interface ContentTemplateUpdate {
     templateInfo?: {
@@ -121,8 +99,6 @@ export interface ContentTemplateUpdate {
     settings?: {
         promptTemplate?: Partial<TemplateSettings['promptTemplate']>;
         visualStyle?: Partial<VisualStyle>;
-        contentStrategy?: Partial<TemplateSettings['contentStrategy']>;
-        platformSpecific?: Partial<TemplateSettings['platformSpecific']>;
     };
 }
 
@@ -145,13 +121,16 @@ export function validateTemplateInfo(info: TemplateInfo): { isValid: boolean; er
     if (!Object.values(ContentType).includes(info.contentType)) {
         errors.push('Valid content type is required');
     }
+    if (!info.targetPlatforms || !Array.isArray(info.targetPlatforms) || info.targetPlatforms.length === 0) {
+        errors.push('At least one target platform is required');
+    }
 
     return { isValid: errors.length === 0, errors };
 }
 
-export function validateSchedule(schedule: Schedule): { isValid: boolean; errors: string[] } {
+export function validateSchedule(schedule?: Schedule): { isValid: boolean; errors: string[] } {
+    if (!schedule) return { isValid: true, errors: [] };
     const errors: string[] = [];
-    
     if (!schedule.daysOfWeek || !schedule.daysOfWeek.length) {
         errors.push('At least one day of week is required');
     } else {
@@ -160,7 +139,6 @@ export function validateSchedule(schedule: Schedule): { isValid: boolean; errors
             errors.push('Invalid day of week specified');
         }
     }
-    
     if (!schedule.timeSlots || !schedule.timeSlots.length) {
         errors.push('At least one time slot is required');
     } else {
@@ -177,16 +155,12 @@ export function validateSchedule(schedule: Schedule): { isValid: boolean; errors
         });
     }
 
-    if (schedule.maxPostsPerDay !== undefined && (schedule.maxPostsPerDay < 1 || schedule.maxPostsPerDay > 10)) {
-        errors.push('Max posts per day must be between 1 and 10');
-    }
-
     return { isValid: errors.length === 0, errors };
 }
 
-export function validateTemplateSettings(settings: TemplateSettings): { isValid: boolean; errors: string[] } {
+export function validateTemplateSettings(settings?: TemplateSettings): { isValid: boolean; errors: string[] } {
+    if (!settings) return { isValid: true, errors: [] };
     const errors: string[] = [];
-    
     // Validate prompt template
     if (!settings.promptTemplate.systemPrompt) {
         errors.push('System prompt is required');
@@ -201,21 +175,38 @@ export function validateTemplateSettings(settings: TemplateSettings): { isValid:
         (settings.promptTemplate.temperature < 0 || settings.promptTemplate.temperature > 2)) {
         errors.push('Temperature must be between 0 and 2');
     }
-    
-    // Validate visual style
-    if (settings.visualStyle.colors) {
-        const { colors } = settings.visualStyle;
-        Object.entries(colors).forEach(([key, value]) => {
-            if (value && !isValidHexColor(value)) {
-                errors.push(`Invalid hex color for ${key}`);
-            }
+    // Validate visual style (new schema)
+    if (!settings.visualStyle) {
+      errors.push('Visual style is required');
+    } else {
+      const vs = settings.visualStyle;
+      // Validate container
+      if (!vs.container) {
+        errors.push('Visual style container is required');
+      } else {
+        if (!['left', 'center', 'right'].includes(vs.container.align)) {
+          errors.push('Container align must be left, center, or right');
+        }
+        if (!['top', 'middle', 'bottom'].includes(vs.container.vertical)) {
+          errors.push('Container vertical must be top, middle, or bottom');
+        }
+        if (vs.container.opacity !== undefined && (vs.container.opacity < 0 || vs.container.opacity > 1)) {
+          errors.push('Container opacity must be between 0 and 1');
+        }
+      }
+      // Validate themes
+      if (!Array.isArray(vs.themes) || vs.themes.length === 0) {
+        errors.push('At least one theme is required in visual style');
+      } else {
+        vs.themes.forEach((theme, idx) => {
+          if (!theme.font) errors.push(`Theme[${idx}]: font is required`);
+          if (!theme.fontSize) errors.push(`Theme[${idx}]: fontSize is required`);
+          if (!['normal', 'bold'].includes(theme.fontWeight)) errors.push(`Theme[${idx}]: fontWeight must be normal or bold`);
+          if (!['normal', 'italic'].includes(theme.fontStyle)) errors.push(`Theme[${idx}]: fontStyle must be normal or italic`);
+          if (!theme.fontColor || !isValidHexColor(theme.fontColor)) errors.push(`Theme[${idx}]: fontColor must be a valid hex color`);
+          if (!theme.backgroundColor || !isValidHexColor(theme.backgroundColor)) errors.push(`Theme[${idx}]: backgroundColor must be a valid hex color`);
         });
-    }
-    
-    // Validate content strategy
-    if (settings.contentStrategy.keywords && 
-        !Array.isArray(settings.contentStrategy.keywords)) {
-        errors.push('Keywords must be an array');
+      }
     }
 
     return { isValid: errors.length === 0, errors };

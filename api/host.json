@@ -1,10 +1,20 @@
 {
   "version": "2.0",
   "logging": {
+    "fileLoggingMode": "always",
+    "console": {
+      "isEnabled": true,
+      "disableColors": false
+    },
+    "logLevel": {
+      "default": "Trace",
+      "Host.Aggregator": "Trace",
+      "Host.Results": "Trace",
+      "Function": "Trace"
+    },
     "applicationInsights": {
       "samplingSettings": {
-        "isEnabled": true,
-        "excludedTypes": "Request"
+        "isEnabled": false
       }
     }
   },
