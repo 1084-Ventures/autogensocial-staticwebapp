@@ -83,7 +83,7 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
         COSMOS_DB_CONNECTION_STRING: (process.env.COSMOS_DB_CONNECTION_STRING || '').slice(0, 20) + '...',
         COSMOS_DB_NAME: process.env.COSMOS_DB_NAME,
         COSMOS_DB_CONTAINER_TEMPLATE: process.env.COSMOS_DB_CONTAINER_TEMPLATE,
-        COSMOS_DB_CONTAINER_BRAND: process.env.COSMOS_DB_CONTAINER_BRAND
+        COSOS_DB_CONTAINER_BRAND: process.env.COSMOS_DB_CONTAINER_BRAND
     });
     // Early validation for required fields
     const earlyValidationErrors: Array<{ field: string; message: string }> = [];
@@ -315,24 +315,52 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
         }
     }
     if (updateData.settings) {
-        const settingsToValidate = {
-            ...existingTemplate.settings,
-            promptTemplate: {
-                ...(existingTemplate.settings && 'promptTemplate' in existingTemplate.settings ? (existingTemplate.settings as any).promptTemplate : {}),
+        const safeSettings = (existingTemplate.settings && typeof existingTemplate.settings === 'object' && 'promptTemplate' in existingTemplate.settings) ? existingTemplate.settings as TemplateSettings : undefined;
+        if (updateData.settings.promptTemplate) {
+            const promptTemplateToValidate = {
+                ...(safeSettings?.promptTemplate || {}),
                 ...updateData.settings.promptTemplate
-            },
-            visualStyle: {
-                ...(existingTemplate.settings && 'visualStyle' in existingTemplate.settings ? (existingTemplate.settings as any).visualStyle : {}),
-                ...updateData.settings.visualStyle
+            };
+            const promptTemplateValidation = validateTemplateSettings({
+                ...(safeSettings || {}),
+                promptTemplate: promptTemplateToValidate
+            } as TemplateSettings);
+            if (!promptTemplateValidation.isValid) {
+                validationErrors.push(...promptTemplateValidation.errors.map(error => ({
+                    field: 'settings.promptTemplate',
+                    message: error
+                })));
             }
-            // platformSpecific removed
-        };
-        const settingsValidation = validateTemplateSettings(settingsToValidate);
-        if (!settingsValidation.isValid) {
-            validationErrors.push(...settingsValidation.errors.map(error => ({
-                field: 'settings',
-                message: error
-            })));
+        }
+        if (updateData.settings.visualStyle) {
+            const visualStyleToValidate = {
+                ...(safeSettings?.visualStyle || {}),
+                ...updateData.settings.visualStyle
+            };
+            const visualStyleValidation = validateTemplateSettings({
+                ...(safeSettings || {}),
+                visualStyle: visualStyleToValidate
+            } as TemplateSettings);
+            if (!visualStyleValidation.isValid) {
+                validationErrors.push(...visualStyleValidation.errors.map(error => ({
+                    field: 'settings.visualStyle',
+                    message: error
+                })));
+            }
+        }
+        if ('image' in updateData.settings && updateData.settings.image) {
+            // Optionally add image validation here if needed
+            // For now, just check presence
+            const imageValidation = validateTemplateSettings({
+                ...(safeSettings || {}),
+                image: updateData.settings.image
+            } as TemplateSettings);
+            if (!imageValidation.isValid) {
+                validationErrors.push(...imageValidation.errors.map(error => ({
+                    field: 'settings.image',
+                    message: error
+                })));
+            }
         }
     }
     if (validationErrors.length > 0) {
