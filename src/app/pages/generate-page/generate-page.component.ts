@@ -40,21 +40,50 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
         variables: []
       },
       visualStyle: {
-        container: {
-          align: 'left',
-          vertical: 'top',
-          opacity: 1
-        },
         themes: [
           {
-            font: 'Arial, sans-serif',
-            fontSize: '16px',
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            fontColor: '#222222',
-            backgroundColor: '#ffffff'
+            font: {
+              family: 'Arial, sans-serif',
+              size: '16px',
+              weight: 'normal',
+              style: 'normal'
+            },
+            color: {
+              text: '#222222',
+              background: '#ffffff',
+              box: '#333333',
+              boxText: '#ffffff',
+              outline: '#000000'
+            },
+            outline: {
+              color: '#000000',
+              width: 0
+            },
+            alignment: {
+              textAlign: 'center'
+            }
           }
         ]
+      },
+      image: {
+        container: {
+          width: 800,
+          height: 600,
+          aspectRatio: 'landscape',
+          padding: 32
+        },
+        format: {
+          minResolution: { width: 800, height: 600 },
+          maxFileSize: 5000000,
+          imageFormat: 'png'
+        },
+        overlay: {
+          text: { allowed: true, maxLength: 100 },
+          position: 'center'
+        },
+        filters: [],
+        altText: true,
+        effects: []
       }
     },
     schedule: {
@@ -128,11 +157,11 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     this.http.get<any>(`/api/content_generation_template_management/${template.id}`)
       .subscribe(
         (fullTemplate) => {
-          // Explicit mapping from API response to form model
           const info = fullTemplate.templateInfo || {};
           const settings = fullTemplate.settings || {};
           const promptTemplate = settings.promptTemplate || {};
           const visualStyle = settings.visualStyle || {};
+          const image = settings.image || {};
           const sched = fullTemplate.schedule || { daysOfWeek: [], timeSlots: [] };
           const platformsObj = info.targetPlatforms || {};
           this.templateData = {
@@ -153,73 +182,24 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
                   valuesString: (v.values || []).join(', ')
                 }))
               },
-              visualStyle: {
-                container: {
-                  align: visualStyle.container?.align || 'left',
-                  vertical: visualStyle.container?.vertical || 'top',
-                  opacity: visualStyle.container?.opacity ?? 1
-                },
-                themes: Array.isArray(visualStyle.themes) && visualStyle.themes.length > 0
-                  ? visualStyle.themes.map((t: any) => ({
-                      font: t.font || (this.fontOptions && this.fontOptions[0] ? this.fontOptions[0].value : 'Arial, sans-serif'),
-                      fontSize: t.fontSize || '16px',
-                      fontWeight: t.fontWeight || 'normal',
-                      fontStyle: t.fontStyle || 'normal',
-                      fontColor: t.fontColor || '#222222',
-                      backgroundColor: t.backgroundColor || '#ffffff'
-                    }))
-                  : [
-                      {
-                        font: (this.fontOptions && this.fontOptions[0] ? this.fontOptions[0].value : 'Arial, sans-serif'),
-                        fontSize: '16px',
-                        fontWeight: 'normal',
-                        fontStyle: 'normal',
-                        fontColor: '#222222',
-                        backgroundColor: '#ffffff'
-                      }
-                    ]
-              }
+              visualStyle: visualStyle,
+              image: image
             },
             schedule: {
               daysOfWeek: sched.daysOfWeek || [],
-              timeSlots: (sched.timeSlots || []).map((slot: any) => ({
-                hour: slot.hour ?? 0,
-                minute: slot.minute ?? 0,
-                timezone: slot.timezone || 'UTC'
-              }))
+              timeSlots: sched.timeSlots || []
             }
           };
         },
         (err) => {
-          // fallback: use the summary if fetch fails
-          this.templateData = JSON.parse(JSON.stringify(template));
+          this.snackBar.open('Error fetching template details', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top'
+          });
+          console.error('Fetch template error:', err);
         }
       );
-  }
-
-  getSelectedPlatforms(): string[] {
-    return Object.entries(this.templateData.templateInfo.targetPlatforms)
-      .filter(([_, checked]) => checked)
-      .map(([platform]) => platform);
-  }
-
-  addVariable() {
-    this.templateData.settings.promptTemplate.variables.push({
-      name: '',
-      values: [],
-      valuesString: ''
-    });
-  }
-
-  removeVariable(index: number) {
-    this.templateData.settings.promptTemplate.variables.splice(index, 1);
-  }
-
-  updateVariableValues(index: number) {
-    const variable = this.templateData.settings.promptTemplate.variables[index];
-    if (variable.valuesString !== undefined) {
-      variable.values = variable.valuesString.split(',').map((v: string) => v.trim()).filter((v: string) => v);
-    }
   }
 
   addVariableValue(event: any, variableIndex: number) {
@@ -507,79 +487,80 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
           variables: []
         },
         visualStyle: {
-          container: {
-            align: 'left',
-            vertical: 'top',
-            opacity: 1
-          },
           themes: [
             {
-              font: 'Arial, sans-serif',
-              fontSize: '16px',
-              fontWeight: 'normal',
-              fontStyle: 'normal',
-              fontColor: '#222222',
-              backgroundColor: '#ffffff'
+              font: {
+                family: 'Arial, sans-serif',
+                size: '16px',
+                weight: 'normal',
+                style: 'normal'
+              },
+              color: {
+                text: '#222222',
+                background: '#ffffff',
+                box: '#333333',
+                boxText: '#ffffff',
+                outline: '#000000'
+              },
+              outline: {
+                color: '#000000',
+                width: 0
+              },
+              alignment: {
+                textAlign: 'center'
+              }
             }
           ]
         },
-        schedule: {
-          daysOfWeek: [],
-          timeSlots: []
+        image: {
+          container: {
+            width: 800,
+            height: 600,
+            aspectRatio: 'landscape',
+            padding: 32
+          },
+          format: {
+            minResolution: { width: 800, height: 600 },
+            maxFileSize: 5000000,
+            imageFormat: 'png'
+          },
+          overlay: {
+            text: { allowed: true, maxLength: 100 },
+            position: 'center'
+          },
+          filters: [],
+          altText: true,
+          effects: []
         }
+      },
+      schedule: {
+        daysOfWeek: [],
+        timeSlots: []
       }
     };
   }
 
   onCancel() {
-    // Reset form or clear selection. Here, we clear the templateId and reset templateData to initial state.
     this.templateId = null;
-    this.templateData = {
-      templateInfo: {
-        name: '',
-        description: '',
-        contentType: '',
-        brandId: this.brandId || '',
-        targetPlatforms: {
-          instagram: false,
-          facebook: false,
-          tiktok: false,
-          twitter: false
-        }
-      },
-      settings: {
-        promptTemplate: {
-          systemPrompt: '',
-          userPrompt: '',
-          variables: []
-        },
-        visualStyle: {
-          container: {
-            align: 'left',
-            vertical: 'top',
-            opacity: 1
-          },
-          themes: [
-            {
-              font: 'Arial, sans-serif',
-              fontSize: '16px',
-              fontWeight: 'normal',
-              fontStyle: 'normal',
-              fontColor: '#222222',
-              backgroundColor: '#ffffff'
-            }
-          ]
-        },
-        schedule: {
-          daysOfWeek: [],
-          timeSlots: []
-        }
-      }
-    };
+    this.createNewTemplate();
   }
 
   ngOnDestroy() {
     this.subscription?.unsubscribe();
+  }
+
+  // Ensure getSelectedPlatforms and updateVariableValues exist and are typed
+  getSelectedPlatforms(): string[] {
+    return Object.entries(this.templateData.templateInfo.targetPlatforms)
+      .filter(([_, checked]) => checked)
+      .map(([platform]) => platform);
+  }
+
+  updateVariableValues(index: number): void {
+    const variable = this.templateData.settings.promptTemplate.variables[index];
+    if (variable.valuesString !== undefined) {
+      variable.values = variable.valuesString.split(',').map((v: string) => v.trim()).filter((v: string) => v);
+    }
   }
 
   // Add methods to manage container and themes
@@ -596,6 +577,23 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   removeTheme(index: number) {
     if (this.templateData.settings.visualStyle.themes.length > 1) {
       this.templateData.settings.visualStyle.themes.splice(index, 1);
+    }
+  }
+
+  addVariable() {
+    if (!this.templateData.settings.promptTemplate.variables) {
+      this.templateData.settings.promptTemplate.variables = [];
+    }
+    this.templateData.settings.promptTemplate.variables.push({
+      name: '',
+      values: [],
+      valuesString: ''
+    });
+  }
+
+  removeVariable(index: number) {
+    if (this.templateData.settings.promptTemplate.variables && this.templateData.settings.promptTemplate.variables.length > index) {
+      this.templateData.settings.promptTemplate.variables.splice(index, 1);
     }
   }
 }

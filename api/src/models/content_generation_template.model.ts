@@ -35,19 +35,49 @@ export interface PromptVariable {
 }
 
 export interface VisualStyle {
-  container: {
-    align: 'left' | 'center' | 'right';
-    vertical: 'top' | 'middle' | 'bottom';
-    opacity?: number;
-  };
   themes: Array<{
-    font: string;
-    fontSize: string;
-    fontWeight: 'normal' | 'bold';
-    fontStyle: 'normal' | 'italic';
-    fontColor: string;
-    backgroundColor: string;
+    font: {
+      family: string;
+      size: string;
+      weight: 'normal' | 'bold';
+      style: 'normal' | 'italic';
+    };
+    color: {
+      text: string;
+      background: string;
+      box: string;
+      boxText: string;
+      outline?: string;
+    };
+    outline?: {
+      color?: string;
+      width?: number;
+    };
+    alignment?: {
+      textAlign?: 'left' | 'center' | 'right';
+    };
   }>;
+}
+
+export interface ImageSettings {
+  container?: {
+    width?: number;
+    height?: number;
+    aspectRatio?: 'square' | 'portrait' | 'landscape';
+    padding?: number;
+  };
+  format?: {
+    minResolution?: { width: number; height: number };
+    maxFileSize?: number;
+    imageFormat?: 'png' | 'jpeg';
+  };
+  overlay?: {
+    text?: { allowed?: boolean; maxLength?: number };
+    position?: 'top' | 'center' | 'bottom';
+  };
+  filters?: string[];
+  altText?: boolean;
+  effects?: string[];
 }
 
 export interface TemplateSettings {
@@ -60,6 +90,7 @@ export interface TemplateSettings {
         variables?: PromptVariable[];
     };
     visualStyle: VisualStyle;
+    image: ImageSettings;
 }
 
 export interface TemplateInfo {
@@ -180,35 +211,19 @@ export function validateTemplateSettings(settings?: TemplateSettings): { isValid
       errors.push('Visual style is required');
     } else {
       const vs = settings.visualStyle;
-      // Validate container
-      if (!vs.container) {
-        errors.push('Visual style container is required');
-      } else {
-        if (!['left', 'center', 'right'].includes(vs.container.align)) {
-          errors.push('Container align must be left, center, or right');
-        }
-        if (!['top', 'middle', 'bottom'].includes(vs.container.vertical)) {
-          errors.push('Container vertical must be top, middle, or bottom');
-        }
-        if (vs.container.opacity !== undefined && (vs.container.opacity < 0 || vs.container.opacity > 1)) {
-          errors.push('Container opacity must be between 0 and 1');
-        }
-      }
-      // Validate themes
       if (!Array.isArray(vs.themes) || vs.themes.length === 0) {
         errors.push('At least one theme is required in visual style');
       } else {
         vs.themes.forEach((theme, idx) => {
           if (!theme.font) errors.push(`Theme[${idx}]: font is required`);
-          if (!theme.fontSize) errors.push(`Theme[${idx}]: fontSize is required`);
-          if (!['normal', 'bold'].includes(theme.fontWeight)) errors.push(`Theme[${idx}]: fontWeight must be normal or bold`);
-          if (!['normal', 'italic'].includes(theme.fontStyle)) errors.push(`Theme[${idx}]: fontStyle must be normal or italic`);
-          if (!theme.fontColor || !isValidHexColor(theme.fontColor)) errors.push(`Theme[${idx}]: fontColor must be a valid hex color`);
-          if (!theme.backgroundColor || !isValidHexColor(theme.backgroundColor)) errors.push(`Theme[${idx}]: backgroundColor must be a valid hex color`);
+          if (!theme.color) errors.push(`Theme[${idx}]: color is required`);
         });
       }
     }
-
+    // Validate image (basic presence)
+    if (!settings.image) {
+      errors.push('Image settings are required');
+    }
     return { isValid: errors.length === 0, errors };
 }
 
