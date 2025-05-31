@@ -40,12 +40,6 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
         variables: []
       },
       visualStyle: {
-        container: {
-          width: 800,
-          height: 600,
-          aspectRatio: 'landscape',
-          padding: 32
-        },
         themes: [
           {
             font: {
@@ -199,8 +193,8 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
                   valuesString: (v.values || []).join(', ')
                 }))
               },
-              visualStyle: visualStyle,
-              image: image,
+              visualStyle: visualStyle, // container property is ignored/removed
+              image: image, // container property is used from here
               boxText: settings.boxText || '',
               textBox: settings.textBox || { color: '#FFFFFF', alpha: 255, outlineColor: '#000000', outlineWidth: 0, padding: 0 }
             },
@@ -506,12 +500,6 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
           variables: []
         },
         visualStyle: {
-          container: {
-            width: 800,
-            height: 600,
-            aspectRatio: 'landscape',
-            padding: 32
-          },
           themes: [
             {
               font: {
@@ -632,16 +620,16 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   }
 
   onAspectRatioChange() {
-    const aspectRatio = this.templateData.settings.visualStyle.container.aspectRatio;
+    const aspectRatio = this.templateData.settings.image.container.aspectRatio;
     if (aspectRatio === 'square') {
-      this.templateData.settings.visualStyle.container.width = 1080;
-      this.templateData.settings.visualStyle.container.height = 1080;
+      this.templateData.settings.image.container.width = 1080;
+      this.templateData.settings.image.container.height = 1080;
     } else if (aspectRatio === 'portrait') {
-      this.templateData.settings.visualStyle.container.width = 1080;
-      this.templateData.settings.visualStyle.container.height = 1350;
+      this.templateData.settings.image.container.width = 1080;
+      this.templateData.settings.image.container.height = 1350;
     } else if (aspectRatio === 'landscape') {
-      this.templateData.settings.visualStyle.container.width = 1200;
-      this.templateData.settings.visualStyle.container.height = 628;
+      this.templateData.settings.image.container.width = 1200;
+      this.templateData.settings.image.container.height = 628;
     }
   }
 }

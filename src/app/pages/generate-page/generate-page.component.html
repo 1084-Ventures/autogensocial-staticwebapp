@@ -95,30 +95,7 @@
                   <!-- Visual Styles Section -->
                   <div class="form-section">
                     <h3>Visual Styles</h3>
-                    <div class="subtitle">Configure container layout and add one or more themes for your content style.</div>
-                    <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-end;">
-                      <!-- Container Controls (updated for new spec, no optional chaining in ngModel) -->
-                      <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
-                        <mat-label>Container Width</mat-label>
-                        <input matInput type="number" [(ngModel)]="templateData.settings.visualStyle.container.width" name="containerWidth" min="0">
-                      </mat-form-field>
-                      <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
-                        <mat-label>Container Height</mat-label>
-                        <input matInput type="number" [(ngModel)]="templateData.settings.visualStyle.container.height" name="containerHeight" min="0">
-                      </mat-form-field>
-                      <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
-                        <mat-label>Container Aspect Ratio</mat-label>
-                        <mat-select [(ngModel)]="templateData.settings.visualStyle.container.aspectRatio" name="containerAspectRatio" (selectionChange)="onAspectRatioChange()">
-                          <mat-option value="square">Square</mat-option>
-                          <mat-option value="portrait">Portrait</mat-option>
-                          <mat-option value="landscape">Landscape</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                      <mat-form-field class="form-field" appearance="outline" style="min-width: 120px;">
-                        <mat-label>Container Padding</mat-label>
-                        <input matInput type="number" [(ngModel)]="templateData.settings.visualStyle.container.padding" name="containerPadding" min="0">
-                      </mat-form-field>
-                    </div>
+                    <div class="subtitle">Configure one or more themes for your content style.</div>
                     <div class="theme-list" style="margin-top: 2rem;">
                       <div *ngFor="let theme of templateData.settings.visualStyle.themes; let i = index" class="theme-item" style="border:1px solid #e0e0e0; border-radius:8px; padding:1rem; margin-bottom:1.5rem;">
                         <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -207,7 +184,7 @@
                   <!-- Image Settings Section (updated for new spec) -->
                   <div class="form-section">
                     <h3>Image Settings</h3>
-                    <div class="subtitle">Configure image generation settings for this template.</div>
+                    <div class="subtitle">Configure image generation settings for this template, including container layout.</div>
                     <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-end;">
                       <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
                         <mat-label>Container Width</mat-label>
@@ -219,7 +196,7 @@
                       </mat-form-field>
                       <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
                         <mat-label>Aspect Ratio</mat-label>
-                        <mat-select [(ngModel)]="templateData.settings.image.container.aspectRatio" name="imageAspectRatio">
+                        <mat-select [(ngModel)]="templateData.settings.image.container.aspectRatio" name="imageAspectRatio" (selectionChange)="onAspectRatioChange()">
                           <mat-option value="square">Square</mat-option>
                           <mat-option value="portrait">Portrait</mat-option>
                           <mat-option value="landscape">Landscape</mat-option>
