@@ -109,13 +109,15 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   private subscription: any;
 
   fontOptions = [
-    { label: 'Arial', value: 'Arial, sans-serif' },
-    { label: 'Georgia', value: 'Georgia, serif' },
-    { label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
-    { label: 'Courier New', value: '"Courier New", Courier, monospace' },
-    { label: 'Verdana', value: 'Verdana, Geneva, sans-serif' },
-    { label: 'Roboto', value: 'Roboto, Arial, sans-serif' },
-    { label: 'Montserrat', value: 'Montserrat, Arial, sans-serif' }
+    { label: 'Arial', value: 'Arial' },
+    { label: 'Arial Narrow', value: 'Arial Narrow' },
+    { label: 'Comic Sans MS', value: 'Comic Sans MS' },
+    { label: 'Courier New', value: 'Courier New' },
+    { label: 'Georgia', value: 'Georgia' },
+    { label: 'Tahoma', value: 'Tahoma' },
+    { label: 'Times New Roman', value: 'Times New Roman' },
+    { label: 'Trebuchet MS', value: 'Trebuchet MS' },
+    { label: 'Verdana', value: 'Verdana' }
   ];
 
   daysOfWeekOptions = [
@@ -626,6 +628,20 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   removeVariable(index: number) {
     if (this.templateData.settings.promptTemplate.variables && this.templateData.settings.promptTemplate.variables.length > index) {
       this.templateData.settings.promptTemplate.variables.splice(index, 1);
+    }
+  }
+
+  onAspectRatioChange() {
+    const aspectRatio = this.templateData.settings.visualStyle.container.aspectRatio;
+    if (aspectRatio === 'square') {
+      this.templateData.settings.visualStyle.container.width = 1080;
+      this.templateData.settings.visualStyle.container.height = 1080;
+    } else if (aspectRatio === 'portrait') {
+      this.templateData.settings.visualStyle.container.width = 1080;
+      this.templateData.settings.visualStyle.container.height = 1350;
+    } else if (aspectRatio === 'landscape') {
+      this.templateData.settings.visualStyle.container.width = 1200;
+      this.templateData.settings.visualStyle.container.height = 628;
     }
   }
 }
