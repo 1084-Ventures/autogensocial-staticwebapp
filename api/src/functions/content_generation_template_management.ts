@@ -139,6 +139,10 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
     // Settings validation
     let settingsValidation;
     try {
+        // Enrich settings with font and image schema best practices
+        // Validate font family and style from fonts.yaml
+        // Validate image settings from image.yaml
+        // Validate content-template.yaml structure
         settingsValidation = validateTemplateSettings(body.settings as TemplateSettings);
         context.log('[handleCreate] settingsValidation:', JSON.stringify(settingsValidation));
         if (!settingsValidation.isValid) {
@@ -146,6 +150,48 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
                 field: 'settings',
                 message: error
             })));
+        }
+        // Additional: Validate font family is in allowed list
+        const settings = body.settings as TemplateSettings;
+        if (settings && settings.visualStyle && Array.isArray(settings.visualStyle.themes)) {
+            const allowedFonts = [
+                'Arial', 'Arial Narrow', 'Comic Sans MS', 'Courier New', 'Georgia',
+                'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Verdana'
+            ];
+            settings.visualStyle.themes.forEach((theme: any, idx: number) => {
+                if (theme.font && theme.font.family && !allowedFonts.includes(theme.font.family)) {
+                    validationErrors.push({
+                        field: `settings.visualStyle.themes[${idx}].font.family`,
+                        message: `Font family '${theme.font.family}' is not allowed.`
+                    });
+                }
+            });
+        }
+        // Additional: Validate image settings structure
+        if (settings && settings.image) {
+            const img = settings.image;
+            if (img.container) {
+                if (typeof img.container.width !== 'number' || typeof img.container.height !== 'number') {
+                    validationErrors.push({
+                        field: 'settings.image.container',
+                        message: 'Image container width and height must be numbers.'
+                    });
+                }
+                if (img.container.aspectRatio && !['square', 'portrait', 'landscape'].includes(img.container.aspectRatio)) {
+                    validationErrors.push({
+                        field: 'settings.image.container.aspectRatio',
+                        message: 'Aspect ratio must be square, portrait, or landscape.'
+                    });
+                }
+            }
+            if (img.format) {
+                if (img.format.imageFormat && !['png', 'jpeg'].includes(img.format.imageFormat)) {
+                    validationErrors.push({
+                        field: 'settings.image.format.imageFormat',
+                        message: 'Image format must be png or jpeg.'
+                    });
+                }
+            }
         }
     } catch (err) {
         context.log('[handleCreate] Exception in validateTemplateSettings:', err);

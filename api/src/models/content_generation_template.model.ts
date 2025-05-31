@@ -66,6 +66,7 @@ export interface ImageSettings {
     aspectRatio?: 'square' | 'portrait' | 'landscape';
     padding?: number;
   };
+  background?: string; // URL or local path to a background image
   format?: {
     minResolution?: { width: number; height: number };
     maxFileSize?: number;
@@ -91,6 +92,14 @@ export interface TemplateSettings {
     };
     visualStyle: VisualStyle;
     image: ImageSettings;
+    boxText?: string;
+    textBox?: {
+      color?: string;
+      alpha?: number;
+      outlineColor?: string;
+      outlineWidth?: number;
+      padding?: number;
+    };
 }
 
 export interface TemplateInfo {

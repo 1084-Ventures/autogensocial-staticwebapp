@@ -40,10 +40,16 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
         variables: []
       },
       visualStyle: {
+        container: {
+          width: 800,
+          height: 600,
+          aspectRatio: 'landscape',
+          padding: 32
+        },
         themes: [
           {
             font: {
-              family: 'Arial, sans-serif',
+              family: 'Arial',
               size: '16px',
               weight: 'normal',
               style: 'normal'
@@ -72,6 +78,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
           aspectRatio: 'landscape',
           padding: 32
         },
+        background: '',
         format: {
           minResolution: { width: 800, height: 600 },
           maxFileSize: 5000000,
@@ -84,6 +91,14 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
         filters: [],
         altText: true,
         effects: []
+      },
+      boxText: '',
+      textBox: {
+        color: '#FFFFFF',
+        alpha: 255,
+        outlineColor: '#000000',
+        outlineWidth: 0,
+        padding: 0
       }
     },
     schedule: {
@@ -183,7 +198,9 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
                 }))
               },
               visualStyle: visualStyle,
-              image: image
+              image: image,
+              boxText: settings.boxText || '',
+              textBox: settings.textBox || { color: '#FFFFFF', alpha: 255, outlineColor: '#000000', outlineWidth: 0, padding: 0 }
             },
             schedule: {
               daysOfWeek: sched.daysOfWeek || [],
@@ -487,10 +504,16 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
           variables: []
         },
         visualStyle: {
+          container: {
+            width: 800,
+            height: 600,
+            aspectRatio: 'landscape',
+            padding: 32
+          },
           themes: [
             {
               font: {
-                family: 'Arial, sans-serif',
+                family: 'Arial',
                 size: '16px',
                 weight: 'normal',
                 style: 'normal'
@@ -519,6 +542,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
             aspectRatio: 'landscape',
             padding: 32
           },
+          background: '',
           format: {
             minResolution: { width: 800, height: 600 },
             maxFileSize: 5000000,
@@ -531,6 +555,14 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
           filters: [],
           altText: true,
           effects: []
+        },
+        boxText: '',
+        textBox: {
+          color: '#FFFFFF',
+          alpha: 255,
+          outlineColor: '#000000',
+          outlineWidth: 0,
+          padding: 0
         }
       },
       schedule: {
