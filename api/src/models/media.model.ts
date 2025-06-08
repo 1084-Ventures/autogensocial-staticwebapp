@@ -37,14 +37,10 @@ export interface CognitivePerson {
   rectangle: { x: number; y: number; w: number; h: number };
 }
 
-export interface CognitiveRead {
-  text: string;
-  boundingBox: { x: number; y: number; w: number; h: number };
-}
-
 export interface MediaMetadata {
   fileName: string;
   description?: string;
+  suggestedName?: string; // Added for alignment with analyze_media output
   tags?: CognitiveTag[];
   categories?: CognitiveCategory[];
   objects?: CognitiveObject[];
@@ -52,7 +48,7 @@ export interface MediaMetadata {
   denseCaptions?: CognitiveDenseCaption[];
   brands?: CognitiveBrand[];
   people?: CognitivePerson[];
-  ocrText?: string;
+  ocrText?: string; // OCR text as a string
   cognitiveData?: Record<string, any>; // raw response for future-proofing
 }
 
