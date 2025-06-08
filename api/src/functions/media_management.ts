@@ -166,9 +166,17 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         let fileName = '';
         let brandId = '';
         let fileMimeType = '';
-        let tags: string[] = [];
+        let tags: { name: string; confidence: number }[] = [];
         let description = '';
         let metaFileName = '';
+        let categories: any[] = [];
+        let objects: any[] = [];
+        let caption: any = undefined;
+        let denseCaptions: any[] = [];
+        let brands: any[] = [];
+        let people: any[] = [];
+        let ocrText: string | undefined = undefined;
+        let cognitiveData: any = undefined;
         const filePromise = new Promise<void>((resolve, reject) => {
             bb.on('file', (nameField: string, file: any, info: any) => {
                 fileName = info.filename;
@@ -182,7 +190,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
             bb.on('field', (fieldName: string, val: string) => {
                 fields[fieldName] = val;
                 if (fieldName === 'brandId') brandId = val;
-                if (fieldName === 'tags') tags = val.split(',').map((t: string) => t.trim()).filter(Boolean);
+                if (fieldName === 'tags') tags = val.split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => ({ name: t, confidence: 1 }));
                 if (fieldName === 'description') description = val;
                 if (fieldName === 'name') metaFileName = val;
             });
@@ -236,7 +244,39 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         const blobUrl = `${blockBlobClient.url}?${sasToken}`;
         context.log('handleUpload: Uploaded to blobUrl with SAS:', blobUrl);
         // Use form's metaFileName as fileName in metadata
-        const metadata = { fileName: metaFileName, tags, description };
+        // Compose metadata using new cognitive structure if available in fields
+        // If cognitiveData is sent in the form, parse and use it
+        if (fields.cognitiveData) {
+          try {
+            cognitiveData = JSON.parse(fields.cognitiveData);
+            tags = cognitiveData.tags || [];
+            categories = cognitiveData.categories || [];
+            objects = cognitiveData.objects || [];
+            caption = cognitiveData.caption;
+            denseCaptions = cognitiveData.denseCaptions || [];
+            brands = cognitiveData.brands || [];
+            people = cognitiveData.people || [];
+            ocrText = cognitiveData.ocrText;
+          } catch (e) {
+            context.log('Failed to parse cognitiveData:', e);
+          }
+        } else if (fields.tags && typeof fields.tags === 'string') {
+          // fallback: parse tags as comma-separated string if not cognitive
+          tags = String(fields.tags).split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => ({ name: t, confidence: 1 }));
+        }
+        const metadata: MediaMetadata = {
+          fileName: metaFileName,
+          tags,
+          description,
+          categories,
+          objects,
+          caption,
+          denseCaptions,
+          brands,
+          people,
+          ocrText,
+          cognitiveData
+        };
         // Infer mediaType from MIME type
         let mediaType: 'image' | 'video' = 'image';
         if (fileMimeType.startsWith('video/')) {

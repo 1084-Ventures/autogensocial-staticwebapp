@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MediaService } from '../../services/media.service';
+import { MediaService, AnalyzeMediaResult } from '../../services/media.service';
 import { MediaDocument } from '../../../../api/src/models/media.model';
 import { MaterialModule } from '../../material.module';
 import { CommonModule } from '@angular/common';
@@ -20,12 +20,24 @@ export class MediaUploadFormComponent {
   file: File | null = null;
   uploading = false;
   fileOver = false;
+  analyzing = false;
+  analyzeError: string | null = null;
+  analyzedCognitiveData: AnalyzeMediaResult | null = null;
 
   constructor(private fb: FormBuilder, private mediaService: MediaService) {
     this.form = this.fb.group({
       name: ['', Validators.required],
       tags: [''],
       description: [''],
+      // Add fields for all cognitive metadata (for hidden/patching)
+      categories: [''],
+      objects: [''],
+      brands: [''],
+      people: [''],
+      ocrText: [''],
+      caption: [''],
+      denseCaptions: [''],
+      cognitiveData: [''],
       file: [null, Validators.required]
     });
   }
@@ -61,6 +73,50 @@ export class MediaUploadFormComponent {
     this.form.patchValue({ file: null });
   }
 
+  async analyzeFile() {
+    if (!this.file) return;
+    this.analyzing = true;
+    this.analyzeError = null;
+    try {
+      const base64 = await this.fileToBase64(this.file);
+      this.mediaService.analyzeMedia(base64).subscribe({
+        next: (result: AnalyzeMediaResult) => {
+          this.form.patchValue({
+            name: result.caption?.text || '', // Map caption to fileName (Name)
+            tags: (result.tags || []).map(t => t.name).join(', '), // Tags stays tags
+            description: (result.denseCaptions || []).map(dc => dc.text).join(', '), // Description becomes denseCaptions
+            categories: (result.categories || []).map(c => c.name).join(', '),
+            objects: (result.objects || []).map(o => o.object).join(', '),
+            brands: (result.brands || []).map(b => b.name).join(', '),
+            people: (result.people || []).length,
+            ocrText: result.ocrText || '',
+            caption: result.caption?.text || '',
+            denseCaptions: (result.denseCaptions || []).map(dc => dc.text).join(', '),
+            cognitiveData: JSON.stringify(result)
+          });
+          this.analyzedCognitiveData = result;
+          this.analyzing = false;
+        },
+        error: (err: any) => {
+          this.analyzeError = err?.error?.error || 'Failed to analyze image.';
+          this.analyzing = false;
+        }
+      });
+    } catch (e) {
+      this.analyzeError = 'Could not read file.';
+      this.analyzing = false;
+    }
+  }
+
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   submit() {
     if (!this.form.valid || !this.file) return;
     this.uploading = true;
@@ -70,12 +126,16 @@ export class MediaUploadFormComponent {
     formData.append('name', this.form.value.name);
     formData.append('tags', this.form.value.tags);
     formData.append('description', this.form.value.description);
+    if (this.analyzedCognitiveData) {
+      formData.append('cognitiveData', JSON.stringify(this.analyzedCognitiveData));
+    }
     this.mediaService.uploadMedia(formData).subscribe({
       next: (media) => {
         this.uploading = false;
         this.uploadSuccess.emit(media);
         this.form.reset();
         this.file = null;
+        this.analyzedCognitiveData = null;
       },
       error: () => {
         this.uploading = false;

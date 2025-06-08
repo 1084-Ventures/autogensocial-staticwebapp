@@ -1,10 +1,59 @@
 // Media model for Cosmos DB and API
 
+export interface CognitiveTag {
+  name: string;
+  confidence: number;
+}
+
+export interface CognitiveObject {
+  object: string;
+  confidence: number;
+  rectangle: { x: number; y: number; w: number; h: number };
+}
+
+export interface CognitiveCategory {
+  name: string;
+  confidence: number;
+}
+
+export interface CognitiveCaption {
+  text: string;
+  confidence: number;
+}
+
+export interface CognitiveDenseCaption {
+  text: string;
+  confidence: number;
+  boundingBox: { x: number; y: number; w: number; h: number };
+}
+
+export interface CognitiveBrand {
+  name: string;
+  confidence: number;
+}
+
+export interface CognitivePerson {
+  confidence: number;
+  rectangle: { x: number; y: number; w: number; h: number };
+}
+
+export interface CognitiveRead {
+  text: string;
+  boundingBox: { x: number; y: number; w: number; h: number };
+}
+
 export interface MediaMetadata {
   fileName: string;
   description?: string;
-  tags?: string[];
-  cognitiveData?: Record<string, any>;
+  tags?: CognitiveTag[];
+  categories?: CognitiveCategory[];
+  objects?: CognitiveObject[];
+  caption?: CognitiveCaption;
+  denseCaptions?: CognitiveDenseCaption[];
+  brands?: CognitiveBrand[];
+  people?: CognitivePerson[];
+  ocrText?: string;
+  cognitiveData?: Record<string, any>; // raw response for future-proofing
 }
 
 export interface MediaDocument {

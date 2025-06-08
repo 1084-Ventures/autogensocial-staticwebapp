@@ -9,7 +9,37 @@
     <ng-container *ngIf="file">
       <mat-icon style="font-size: 40px; color: #43a047;">check_circle</mat-icon>
       <p style="margin: 0.5rem 0 0 0; font-weight: 500;">Selected file: {{ file.name }}</p>
+      <button mat-button color="primary" type="button" (click)="analyzeFile()" style="margin-top: 0.5rem; margin-right: 0.5rem;">Analyze</button>
       <button mat-button color="warn" type="button" (click)="removeFile()" style="margin-top: 0.5rem;">Remove</button>
+      <mat-progress-bar *ngIf="analyzing" mode="indeterminate" style="margin-top: 0.5rem;"></mat-progress-bar>
+      <div *ngIf="analyzeError" style="color: #d32f2f; margin-top: 0.5rem; font-size: 0.95em;">{{ analyzeError }}</div>
+      <div *ngIf="analyzedCognitiveData">
+        <div style="margin-top: 1rem;" *ngIf="analyzedCognitiveData.caption as caption">
+          <strong>AI Caption:</strong> {{ caption.text }} <span *ngIf="caption.confidence != null">({{ caption.confidence | percent:'1.0-0' }})</span>
+        </div>
+        <div *ngIf="analyzedCognitiveData.tags?.length">
+          <strong>Tags:</strong>
+          <span *ngFor="let tag of analyzedCognitiveData.tags; let last = last">{{ tag.name }}<span *ngIf="tag.confidence != null"> ({{ tag.confidence | percent:'1.0-0' }})</span><span *ngIf="!last">, </span></span>
+        </div>
+        <div *ngIf="analyzedCognitiveData.categories?.length">
+          <strong>Categories:</strong>
+          <span *ngFor="let cat of analyzedCognitiveData.categories; let last = last">{{ cat.name }}<span *ngIf="cat.confidence != null"> ({{ cat.confidence | percent:'1.0-0' }})</span><span *ngIf="!last">, </span></span>
+        </div>
+        <div *ngIf="analyzedCognitiveData.objects?.length">
+          <strong>Objects:</strong>
+          <span *ngFor="let obj of analyzedCognitiveData.objects; let last = last">{{ obj.object }}<span *ngIf="obj.confidence != null"> ({{ obj.confidence | percent:'1.0-0' }})</span><span *ngIf="!last">, </span></span>
+        </div>
+        <div *ngIf="analyzedCognitiveData.brands?.length">
+          <strong>Brands:</strong>
+          <span *ngFor="let brand of analyzedCognitiveData.brands; let last = last">{{ brand.name }}<span *ngIf="brand.confidence != null"> ({{ brand.confidence | percent:'1.0-0' }})</span><span *ngIf="!last">, </span></span>
+        </div>
+        <div *ngIf="analyzedCognitiveData.people?.length">
+          <strong>People detected:</strong> {{ analyzedCognitiveData.people?.length }}
+        </div>
+        <div *ngIf="analyzedCognitiveData.ocrText">
+          <strong>OCR Text:</strong> {{ analyzedCognitiveData.ocrText }}
+        </div>
+      </div>
     </ng-container>
   </div>
   <div style="display: flex; flex-direction: column; gap: 1.2rem;">
@@ -20,6 +50,14 @@
     <mat-form-field appearance="fill">
       <mat-label>Tags</mat-label>
       <input matInput formControlName="tags" placeholder="Tags (comma separated)" />
+      <input formControlName="categories" type="hidden" />
+      <input formControlName="objects" type="hidden" />
+      <input formControlName="brands" type="hidden" />
+      <input formControlName="people" type="hidden" />
+      <input formControlName="ocrText" type="hidden" />
+      <input formControlName="caption" type="hidden" />
+      <input formControlName="denseCaptions" type="hidden" />
+      <input formControlName="cognitiveData" type="hidden" />
     </mat-form-field>
     <mat-form-field appearance="fill">
       <mat-label>Description</mat-label>

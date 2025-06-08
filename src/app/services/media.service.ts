@@ -4,6 +4,20 @@ import { Observable } from 'rxjs';
 // Reference models directly from the API directory
 import { MediaDocument, MediaUpdate } from '../../../api/src/models/media.model';
 
+export interface AnalyzeMediaResult {
+  suggestedName: string;
+  description: string;
+  tags: { name: string; confidence: number }[];
+  categories: { name: string; confidence: number }[];
+  objects: { object: string; confidence: number; rectangle: { x: number; y: number; w: number; h: number } }[];
+  caption?: { text: string; confidence: number };
+  denseCaptions?: { text: string; confidence: number; boundingBox: { x: number; y: number; w: number; h: number } }[];
+  brands?: { name: string; confidence: number }[];
+  people?: { confidence: number; rectangle: { x: number; y: number; w: number; h: number } }[];
+  ocrText?: string;
+  cognitiveData?: any;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MediaService {
   private apiUrl = '/api/media_management';
@@ -28,5 +42,12 @@ export class MediaService {
 
   uploadMedia(formData: FormData): Observable<MediaDocument> {
     return this.http.post<MediaDocument>(this.apiUrl, formData);
+  }
+
+  analyzeMedia(imageBase64: string) {
+    return this.http.post<AnalyzeMediaResult>(
+      '/api/analyze-media',
+      { imageBase64 }
+    );
   }
 }

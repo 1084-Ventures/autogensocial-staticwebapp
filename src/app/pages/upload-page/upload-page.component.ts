@@ -45,7 +45,7 @@ export class UploadPageComponent implements OnDestroy {
   selectMedia(media: MediaDocument) {
     this.selectedMedia = media;
     this.showUploadForm = false;
-    this.tagsString = (media.metadata.tags || []).join(', ');
+    this.tagsString = (media.metadata.tags || []).map((t: any) => t.name).join(', ');
   }
 
   openUploadForm() {
@@ -56,7 +56,7 @@ export class UploadPageComponent implements OnDestroy {
 
   submitMediaEditForm(form: any) {
     if (!this.selectedMedia) return;
-    const tags = this.tagsString.split(',').map(t => t.trim()).filter(t => t);
+    const tags = this.tagsString.split(',').map(t => t.trim()).filter(t => t).map(t => ({ name: t, confidence: 1 }));
     const update: MediaUpdate = {
       metadata: {
         fileName: this.selectedMedia.metadata.fileName,
@@ -71,7 +71,7 @@ export class UploadPageComponent implements OnDestroy {
     this.showUploadForm = false;
     this.loadMedia();
     this.selectedMedia = media;
-    this.tagsString = (media.metadata.tags || []).join(', ');
+    this.tagsString = (media.metadata.tags || []).map((t: any) => t.name).join(', ');
   }
 
   onUpdateMedia(update: MediaUpdate) {
@@ -79,7 +79,7 @@ export class UploadPageComponent implements OnDestroy {
     this.mediaService.updateMedia(this.selectedMedia.id, update).subscribe(updated => {
       this.selectedMedia = updated;
       this.loadMedia();
-      this.tagsString = (updated.metadata.tags || []).join(', ');
+      this.tagsString = (updated.metadata.tags || []).map((t: any) => t.name).join(', ');
     });
   }
 
