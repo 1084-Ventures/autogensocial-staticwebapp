@@ -63,4 +63,14 @@ export class BrandService {
         })
       );
   }
+
+  deleteBrand(id: string): Observable<{ id: string }> {
+    return this.http.delete<{ id: string }>(`${this.apiUrl}/${id}`)
+      .pipe(
+        catchError(error => {
+          this.errorHandler.handleError(error);
+          throw error;
+        })
+      );
+  }
 }

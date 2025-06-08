@@ -54,6 +54,10 @@ export interface BrandUpdate {
   };
 }
 
+export interface BrandDelete {
+  id: string; // UUID format
+}
+
 // Validation functions
 export function validateBrandName(name: string): boolean {
   return name.length > 0 && name.length <= 100;

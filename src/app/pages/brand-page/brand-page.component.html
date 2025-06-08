@@ -72,7 +72,6 @@
               </mat-expansion-panel>
             </div>
           </div>
-
           <div class="form-actions">
             <button mat-button type="button" (click)="cancelChanges()" [disabled]="loading">
               Cancel
@@ -80,6 +79,10 @@
             <button mat-raised-button color="primary" type="submit" [disabled]="!brandForm.valid || loading">
               <mat-icon>save</mat-icon>
               Save Changes
+            </button>
+            <button mat-raised-button color="warn" type="button" (click)="deleteBrand()" [disabled]="loading">
+              <mat-icon>delete</mat-icon>
+              Delete Brand
             </button>
           </div>
         </div>

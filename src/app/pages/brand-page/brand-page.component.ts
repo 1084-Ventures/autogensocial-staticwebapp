@@ -181,6 +181,25 @@ export class BrandPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  async deleteBrand() {
+    if (!this.brandId) return;
+    if (!confirm('Are you sure you want to delete this brand? This action cannot be undone.')) return;
+    try {
+      this.loading = true;
+      await this.brandService.deleteBrand(this.brandId).toPromise();
+      this.snackBar.open('Brand deleted successfully', 'Close', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top'
+      });
+      this.navigationService.navigateToBrand('', 'brand_details');
+    } catch (error) {
+      this.errorHandler.handleError(error as any);
+    } finally {
+      this.loading = false;
+    }
+  }
+
   // Form control getters
   get brandNameControl(): FormControl {
     return this.brandForm.get('brandInfo.name') as FormControl;

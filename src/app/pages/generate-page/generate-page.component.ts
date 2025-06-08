@@ -26,74 +26,25 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
       description: '',
       contentType: '',
       brandId: '',
-      targetPlatforms: {
-        instagram: false,
-        facebook: false,
-        tiktok: false,
-        twitter: false
-      }
+      targetPlatforms: []
     },
     settings: {
       promptTemplate: {
         systemPrompt: '',
         userPrompt: '',
+        model: '',
+        temperature: 1,
+        maxTokens: 256,
         variables: []
       },
       visualStyle: {
         themes: [
-          {
-            font: {
-              family: 'Arial',
-              size: '16px',
-              weight: 'normal',
-              style: 'normal'
-            },
-            color: {
-              text: '#222222',
-              background: '#ffffff',
-              box: '#333333',
-              boxText: '#ffffff',
-              outline: '#000000'
-            },
-            outline: {
-              color: '#000000',
-              width: 0
-            },
-            alignment: {
-              textAlign: 'center'
-            }
-          }
+          // Each theme should match the structure in visual-style.yaml
+          // Example:
+          // { font: {...}, color: {...}, outline: {...}, alignment: {...}, ... }
         ]
       },
-      image: {
-        container: {
-          width: 800,
-          height: 600,
-          aspectRatio: 'landscape',
-          padding: 32
-        },
-        background: '',
-        format: {
-          minResolution: { width: 800, height: 600 },
-          maxFileSize: 5000000,
-          imageFormat: 'png'
-        },
-        overlay: {
-          text: { allowed: true, maxLength: 100 },
-          position: 'center'
-        },
-        filters: [],
-        altText: true,
-        effects: []
-      },
-      boxText: '',
-      textBox: {
-        color: '#FFFFFF',
-        alpha: 255,
-        outlineColor: '#000000',
-        outlineWidth: 0,
-        padding: 0
-      }
+      image: {}, // Should match image.yaml structure
     },
     schedule: {
       daysOfWeek: [],
@@ -114,23 +65,57 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     { label: 'Verdana', value: 'Verdana' }
   ];
 
+  // Helper for UI: display capitalized, store lowercase
   daysOfWeekOptions = [
-    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+    { label: 'Monday', value: 'monday' },
+    { label: 'Tuesday', value: 'tuesday' },
+    { label: 'Wednesday', value: 'wednesday' },
+    { label: 'Thursday', value: 'thursday' },
+    { label: 'Friday', value: 'friday' },
+    { label: 'Saturday', value: 'saturday' },
+    { label: 'Sunday', value: 'sunday' }
   ];
 
-  halfHourOptions = Array.from({ length: 48 }, (_, i) => {
+  // 30-minute increment time slots for a 24-hour day
+  timeSlotOptions: Array<{ value: string, label: string }> = Array.from({ length: 48 }, (_, i) => {
     const hour = Math.floor(i / 2);
     const minute = i % 2 === 0 ? 0 : 30;
-    const label = `${hour.toString().padStart(2, '0')}:${minute === 0 ? '00' : '30'}`;
-    return { hour, minute, label };
+    const value = `${hour.toString().padStart(2, '0')}:${minute === 0 ? '00' : '30'}`;
+    const ampm = hour < 12 ? 'AM' : 'PM';
+    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+    const label = `${displayHour}:${minute === 0 ? '00' : '30'} ${ampm}`;
+    return { value, label };
   });
 
-  timezoneOptions = [
+  // Time zone options for schedule
+  timeZoneOptions: string[] = [
     'UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
-    'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Moscow',
-    'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Hong_Kong', 'Asia/Singapore',
-    'Australia/Sydney', 'Australia/Melbourne', 'Pacific/Auckland',
-    'America/Sao_Paulo', 'Africa/Johannesburg', 'Asia/Kolkata', 'Asia/Dubai'
+    'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Asia/Tokyo', 'Asia/Shanghai',
+    'Asia/Kolkata', 'Australia/Sydney', 'America/Sao_Paulo', 'Africa/Johannesburg', 'Asia/Dubai'
+  ];
+
+  materialColors = [
+    { name: 'Red', value: '#F44336' },
+    { name: 'Pink', value: '#E91E63' },
+    { name: 'Purple', value: '#9C27B0' },
+    { name: 'Deep Purple', value: '#673AB7' },
+    { name: 'Indigo', value: '#3F51B5' },
+    { name: 'Blue', value: '#2196F3' },
+    { name: 'Light Blue', value: '#03A9F4' },
+    { name: 'Cyan', value: '#00BCD4' },
+    { name: 'Teal', value: '#009688' },
+    { name: 'Green', value: '#4CAF50' },
+    { name: 'Light Green', value: '#8BC34A' },
+    { name: 'Lime', value: '#CDDC39' },
+    { name: 'Yellow', value: '#FFEB3B' },
+    { name: 'Amber', value: '#FFC107' },
+    { name: 'Orange', value: '#FF9800' },
+    { name: 'Deep Orange', value: '#FF5722' },
+    { name: 'Brown', value: '#795548' },
+    { name: 'Grey', value: '#9E9E9E' },
+    { name: 'Blue Grey', value: '#607D8B' },
+    { name: 'White', value: '#FFFFFF' },
+    { name: 'Black', value: '#000000' }
   ];
 
   templates: any[] = [];
@@ -141,7 +126,9 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     private http: HttpClient,
     private snackBar: MatSnackBar,
     private errorHandler: ErrorHandlerService
-  ) {}
+  ) {
+    // this.timeSlotOptions = this.generateTimeSlots();
+  }
 
   ngOnInit() {
     this.subscription = this.navigationService.currentBrand$.subscribe(
@@ -171,7 +158,13 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
           const info = fullTemplate.templateInfo || {};
           const settings = fullTemplate.settings || {};
           const promptTemplate = settings.promptTemplate || {};
-          const visualStyle = settings.visualStyle || {};
+          let visualStyle = settings.visualStyle || {};
+          if (visualStyle.themes) {
+            visualStyle.themes = visualStyle.themes.map((theme: any) => ({
+              ...theme,
+              box: theme.box || { color: '#000000', alpha: 128 }
+            }));
+          }
           const image = settings.image || {};
           const sched = fullTemplate.schedule || { daysOfWeek: [], timeSlots: [] };
           const platformsObj = info.targetPlatforms || {};
@@ -187,16 +180,17 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
               promptTemplate: {
                 systemPrompt: promptTemplate.systemPrompt || '',
                 userPrompt: promptTemplate.userPrompt || '',
+                model: promptTemplate.model || '',
+                temperature: promptTemplate.temperature !== undefined ? promptTemplate.temperature : 1,
+                maxTokens: promptTemplate.maxTokens !== undefined ? promptTemplate.maxTokens : 256,
                 variables: (promptTemplate.variables || []).map((v: any) => ({
                   name: v.name || '',
                   values: v.values || [],
                   valuesString: (v.values || []).join(', ')
                 }))
               },
-              visualStyle: visualStyle, // container property is ignored/removed
-              image: image, // container property is used from here
-              boxText: settings.boxText || '',
-              textBox: settings.textBox || { color: '#FFFFFF', alpha: 255, outlineColor: '#000000', outlineWidth: 0, padding: 0 }
+              visualStyle: visualStyle,
+              image: image
             },
             schedule: {
               daysOfWeek: sched.daysOfWeek || [],
@@ -237,15 +231,19 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     if (!this.templateData.schedule.timeSlots) {
       this.templateData.schedule.timeSlots = [];
     }
-    // Default to first half-hour option
-    const first = this.halfHourOptions[0];
-    this.templateData.schedule.timeSlots.push({ hour: first.hour, minute: first.minute, timezone: 'UTC' });
+    // Default to first time slot and current or default timezone
+    const first = this.timeSlotOptions[0];
+    const [hour, minute] = first.value.split(':').map(Number);
+    const timezone = this.templateData.schedule.timeZone || this.timeZoneOptions[0];
+    this.templateData.schedule.timeSlots.push({ hour, minute, timezone });
   }
 
   onTimeSlotChange(i: number, value: string) {
     const [hour, minute] = value.split(':').map(Number);
-    this.templateData.schedule.timeSlots[i].hour = hour;
-    this.templateData.schedule.timeSlots[i].minute = minute;
+    if (this.templateData.schedule.timeSlots[i]) {
+      this.templateData.schedule.timeSlots[i].hour = hour;
+      this.templateData.schedule.timeSlots[i].minute = minute;
+    }
   }
 
   removeTimeSlot(index: number) {
@@ -261,10 +259,11 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     if (!this.templateData.schedule.daysOfWeek) {
       this.templateData.schedule.daysOfWeek = [];
     }
-    const idx = this.templateData.schedule.daysOfWeek.indexOf(day);
+    const dayValue = this.daysOfWeekOptions.find(d => d.label === day)?.value || day.toLowerCase();
+    const idx = this.templateData.schedule.daysOfWeek.indexOf(dayValue);
     if (checked && idx === -1) {
-      this.templateData.schedule.daysOfWeek.push(day);
-    } else if (!checked && idx > -1) {
+      this.templateData.schedule.daysOfWeek.push(dayValue);
+    } else if (!checked && idx !== -1) {
       this.templateData.schedule.daysOfWeek.splice(idx, 1);
     }
   }
@@ -486,73 +485,43 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
         description: '',
         contentType: '',
         brandId: this.brandId || '',
-        targetPlatforms: {
-          instagram: false,
-          facebook: false,
-          tiktok: false,
-          twitter: false
-        }
+        targetPlatforms: []
       },
       settings: {
         promptTemplate: {
           systemPrompt: '',
           userPrompt: '',
+          model: '',
+          temperature: 1,
+          maxTokens: 256,
           variables: []
         },
         visualStyle: {
-          themes: [
-            {
-              font: {
-                family: 'Arial',
-                size: '16px',
-                weight: 'normal',
-                style: 'normal'
-              },
-              color: {
-                text: '#222222',
-                background: '#ffffff',
-                box: '#333333',
-                boxText: '#ffffff',
-                outline: '#000000'
-              },
-              outline: {
-                color: '#000000',
-                width: 0
-              },
-              alignment: {
-                textAlign: 'center'
-              }
+          // Pre-populate with one default theme so the form always renders correctly
+          themes: [{
+            font: {
+              family: 'Arial',
+              weight: 'normal',
+              style: 'normal'
+            },
+            fontSize: 32,
+            color: '#222222',
+            outlineColor: '#000000',
+            outlineWidth: 0,
+            alignment: 'center',
+            backgroundColor: '#ffffff',
+            box: {
+              color: '#000000',
+              alpha: 128
             }
-          ]
+          }]
         },
         image: {
-          container: {
-            width: 800,
-            height: 600,
-            aspectRatio: 'landscape',
-            padding: 32
-          },
-          background: '',
-          format: {
-            minResolution: { width: 800, height: 600 },
-            maxFileSize: 5000000,
-            imageFormat: 'png'
-          },
-          overlay: {
-            text: { allowed: true, maxLength: 100 },
-            position: 'center'
-          },
-          filters: [],
-          altText: true,
-          effects: []
-        },
-        boxText: '',
-        textBox: {
-          color: '#FFFFFF',
-          alpha: 255,
-          outlineColor: '#000000',
-          outlineWidth: 0,
-          padding: 0
+          aspectRatio: '1:1',
+          backgroundType: 'color',
+          containerPadding: 0,
+          textBoxHorizontalAlignment: 'center',
+          textBoxVerticalAlignment: 'center'
         }
       },
       schedule: {
@@ -588,18 +557,25 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   // Add methods to manage container and themes
   addTheme() {
     this.templateData.settings.visualStyle.themes.push({
-      font: this.fontOptions[0].value,
-      fontSize: '16px',
-      fontWeight: 'normal',
-      fontStyle: 'normal',
-      fontColor: '#222222',
-      backgroundColor: '#ffffff'
+      font: {
+        family: 'Arial',
+        weight: 'normal',
+        style: 'normal'
+      },
+      fontSize: 32,
+      color: '#222222',
+      outlineColor: '#000000',
+      outlineWidth: 0,
+      alignment: 'center',
+      backgroundColor: '#ffffff',
+      box: {
+        color: '#000000',
+        alpha: 128
+      }
     });
   }
   removeTheme(index: number) {
-    if (this.templateData.settings.visualStyle.themes.length > 1) {
-      this.templateData.settings.visualStyle.themes.splice(index, 1);
-    }
+    this.templateData.settings.visualStyle.themes.splice(index, 1);
   }
 
   addVariable() {
@@ -630,6 +606,40 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     } else if (aspectRatio === 'landscape') {
       this.templateData.settings.image.container.width = 1200;
       this.templateData.settings.image.container.height = 628;
+    }
+  }
+
+  // Update platform selection logic to work with array of strings
+  togglePlatform(platform: string, checked: boolean) {
+    const arr = this.templateData.templateInfo.targetPlatforms;
+    if (checked && !arr.includes(platform)) arr.push(platform);
+    if (!checked) this.templateData.templateInfo.targetPlatforms = arr.filter((p: string) => p !== platform);
+  }
+
+  // Helper to get the string value for a time slot (for binding)
+  slotString(i: number): string {
+    const slot = this.templateData.schedule.timeSlots[i];
+    if (!slot) return '';
+    const hour = slot.hour?.toString().padStart(2, '0') ?? '00';
+    const minute = slot.minute?.toString().padStart(2, '0') ?? '00';
+    return `${hour}:${minute}`;
+  }
+
+  onDeleteTemplate() {
+    if (!this.templateId) return;
+    if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+      this.http.delete(`/api/content_generation_template_management/${this.templateId}`)
+        .subscribe(
+          () => {
+            this.snackBar.open('Template deleted', 'Close', { duration: 3000 });
+            this.templateId = null;
+            this.createNewTemplate();
+            this.fetchTemplatesForBrand(this.brandId!);
+          },
+          (err) => {
+            this.snackBar.open('Failed to delete template', 'Close', { duration: 3000 });
+          }
+        );
     }
   }
 }

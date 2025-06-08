@@ -61,6 +61,29 @@
   margin-top: 2rem;
 }
 
+.theme-list {
+  margin-top: 2rem;
+}
+
+.theme-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.theme-item > div {
+  flex: 1;
+}
+
+.theme-item button {
+  margin-left: 1rem;
+}
+
 @media (max-width: 700px) {
   .form-row {
     flex-direction: column;

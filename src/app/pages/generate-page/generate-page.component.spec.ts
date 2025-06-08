@@ -45,6 +45,26 @@ describe('GeneratePageComponent', () => {
     expect(component.brandId).toBeNull();
   });
 
+  it('should add and remove platforms correctly', () => {
+    component.templateData.templateInfo.targetPlatforms = [];
+    component.togglePlatform('instagram', true);
+    expect(component.templateData.templateInfo.targetPlatforms).toContain('instagram');
+    component.togglePlatform('facebook', true);
+    expect(component.templateData.templateInfo.targetPlatforms).toContain('facebook');
+    component.togglePlatform('instagram', false);
+    expect(component.templateData.templateInfo.targetPlatforms).not.toContain('instagram');
+  });
+
+  it('should add and remove themes correctly', () => {
+    component.templateData.settings.visualStyle.themes = [];
+    component.addTheme();
+    expect(component.templateData.settings.visualStyle.themes.length).toBe(1);
+    component.addTheme();
+    expect(component.templateData.settings.visualStyle.themes.length).toBe(2);
+    component.removeTheme(0);
+    expect(component.templateData.settings.visualStyle.themes.length).toBe(1);
+  });
+
   it('should clean up subscription on destroy', () => {
     const subscriptionSpy = spyOn(component['subscription'], 'unsubscribe');
     component.ngOnDestroy();

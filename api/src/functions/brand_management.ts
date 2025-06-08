@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { CosmosClient } from "@azure/cosmos";
-import { BrandDocument, BrandCreate, BrandUpdate, BrandNameResponse, validateBrandName, validateBrandDescription, validateSocialAccount } from '../models/brand.model';
+import { BrandDocument, BrandCreate, BrandUpdate, BrandNameResponse, BrandDelete, validateBrandName, validateBrandDescription, validateSocialAccount } from '../models/brand.model';
 import { ErrorResponse, PaginationParams } from '../models/base.model';
 import { randomUUID } from 'crypto';
 
@@ -25,6 +25,8 @@ export async function brand_management(request: HttpRequest, context: Invocation
         return handleGet(request, userId);
       case 'PUT':
         return handleUpdate(request, userId);
+      case 'DELETE':
+        return handleDelete(request, userId);
       default:
         return createErrorResponse(405, 'Method not allowed');
     }
@@ -129,6 +131,35 @@ async function handleUpdate(request: HttpRequest, userId: string): Promise<HttpR
   return createResponse(200, updatedBrand);
 }
 
+async function handleDelete(request: HttpRequest, userId: string): Promise<HttpResponseInit> {
+  let brandId = request.params.id;
+  if (!brandId && request.method === 'DELETE') {
+    try {
+      const body = (await request.json()) as BrandDelete;
+      brandId = body.id;
+    } catch {}
+  }
+  if (!brandId) {
+    return createErrorResponse(400, 'Brand ID is required', 'MISSING_ID');
+  }
+  // Fetch the brand document using a cross-partition query to get the correct partition key (/brandInfo/userId)
+  const query = {
+    query: 'SELECT * FROM c WHERE c.id = @id',
+    parameters: [{ name: '@id', value: brandId }]
+  };
+  const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
+  const brand = resources[0];
+  if (!brand || brand.brandInfo.userId !== userId) {
+    return createErrorResponse(404, 'Brand not found', 'RESOURCE_NOT_FOUND');
+  }
+  try {
+    await container.item(brandId, brand.brandInfo.userId).delete();
+    return createResponse(200, { id: brandId });
+  } catch (error) {
+    return createErrorResponse(500, 'Failed to delete brand', 'DELETE_ERROR');
+  }
+}
+
 function extractPaginationParams(request: HttpRequest): PaginationParams {
   const searchParams = new URL(request.url).searchParams;
   return {
@@ -160,7 +191,13 @@ async function getBrandNamesByUserId(userId: string, pagination: PaginationParam
 }
 
 async function getBrandById(brandId: string, userId: string): Promise<BrandDocument | undefined> {
-  const { resource: brand } = await container.item(brandId, brandId).read<BrandDocument>();
+  // Fetch using cross-partition query to get correct partition key
+  const query = {
+    query: 'SELECT * FROM c WHERE c.id = @id',
+    parameters: [{ name: '@id', value: brandId }]
+  };
+  const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
+  const brand = resources[0];
   if (!brand || brand.brandInfo.userId !== userId) {
     return undefined;
   }
@@ -168,12 +205,16 @@ async function getBrandById(brandId: string, userId: string): Promise<BrandDocum
 }
 
 async function updateBrand(brandId: string, userId: string, updateData: BrandUpdate): Promise<BrandDocument | undefined> {
-  const { resource: existingBrand } = await container.item(brandId, brandId).read<BrandDocument>();
-  
+  // Fetch using cross-partition query to get correct partition key
+  const query = {
+    query: 'SELECT * FROM c WHERE c.id = @id',
+    parameters: [{ name: '@id', value: brandId }]
+  };
+  const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
+  const existingBrand = resources[0];
   if (!existingBrand || existingBrand.brandInfo.userId !== userId) {
     return undefined;
   }
-
   const updatedBrand: BrandDocument = {
     ...existingBrand,
     metadata: {
@@ -200,8 +241,7 @@ async function updateBrand(brandId: string, userId: string, updateData: BrandUpd
       }
     }
   };
-
-  const { resource: savedBrand } = await container.item(brandId, brandId).replace(updatedBrand);
+  const { resource: savedBrand } = await container.item(brandId, existingBrand.brandInfo.userId).replace(updatedBrand);
   return savedBrand;
 }
 
@@ -243,7 +283,7 @@ async function extractUserId(request: HttpRequest): Promise<string> {
 }
 
 app.http('brand_management', {
-  methods: ['GET', 'POST', 'PUT'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   authLevel: 'anonymous', // Using Static Web Apps authentication
   route: 'brand_management/{id?}',
   handler: brand_management

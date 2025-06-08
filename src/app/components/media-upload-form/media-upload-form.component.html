@@ -1,0 +1,31 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="media-upload-form" style="max-width: 420px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 2rem 2.5rem;">
+  <div class="file-drop-area" [class.file-over]="fileOver" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)" style="border: 2px dashed #90caf9; border-radius: 10px; background: #f5fafd; padding: 2rem 1rem; text-align: center; margin-bottom: 2rem; transition: border-color 0.2s; cursor: pointer;">
+    <ng-container *ngIf="!file">
+      <mat-icon style="font-size: 48px; color: #90caf9; margin-bottom: 0.5rem;">cloud_upload</mat-icon>
+      <p style="margin: 0 0 0.5rem 0; font-size: 1.1em;">Drag & drop a file here</p>
+      <p style="margin: 0; color: #888;">or <span class="file-select" (click)="fileInput.click()" style="color: #1976d2; text-decoration: underline; cursor: pointer;">browse</span></p>
+      <input #fileInput type="file" (change)="onFileChange($event)" hidden />
+    </ng-container>
+    <ng-container *ngIf="file">
+      <mat-icon style="font-size: 40px; color: #43a047;">check_circle</mat-icon>
+      <p style="margin: 0.5rem 0 0 0; font-weight: 500;">Selected file: {{ file.name }}</p>
+      <button mat-button color="warn" type="button" (click)="removeFile()" style="margin-top: 0.5rem;">Remove</button>
+    </ng-container>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+    <mat-form-field appearance="fill">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" placeholder="Name" required />
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Tags</mat-label>
+      <input matInput formControlName="tags" placeholder="Tags (comma separated)" />
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" placeholder="Description"></textarea>
+    </mat-form-field>
+    <button mat-raised-button color="primary" type="submit" [disabled]="uploading || !form.valid" style="margin-top: 0.5rem;">Upload</button>
+    <mat-progress-bar *ngIf="uploading" mode="indeterminate" style="margin-top: 1rem;"></mat-progress-bar>
+  </div>
+</form>

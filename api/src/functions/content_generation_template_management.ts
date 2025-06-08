@@ -34,6 +34,15 @@ console.log('[Startup] COSMOS_DB_CONNECTION_STRING present:', !!process.env.COSM
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
+// Utility to remove obsolete fields from settings
+function stripObsoleteFields(settings: any) {
+    if (settings) {
+        if ('boxText' in settings) delete settings.boxText;
+        if ('textBox' in settings) delete settings.textBox;
+    }
+    return settings;
+}
+
 export async function content_generation_template_management(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Request received in content_generation_template_management');
     try {
@@ -62,6 +71,39 @@ export async function content_generation_template_management(request: HttpReques
                 return handleGet(request, userId, context);
             case 'PUT':
                 return handleUpdate(request, userId, context, body);
+            case 'DELETE':
+                const templateId = request.params.id;
+                if (!templateId) {
+                    return createErrorResponse(400, 'Template ID is required for deletion');
+                }
+                // Optionally: verify user/brand ownership here
+                // Accept body for ContentGenerationTemplateDelete interface (future-proof)
+                let deleteBody: any = undefined;
+                try {
+                    deleteBody = await request.json();
+                } catch {}
+                const idToDelete = deleteBody?.id || templateId;
+                if (!idToDelete) {
+                    return createErrorResponse(400, 'Template ID is required for deletion');
+                }
+                context.log(`[DELETE] Attempting to delete template. id: ${idToDelete}, partitionKey: ${idToDelete}`);
+                try {
+                    const response = await container.item(idToDelete, idToDelete).delete();
+                    context.log(`[DELETE] Cosmos DB delete response:`, JSON.stringify(response));
+                    if (!response.resource) {
+                        context.log(`[DELETE] No resource returned after delete. Returning 404.`);
+                        return createErrorResponse(404, 'Template not found or already deleted');
+                    }
+                    context.log(`[DELETE] Delete successful for id: ${idToDelete}`);
+                    return createResponse(200, { id: idToDelete });
+                } catch (err) {
+                    context.log(`[DELETE] Error during delete:`, err);
+                    const error = err as any;
+                    if (error.code === 404 || error.statusCode === 404) {
+                        return createErrorResponse(404, 'Template not found or already deleted');
+                    }
+                    return createErrorResponse(500, 'Failed to delete template');
+                }
             default:
                 context.log('Unsupported HTTP method:', request.method);
                 return createErrorResponse(405, 'Method Not Allowed', 'METHOD_NOT_ALLOWED');
@@ -77,14 +119,19 @@ export async function content_generation_template_management(request: HttpReques
     }
 }
 
+// Helper to fetch template by id using cross-partition query to get brandId
+async function getTemplateByIdWithPartition(templateId: string): Promise<{ resource: ContentGenerationTemplateDocument | undefined }> {
+    // Query for the template by id (cross-partition)
+    const querySpec = {
+        query: 'SELECT * FROM c WHERE c.id = @id',
+        parameters: [{ name: '@id', value: templateId }]
+    };
+    const { resources } = await container.items.query<ContentGenerationTemplateDocument>(querySpec).fetchAll();
+    return { resource: resources[0] };
+}
+
 async function handleCreate(request: HttpRequest, userId: string, context: InvocationContext, body: ContentTemplateCreate): Promise<HttpResponseInit> {
     const start = Date.now();
-    context.log('[handleCreate] ENV:', {
-        COSMOS_DB_CONNECTION_STRING: (process.env.COSMOS_DB_CONNECTION_STRING || '').slice(0, 20) + '...',
-        COSMOS_DB_NAME: process.env.COSMOS_DB_NAME,
-        COSMOS_DB_CONTAINER_TEMPLATE: process.env.COSMOS_DB_CONTAINER_TEMPLATE,
-        COSOS_DB_CONTAINER_BRAND: process.env.COSMOS_DB_CONTAINER_BRAND
-    });
     // Early validation for required fields
     const earlyValidationErrors: Array<{ field: string; message: string }> = [];
     if (!body.templateInfo) {
@@ -203,6 +250,8 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
         return createErrorResponse(422, 'Validation failed', 'VALIDATION_ERROR', validationErrors);
     }
     context.log(`[handleCreate] Validation passed: ${Date.now() - start}ms`);
+    // Strip obsolete fields before saving
+    if (body.settings) stripObsoleteFields(body.settings);
     const newTemplate: ContentGenerationTemplateDocument = {
         id: randomUUID(),
         metadata: {
@@ -244,7 +293,13 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
 
 async function verifyBrandOwnership(brandId: string, userId: string, context?: InvocationContext): Promise<boolean> {
     try {
-        const { resource: brand } = await brandContainer.item(brandId, brandId).read<BrandDocument>();
+        // Use cross-partition query to fetch the brand by id and check userId
+        const query = {
+            query: 'SELECT * FROM c WHERE c.id = @id',
+            parameters: [{ name: '@id', value: brandId }]
+        };
+        const { resources } = await brandContainer.items.query<BrandDocument>(query).fetchAll();
+        const brand = resources[0];
         if (context) context.log('[verifyBrandOwnership] brand:', JSON.stringify(brand));
         return brand?.brandInfo.userId === userId;
     } catch (error) {
@@ -270,6 +325,8 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
 
         const pagination = extractPaginationParams(request);
         const templates = await getTemplatesByBrandId(brandId, userId, pagination);
+        // Remove obsolete fields from all returned templates
+        templates.forEach(t => { if (t.settings) stripObsoleteFields(t.settings); });
         return createResponse(200, templates);
     }
 
@@ -284,6 +341,8 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
         return createErrorResponse(403, 'Not authorized to view this template', 'UNAUTHORIZED_BRAND_ACCESS');
     }
 
+    // Remove obsolete fields from returned template
+    if (template.settings) stripObsoleteFields(template.settings);
     return createResponse(200, template);
 }
 
@@ -296,8 +355,9 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
     }
     let existingTemplate;
     try {
-        const result = await container.item(templateId, templateId).read<ContentGenerationTemplateDocument>();
-        existingTemplate = result.resource;
+        // Use cross-partition query to get the template and its brandId
+        const { resource } = await getTemplateByIdWithPartition(templateId);
+        existingTemplate = resource;
         context.log(`[handleUpdate] After DB read: ${Date.now() - start}ms`);
     } catch (err) {
         context.log(`[handleUpdate] DB read error after ${Date.now() - start}ms`, err);
@@ -414,9 +474,13 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
         return createErrorResponse(422, 'Validation failed', 'VALIDATION_ERROR', validationErrors);
     }
     context.log(`[handleUpdate] After validation: ${Date.now() - start}ms`);
+    // Remove obsolete fields before saving
+    if (updateData.settings) stripObsoleteFields(updateData.settings);
     let updatedTemplate;
     try {
         updatedTemplate = await updateTemplate(templateId, userId, updateData);
+        // Remove obsolete fields from response before returning
+        if (updatedTemplate && updatedTemplate.settings) stripObsoleteFields(updatedTemplate.settings);
         context.log(`[handleUpdate] After DB write: ${Date.now() - start}ms`);
     } catch (err) {
         context.log(`[handleUpdate] DB write error after ${Date.now() - start}ms`, err);
@@ -462,15 +526,14 @@ async function getTemplatesByBrandId(brandId: string | null, userId: string, pag
 }
 
 async function getTemplateById(templateId: string, userId: string): Promise<ContentGenerationTemplateDocument | undefined> {
-    const { resource: template } = await container.item(templateId, templateId).read<ContentGenerationTemplateDocument>();
-    if (!template) {
-        return undefined;
-    }
-    return template;
+    // Use cross-partition query to get the template and its brandId
+    const { resource } = await getTemplateByIdWithPartition(templateId);
+    return resource;
 }
 
 async function updateTemplate(templateId: string, userId: string, updateData: ContentTemplateUpdate): Promise<ContentGenerationTemplateDocument | undefined> {
-    const { resource: existingTemplate } = await container.item(templateId, templateId).read<ContentGenerationTemplateDocument>();
+    // Fetch the template to get the correct brandId
+    const { resource: existingTemplate } = await getTemplateByIdWithPartition(templateId);
     if (!existingTemplate) {
         return undefined;
     }
@@ -501,8 +564,7 @@ async function updateTemplate(templateId: string, userId: string, updateData: Co
             ...(safeSettings || {}),
             promptTemplate: {
                 ...(safeSettings && 'promptTemplate' in safeSettings ? (safeSettings as any).promptTemplate : {}),
-                ...updateData.settings.promptTemplate,
-                systemPrompt: updateData.settings.promptTemplate?.systemPrompt || (safeSettings && 'promptTemplate' in safeSettings ? (safeSettings as any).promptTemplate?.systemPrompt : undefined)
+                ...updateData.settings.promptTemplate
             },
             visualStyle: {
                 ...(safeSettings && 'visualStyle' in safeSettings ? (safeSettings as any).visualStyle : {}),
@@ -510,7 +572,19 @@ async function updateTemplate(templateId: string, userId: string, updateData: Co
             }
         } : (existingTemplate.settings ?? {})
     };
-    const { resource: savedTemplate } = await container.item(templateId, templateId).replace(updatedTemplate);
+    // Remove obsolete fields before saving
+    if (updatedTemplate.settings) stripObsoleteFields(updatedTemplate.settings);
+    // Log the final userPrompt value before saving
+    if (updatedTemplate.settings && typeof updatedTemplate.settings === 'object' && 'promptTemplate' in updatedTemplate.settings) {
+        const pt = (updatedTemplate.settings as any).promptTemplate;
+        console.log('[updateTemplate] Final userPrompt to be saved:', pt?.userPrompt);
+    } else {
+        console.log('[updateTemplate] Final userPrompt to be saved: <no promptTemplate found>');
+    }
+    const brandId = existingTemplate.templateInfo?.brandId;
+    // Log the id and brandId used for update
+    console.log(`[updateTemplate] Updating template id=${templateId} with brandId(partitionKey)=${brandId}`);
+    const { resource: savedTemplate } = await container.item(templateId, brandId).replace(updatedTemplate);
     return savedTemplate;
 }
 
@@ -552,8 +626,8 @@ async function extractUserId(request: HttpRequest): Promise<string> {
 }
 
 app.http('content_generation_template_management', {
-    methods: ['GET', 'POST', 'PUT'],
-    authLevel: 'anonymous', // Using Static Web Apps authentication
-    route: 'content_generation_template_management/{id?}',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Add DELETE support
+    authLevel: 'anonymous',
+    route: 'content_generation_template_management/{id?}', // Make id param optional for GET/POST
     handler: content_generation_template_management
 });

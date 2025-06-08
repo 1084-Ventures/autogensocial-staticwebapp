@@ -39,14 +39,11 @@ export interface VisualStyle {
     font: {
       family: string;
       size: string;
-      weight: 'normal' | 'bold';
-      style: 'normal' | 'italic';
     };
     color: {
       text: string;
       background: string;
-      box: string;
-      boxText: string;
+      box?: string;
       outline?: string;
     };
     outline?: {
@@ -92,14 +89,6 @@ export interface TemplateSettings {
     };
     visualStyle: VisualStyle;
     image: ImageSettings;
-    boxText?: string;
-    textBox?: {
-      color?: string;
-      alpha?: number;
-      outlineColor?: string;
-      outlineWidth?: number;
-      padding?: number;
-    };
 }
 
 export interface TemplateInfo {
@@ -140,6 +129,10 @@ export interface ContentTemplateUpdate {
         promptTemplate?: Partial<TemplateSettings['promptTemplate']>;
         visualStyle?: Partial<VisualStyle>;
     };
+}
+
+export interface ContentGenerationTemplateDelete {
+  id: string; // UUID format
 }
 
 // Validation functions

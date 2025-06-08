@@ -4,6 +4,11 @@
     },
     "routes": [
       {
+        "route": "/api/*",
+        "allowedRoles": [ "authenticated" ],
+        "methods": [ "GET", "POST", "PUT", "DELETE" ]
+      },
+      {
         "route": "/*",
         "allowedRoles": [ "authenticated" ]
       }
