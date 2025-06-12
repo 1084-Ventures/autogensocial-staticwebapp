@@ -1,7 +1,7 @@
 import { jest, describe, beforeEach, it, expect } from '@jest/globals';
 import '../mocks/cosmos.mock';
 import { HttpRequest } from '@azure/functions';
-import { content_generation_template_management } from '../../src/functions/content_generation_template_management';
+import { contentGenerationTemplateManagement } from '../../src/functions/content_generation_template_management';
 import { ContentGenerationTemplate, ContentType, DayOfWeek } from '../../src/models/content_generation_template.model';
 import { mockItemRead, mockItemReplace, mockItemsCreate, mockItemsQuery } from '../mocks/cosmos.mock';
 
@@ -353,7 +353,7 @@ describe('content_generation_template_management', () => {
       } as MockRequest;
 
       const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
-      
+
       expect(response.status).toBe(404);
       const body = JSON.parse(response.body as string);
       expect(body.error).toBe('Template not found');

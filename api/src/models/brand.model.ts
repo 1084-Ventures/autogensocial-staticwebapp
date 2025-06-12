@@ -78,3 +78,7 @@ function isValidISODate(dateString: string): boolean {
   const date = new Date(dateString);
   return date instanceof Date && !isNaN(date.getTime());
 }
+
+export class BrandModel {
+  // class properties and methods here
+}

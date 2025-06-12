@@ -241,3 +241,7 @@ function isValidTimezone(timezone: string): boolean {
         return false;
     }
 }
+
+export class ContentGenerationTemplateModel {
+  // ...existing code...
+}

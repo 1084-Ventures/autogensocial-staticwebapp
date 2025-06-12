@@ -32,3 +32,7 @@ const toHaveProperty = (received: any, property: string, expectedValue?: any) =>
 };
 
 expect.extend({ toHaveProperty });
+
+export const setup = () => {
+  // ...existing setup code...
+};

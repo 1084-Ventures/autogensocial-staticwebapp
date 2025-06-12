@@ -74,3 +74,7 @@ export class BrandService {
       );
   }
 }
+
+describe('brand_service', () => {
+  // ...existing tests...
+});

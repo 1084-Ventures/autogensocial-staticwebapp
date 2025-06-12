@@ -74,3 +74,7 @@ export interface MediaUpdate {
   fileName?: string;
   metadata?: Partial<MediaMetadata>;
 }
+
+export class MediaModel {
+  // class implementation
+}
