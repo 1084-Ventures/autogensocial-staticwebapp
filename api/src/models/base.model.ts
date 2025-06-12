@@ -23,3 +23,22 @@ export interface PaginationParams {
   sortBy?: 'createdAt' | 'updatedAt' | 'name';
   sortOrder?: 'asc' | 'desc';
 }
+
+export class BaseModel {
+  id: string; // UUID v4 format
+  metadata: {
+    createdAt: string; // ISO 8601 date-time format
+    updatedAt: string; // ISO 8601 date-time format
+    isActive: boolean;
+    version?: number;
+  };
+
+  constructor(id: string) {
+    this.id = id;
+    this.metadata = {
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isActive: true,
+    };
+  }
+}

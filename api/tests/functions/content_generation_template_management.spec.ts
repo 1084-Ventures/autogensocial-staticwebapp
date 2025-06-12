@@ -94,7 +94,7 @@ type CosmosQueryResponse<T> = {
   resources: T[];
 };
 
-describe('Content Generation Template Management', () => {
+describe('content_generation_template_management', () => {
   const mockContext = {
     log: jest.fn(),
     executionContext: { functionName: 'testFunction' }
@@ -175,7 +175,7 @@ describe('Content Generation Template Management', () => {
         json: () => Promise.resolve(validTemplate)
       } as MockRequest;
 
-      const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+      const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
       
       expect(response.status).toBe(201);
       const body = JSON.parse(response.body as string);
@@ -208,7 +208,7 @@ describe('Content Generation Template Management', () => {
         json: () => Promise.resolve(invalidTemplate)
       } as MockRequest;
 
-      const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+      const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
       
       expect(response.status).toBe(422);
       const body = JSON.parse(response.body as string);
@@ -245,7 +245,7 @@ describe('Content Generation Template Management', () => {
         params: {}
       } as MockRequest;
 
-      const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+      const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
       
       expect(response.status).toBe(200);
       const body = JSON.parse(response.body as string);
@@ -264,7 +264,7 @@ describe('Content Generation Template Management', () => {
         params: { id: 'test-id' }
       } as MockRequest;
 
-      const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+      const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
       
       expect(response.status).toBe(200);
       const body = JSON.parse(response.body as string);
@@ -284,7 +284,7 @@ describe('Content Generation Template Management', () => {
         params: { id: 'non-existent' }
       } as MockRequest;
 
-      const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+      const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
       
       expect(response.status).toBe(404);
       const body = JSON.parse(response.body as string);
@@ -327,7 +327,7 @@ describe('Content Generation Template Management', () => {
         json: () => Promise.resolve(updateData)
       } as MockRequest;
 
-      const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+      const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
       
       expect(response.status).toBe(200);
       const body = JSON.parse(response.body as string);
@@ -352,7 +352,7 @@ describe('Content Generation Template Management', () => {
         json: () => Promise.resolve({ templateInfo: { name: 'New Name' } })
       } as MockRequest;
 
-      const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+      const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
       
       expect(response.status).toBe(404);
       const body = JSON.parse(response.body as string);
@@ -390,7 +390,7 @@ describe('Content Generation Template Management', () => {
             json: () => Promise.resolve(validTemplate)
         } as MockRequest;
 
-        const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+        const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
         
         expect(response.status).toBe(403);
         const body = JSON.parse(response.body as string);
@@ -428,7 +428,7 @@ describe('Content Generation Template Management', () => {
             json: () => Promise.resolve({ templateInfo: { name: 'Updated Name' } })
         } as MockRequest;
 
-        const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+        const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
         
         expect(response.status).toBe(403);
         const body = JSON.parse(response.body as string);
@@ -477,7 +477,7 @@ describe('Content Generation Template Management', () => {
             })
         } as MockRequest;
 
-        const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+        const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
         
         expect(response.status).toBe(403);
         const body = JSON.parse(response.body as string);
@@ -504,7 +504,7 @@ describe('Content Generation Template Management', () => {
             query: new URLSearchParams({ brandId: 'test-brand' })
         } as MockRequest;
 
-        const response = await content_generation_template_management(mockRequest as unknown as HttpRequest, mockContext as any);
+        const response = await contentGenerationTemplateManagement(mockRequest as unknown as HttpRequest, mockContext as any);
         
         expect(response.status).toBe(403);
         const body = JSON.parse(response.body as string);

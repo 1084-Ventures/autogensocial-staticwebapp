@@ -43,7 +43,7 @@ function stripObsoleteFields(settings: any) {
     return settings;
 }
 
-export async function content_generation_template_management(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export const contentGenerationTemplateManagement = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     context.log('Request received in content_generation_template_management');
     try {
         const userId = await extractUserId(request);
@@ -626,8 +626,8 @@ async function extractUserId(request: HttpRequest): Promise<string> {
 }
 
 app.http('content_generation_template_management', {
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Add DELETE support
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     authLevel: 'anonymous',
-    route: 'content_generation_template_management/{id?}', // Make id param optional for GET/POST
-    handler: content_generation_template_management
+    route: 'content_generation_template_management/{id?}',
+    handler: contentGenerationTemplateManagement
 });

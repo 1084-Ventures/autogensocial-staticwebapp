@@ -41,8 +41,8 @@ async function analyzeImageWithCognitiveServices(imageBase64: string, context: I
     return response.json();
 }
 
-export async function analyze_media(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log("[analyze_media] Request received");
+export async function analyzeMedia(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log("[analyzeMedia] Request received");
     if (request.method !== "POST") {
         return {
             status: 405,
@@ -53,7 +53,7 @@ export async function analyze_media(request: HttpRequest, context: InvocationCon
     try {
         body = await request.json();
     } catch (err) {
-        context.log("[analyze_media] Invalid JSON", err);
+        context.log("[analyzeMedia] Invalid JSON", err);
         return {
             status: 400,
             body: JSON.stringify({ error: "Invalid JSON in request body" })
@@ -143,7 +143,7 @@ export async function analyze_media(request: HttpRequest, context: InvocationCon
             })
         };
     } catch (err: any) {
-        context.log("[analyze_media] Error during analysis", err);
+        context.log("[analyzeMedia] Error during analysis", err);
         return {
             status: 500,
             body: JSON.stringify({ error: err.message || "Failed to analyze image" })
@@ -155,5 +155,5 @@ app.http('analyze_media', {
     methods: ['POST'],
     authLevel: 'anonymous',
     route: 'analyze-media',
-    handler: analyze_media
+    handler: analyzeMedia
 });

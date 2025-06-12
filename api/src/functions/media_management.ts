@@ -10,7 +10,7 @@ const database = client.database(process.env.COSMOS_DB_NAME || '');
 const mediaContainer = database.container(process.env.COSMOS_DB_CONTAINER_MEDIA || '');
 // const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
 
-export async function media_management(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export const mediaManagement = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     context.log('Request received in media_management');
     context.log('Method:', request.method);
     context.log('URL:', request.url);
@@ -438,5 +438,5 @@ app.http('media_management', {
     methods: ['GET', 'POST', 'DELETE', 'PUT'],
     authLevel: 'anonymous',
     route: 'media_management/{id?}',
-    handler: media_management
+    handler: mediaManagement
 });
