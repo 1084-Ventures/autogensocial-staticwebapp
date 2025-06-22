@@ -1,7 +1,15 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { CosmosClient } from "@azure/cosmos";
-import { BrandDocument, BrandCreate, BrandUpdate, BrandNameResponse, BrandDelete, validateBrandName, validateBrandDescription, validateSocialAccount } from '../models/brand.model';
-import { ErrorResponse, PaginationParams } from '../models/base.model';
+import type { components } from '../../generated/models';
+
+// Use generated types
+export type BrandDocument = components["schemas"]["BrandDocument"];
+export type BrandCreate = components["schemas"]["BrandCreate"];
+export type BrandUpdate = components["schemas"]["BrandUpdate"];
+export type BrandDelete = components["schemas"]["BrandDelete"];
+export type BrandResponse = components["schemas"]["BrandResponse"];
+export type PaginationParams = components["parameters"]["pagination"];
+export type ErrorResponse = components["schemas"]["Error"];
 import { randomUUID } from 'crypto';
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
@@ -38,61 +46,49 @@ export const brandManagement = async (request: HttpRequest, context: InvocationC
 
 async function handleCreate(request: HttpRequest, userId: string): Promise<HttpResponseInit> {
   const body = await request.json() as BrandCreate;
-  
   // Validate input
   const validationErrors = [];
-  if (!body.name || !validateBrandName(body.name)) {
-    validationErrors.push({ field: 'name', message: 'Name is required and must be between 1 and 100 characters' });
+  if (!body.brandInfo || !body.brandInfo.name || body.brandInfo.name.length < 1 || body.brandInfo.name.length > 100) {
+    validationErrors.push({ field: 'brandInfo.name', message: 'Name is required and must be between 1 and 100 characters' });
   }
-  if (body.description && !validateBrandDescription(body.description)) {
-    validationErrors.push({ field: 'description', message: 'Description must not exceed 500 characters' });
+  if (body.brandInfo && body.brandInfo.description && body.brandInfo.description.length > 500) {
+    validationErrors.push({ field: 'brandInfo.description', message: 'Description must not exceed 500 characters' });
   }
-  
   if (validationErrors.length > 0) {
     return createErrorResponse(422, 'Validation failed', 'VALIDATION_ERROR', validationErrors);
   }
-
   const newBrand: BrandDocument = {
     id: randomUUID(),
     metadata: {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isActive: true,
-      version: 1
+      created_date: new Date().toISOString(),
+      updated_date: new Date().toISOString(),
+      is_active: true
     },
-    brandInfo: {
-      name: body.name,
-      description: body.description || '',
-      userId
-    },
-    socialAccounts: {
-      instagram: { enabled: false, username: '', accessToken: '' },
-      facebook: { enabled: false, username: '', accessToken: '' },
-      tiktok: { enabled: false, username: '', accessToken: '' }
+    brand_info: {
+      name: body.brandInfo.name,
+      description: body.brandInfo.description || ''
     }
   };
-
   const { resource: createdBrand } = await container.items.create(newBrand);
   if (!createdBrand) {
     return createErrorResponse(500, 'Failed to create brand');
   }
-  return createResponse(201, { id: createdBrand.id, name: createdBrand.brandInfo.name });
+  const response: BrandResponse = { id: createdBrand.id, name: createdBrand.brand_info?.name };
+  return createResponse(201, response);
 }
 
 async function handleGet(request: HttpRequest, userId: string): Promise<HttpResponseInit> {
   const brandId = request.params.id;
-
   if (!brandId) {
     const pagination = extractPaginationParams(request);
-    const brandNames = await getBrandNamesByUserId(userId, pagination);
-    return createResponse(200, brandNames);
+    const brands = await getBrandsByUserId(userId, pagination);
+    return createResponse(200, brands as BrandDocument[]);
   }
-
   const brand = await getBrandById(brandId, userId);
   if (!brand) {
     return createErrorResponse(404, 'Brand not found', 'RESOURCE_NOT_FOUND');
   }
-  return createResponse(200, brand);
+  return createResponse(200, brand as BrandDocument);
 }
 
 async function handleUpdate(request: HttpRequest, userId: string): Promise<HttpResponseInit> {
@@ -100,35 +96,23 @@ async function handleUpdate(request: HttpRequest, userId: string): Promise<HttpR
   if (!brandId) {
     return createErrorResponse(400, 'Brand ID is required', 'MISSING_ID');
   }
-
   const updateData = await request.json() as BrandUpdate;
-  
   // Validate input
   const validationErrors = [];
-  if (updateData.name && !validateBrandName(updateData.name)) {
-    validationErrors.push({ field: 'name', message: 'Name must be between 1 and 100 characters' });
+  if (updateData.brandInfo && updateData.brandInfo.name && (updateData.brandInfo.name.length < 1 || updateData.brandInfo.name.length > 100)) {
+    validationErrors.push({ field: 'brandInfo.name', message: 'Name must be between 1 and 100 characters' });
   }
-  if (updateData.description && !validateBrandDescription(updateData.description)) {
-    validationErrors.push({ field: 'description', message: 'Description must not exceed 500 characters' });
+  if (updateData.brandInfo && updateData.brandInfo.description && updateData.brandInfo.description.length > 500) {
+    validationErrors.push({ field: 'brandInfo.description', message: 'Description must not exceed 500 characters' });
   }
-  if (updateData.socialAccounts) {
-    for (const [platform, account] of Object.entries(updateData.socialAccounts)) {
-      if (account && !validateSocialAccount(account)) {
-        validationErrors.push({ field: `socialAccounts.${platform}`, message: 'Invalid social account data' });
-      }
-    }
-  }
-  
   if (validationErrors.length > 0) {
     return createErrorResponse(422, 'Validation failed', 'VALIDATION_ERROR', validationErrors);
   }
-
   const updatedBrand = await updateBrand(brandId, userId, updateData);
   if (!updatedBrand) {
     return createErrorResponse(404, 'Brand not found', 'RESOURCE_NOT_FOUND');
   }
-
-  return createResponse(200, updatedBrand);
+  return createResponse(200, updatedBrand as BrandDocument);
 }
 
 async function handleDelete(request: HttpRequest, userId: string): Promise<HttpResponseInit> {
@@ -142,19 +126,20 @@ async function handleDelete(request: HttpRequest, userId: string): Promise<HttpR
   if (!brandId) {
     return createErrorResponse(400, 'Brand ID is required', 'MISSING_ID');
   }
-  // Fetch the brand document using a cross-partition query to get the correct partition key (/brandInfo/userId)
+  // Fetch the brand document using a cross-partition query to get the correct partition key (/brand_info/user_id)
   const query = {
     query: 'SELECT * FROM c WHERE c.id = @id',
     parameters: [{ name: '@id', value: brandId }]
   };
   const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
   const brand = resources[0];
-  if (!brand || brand.brandInfo.userId !== userId) {
+  if (!brand || brand.user_id !== userId) {
     return createErrorResponse(404, 'Brand not found', 'RESOURCE_NOT_FOUND');
   }
   try {
-    await container.item(brandId, brand.brandInfo.userId).delete();
-    return createResponse(200, { id: brandId });
+    await container.item(brandId, brand.user_id).delete();
+    const response: BrandResponse = { id: brandId, name: brand.brand_info?.name };
+    return createResponse(200, response);
   } catch (error) {
     return createErrorResponse(500, 'Failed to delete brand', 'DELETE_ERROR');
   }
@@ -165,19 +150,18 @@ function extractPaginationParams(request: HttpRequest): PaginationParams {
   return {
     limit: Math.min(parseInt(searchParams.get('limit') || DEFAULT_PAGE_SIZE.toString(), 10), MAX_PAGE_SIZE),
     offset: Math.max(parseInt(searchParams.get('offset') || '0', 10), 0),
-    sortBy: (searchParams.get('sortBy') || 'createdAt') as 'createdAt' | 'updatedAt' | 'name',
-    sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc'
+    sort_by: (searchParams.get('sort_by') || 'created_at') as 'created_at' | 'updated_at' | 'name',
+    sort_order: (searchParams.get('sort_order') || 'desc') as 'asc' | 'desc'
   };
 }
 
-async function getBrandNamesByUserId(userId: string, pagination: PaginationParams): Promise<BrandNameResponse[]> {
-  const { limit, offset, sortBy, sortOrder } = pagination;
+async function getBrandsByUserId(userId: string, pagination: PaginationParams): Promise<BrandDocument[]> {
+  const { limit, offset, sort_by, sort_order } = pagination;
   const querySpec = {
     query: `
-      SELECT c.id, c.brandInfo.name 
-      FROM c 
-      WHERE c.brandInfo.userId = @userId 
-      ORDER BY c.${sortBy} ${sortOrder}
+      SELECT * FROM c 
+      WHERE c.user_id = @userId 
+      ORDER BY c.${sort_by} ${sort_order}
       OFFSET @offset LIMIT @limit
     `,
     parameters: [
@@ -186,7 +170,7 @@ async function getBrandNamesByUserId(userId: string, pagination: PaginationParam
       { name: '@limit', value: limit || DEFAULT_PAGE_SIZE }
     ]
   };
-  const { resources: brands } = await container.items.query<BrandNameResponse>(querySpec).fetchAll();
+  const { resources: brands } = await container.items.query<BrandDocument>(querySpec).fetchAll();
   return brands;
 }
 
@@ -198,7 +182,7 @@ async function getBrandById(brandId: string, userId: string): Promise<BrandDocum
   };
   const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
   const brand = resources[0];
-  if (!brand || brand.brandInfo.userId !== userId) {
+  if (!brand || brand.user_id !== userId) {
     return undefined;
   }
   return brand;
@@ -212,36 +196,22 @@ async function updateBrand(brandId: string, userId: string, updateData: BrandUpd
   };
   const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
   const existingBrand = resources[0];
-  if (!existingBrand || existingBrand.brandInfo.userId !== userId) {
+  if (!existingBrand || existingBrand.user_id !== userId) {
     return undefined;
   }
   const updatedBrand: BrandDocument = {
     ...existingBrand,
     metadata: {
       ...existingBrand.metadata,
-      updatedAt: new Date().toISOString()
+      updated_date: new Date().toISOString()
     },
-    brandInfo: {
-      ...existingBrand.brandInfo,
-      name: updateData.name ?? existingBrand.brandInfo.name,
-      description: updateData.description ?? existingBrand.brandInfo.description
+    brand_info: {
+      ...existingBrand.brand_info,
+      ...(updateData.brandInfo || {})
     },
-    socialAccounts: {
-      instagram: {
-        ...existingBrand.socialAccounts.instagram,
-        ...updateData.socialAccounts?.instagram
-      },
-      facebook: {
-        ...existingBrand.socialAccounts.facebook,
-        ...updateData.socialAccounts?.facebook
-      },
-      tiktok: {
-        ...existingBrand.socialAccounts.tiktok,
-        ...updateData.socialAccounts?.tiktok
-      }
-    }
+    socialAccounts: updateData.socialAccounts || existingBrand.socialAccounts
   };
-  const { resource: savedBrand } = await container.item(brandId, existingBrand.brandInfo.userId).replace(updatedBrand);
+  const { resource: savedBrand } = await container.item(brandId, existingBrand.user_id).replace(updatedBrand);
   return savedBrand;
 }
 
@@ -261,8 +231,8 @@ function createErrorResponse(
   code?: string,
   details?: Array<{ field: string; message: string }>
 ): HttpResponseInit {
-  const error: ErrorResponse = {
-    error: message,
+  const error: any = {
+    message,
     ...(code && { code }),
     ...(details && { details })
   };
@@ -272,7 +242,6 @@ function createErrorResponse(
 async function extractUserId(request: HttpRequest): Promise<string> {
   const clientPrincipal = request.headers.get('x-ms-client-principal');
   if (!clientPrincipal) return 'anonymous';
-
   try {
     const decodedPrincipal = Buffer.from(clientPrincipal, 'base64').toString('ascii');
     const principalObject = JSON.parse(decodedPrincipal);

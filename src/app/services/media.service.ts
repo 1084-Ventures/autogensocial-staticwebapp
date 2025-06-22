@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-// Reference models directly from the API directory
-import { MediaDocument, MediaUpdate } from '../../../api/src/models/media.model';
+import type { components } from '../generated/models';
+
+export type MediaDocument = components["schemas"]["MediaDocument"];
+export type MediaUpdate = Partial<components["schemas"]["MediaDocument"]>;
 
 export interface AnalyzeMediaResult {
   suggestedName: string;

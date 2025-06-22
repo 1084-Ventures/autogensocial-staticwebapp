@@ -1,14 +1,15 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import fetch from "node-fetch";
-import {
-  CognitiveTag,
-  CognitiveObject,
-  CognitiveCategory,
-  CognitiveCaption,
-  CognitiveDenseCaption,
-  CognitiveBrand,
-  CognitivePerson
-} from '../models/media.model';
+import type { components } from '../../generated/models';
+
+// Use generated types
+export type CognitiveTag = components["schemas"]["CognitiveTag"];
+export type CognitiveObject = components["schemas"]["CognitiveObject"];
+export type CognitiveCategory = components["schemas"]["CognitiveCategory"];
+export type CognitiveCaption = components["schemas"]["CognitiveCaption"];
+export type CognitiveDenseCaption = components["schemas"]["CognitiveDenseCaption"];
+export type CognitiveBrand = components["schemas"]["CognitiveBrand"];
+export type CognitivePerson = components["schemas"]["CognitivePerson"];
 
 // Environment variables for Azure Cognitive Services
 const COGSVCS_ENDPOINT = process.env.AZURE_COGSVCS_ENDPOINT;

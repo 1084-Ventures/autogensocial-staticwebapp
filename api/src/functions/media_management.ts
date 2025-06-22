@@ -3,7 +3,13 @@ import { CosmosClient } from "@azure/cosmos";
 // import { BlobServiceClient } from "@azure/storage-blob"; // Uncomment when implementing blob upload
 // import { analyzeMediaWithCognitiveServices } from "../services/cognitive"; // Placeholder for cognitive analysis
 import { randomUUID } from "crypto";
-import { MediaDocument, MediaCreate, MediaMetadata, MediaUpdate } from '../models/media.model';
+import type { components } from '../../generated/models';
+
+// Use generated types
+export type MediaDocument = components["schemas"]["MediaDocument"];
+export type MediaCreate = components["schemas"]["MediaDocument"];
+export type MediaUpdate = Partial<components["schemas"]["MediaDocument"]>;
+export type MediaMetadata = components["schemas"]["MediaMetadata"];
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
 const database = client.database(process.env.COSMOS_DB_NAME || '');

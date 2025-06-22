@@ -2,7 +2,7 @@ import { jest, describe, beforeEach, it, expect } from '@jest/globals';
 import '../mocks/cosmos.mock';
 import { HttpRequest } from '@azure/functions';
 import { contentGenerationTemplateManagement } from '../../src/functions/content_generation_template_management';
-import { ContentGenerationTemplate, ContentType, DayOfWeek } from '../../src/models/content_generation_template.model';
+import { ContentGenerationTemplate, ContentType, DayOfWeek } from '../../generated/models';
 import { mockItemRead, mockItemReplace, mockItemsCreate, mockItemsQuery } from '../mocks/cosmos.mock';
 
 // Mock Headers implementation

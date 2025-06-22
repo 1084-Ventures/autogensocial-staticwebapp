@@ -1,4 +1,6 @@
 import { CosmosClient } from '@azure/cosmos';
+import { jest } from '@jest/globals';
+
 
 // Create mock functions
 export const mockItemRead = jest.fn();

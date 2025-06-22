@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ErrorResponse } from '../../../api/src/models/base.model';
+import type { components } from '../generated/models';
+
+export type ErrorResponse = components["schemas"]["Error"];
 
 @Injectable({
   providedIn: 'root'
@@ -15,10 +17,7 @@ export class ErrorHandlerService {
 
     if (error.error) {
       const errorResponse = error.error as ErrorResponse;
-      message = errorResponse.error;
-      if (errorResponse.details?.length) {
-        details = errorResponse.details.map(detail => `${detail.field}: ${detail.message}`).join('\n');
-      }
+      message = errorResponse.message || errorResponse.code || message;
     }
 
     this.snackBar.open(

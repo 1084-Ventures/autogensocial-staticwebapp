@@ -4,24 +4,23 @@ import { Observable, catchError } from 'rxjs';
 import type { components } from '../generated/models';
 import { ErrorHandlerService } from './error-handler.service';
 
-// Use correct generated types
-export type BrandDocument = components["schemas"]["BrandDocument"];
-export type BrandCreate = components["schemas"]["BrandCreate"];
-export type BrandUpdate = components["schemas"]["BrandUpdate"];
+export type ContentGenerationTemplateDocument = components["schemas"]["ContentGenerationTemplateDocument"];
+export type ContentGenerationTemplateCreate = components["schemas"]["ContentGenerationTemplateCreate"];
+export type ContentGenerationTemplateUpdate = components["schemas"]["ContentGenerationTemplateUpdate"];
 export type PaginationParams = components["parameters"]["pagination"];
 
 @Injectable({
   providedIn: 'root'
 })
-export class BrandService {
-  private apiUrl = '/api/brand_management';
+export class ContentGenerationTemplateService {
+  private apiUrl = '/api/content_generation_template_management';
 
   constructor(
     private http: HttpClient,
     private errorHandler: ErrorHandlerService
   ) {}
 
-  getBrands(params?: PaginationParams): Observable<BrandDocument[]> {
+  getTemplates(params?: PaginationParams): Observable<ContentGenerationTemplateDocument[]> {
     let httpParams = new HttpParams();
     if (params) {
       if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
@@ -29,8 +28,7 @@ export class BrandService {
       if (params.sort_by) httpParams = httpParams.set('sortBy', params.sort_by);
       if (params.sort_order) httpParams = httpParams.set('sortOrder', params.sort_order);
     }
-
-    return this.http.get<BrandDocument[]>(this.apiUrl, { params: httpParams })
+    return this.http.get<ContentGenerationTemplateDocument[]>(this.apiUrl, { params: httpParams })
       .pipe(
         catchError(error => {
           this.errorHandler.handleError(error);
@@ -39,8 +37,8 @@ export class BrandService {
       );
   }
 
-  getBrand(id: string): Observable<BrandDocument> {
-    return this.http.get<BrandDocument>(`${this.apiUrl}/${id}`)
+  getTemplate(id: string): Observable<ContentGenerationTemplateDocument> {
+    return this.http.get<ContentGenerationTemplateDocument>(`${this.apiUrl}/${id}`)
       .pipe(
         catchError(error => {
           this.errorHandler.handleError(error);
@@ -49,8 +47,8 @@ export class BrandService {
       );
   }
 
-  createBrand(brand: BrandCreate): Observable<BrandDocument> {
-    return this.http.post<BrandDocument>(this.apiUrl, brand)
+  createTemplate(template: ContentGenerationTemplateCreate): Observable<ContentGenerationTemplateDocument> {
+    return this.http.post<ContentGenerationTemplateDocument>(this.apiUrl, template)
       .pipe(
         catchError(error => {
           this.errorHandler.handleError(error);
@@ -59,8 +57,8 @@ export class BrandService {
       );
   }
 
-  updateBrand(id: string, brand: BrandUpdate): Observable<BrandDocument> {
-    return this.http.put<BrandDocument>(`${this.apiUrl}/${id}`, brand)
+  updateTemplate(id: string, template: ContentGenerationTemplateUpdate): Observable<ContentGenerationTemplateDocument> {
+    return this.http.put<ContentGenerationTemplateDocument>(`${this.apiUrl}/${id}`, template)
       .pipe(
         catchError(error => {
           this.errorHandler.handleError(error);
@@ -69,7 +67,7 @@ export class BrandService {
       );
   }
 
-  deleteBrand(id: string): Observable<{ id: string }> {
+  deleteTemplate(id: string): Observable<{ id: string }> {
     return this.http.delete<{ id: string }>(`${this.apiUrl}/${id}`)
       .pipe(
         catchError(error => {
@@ -79,7 +77,3 @@ export class BrandService {
       );
   }
 }
-
-describe('brand_service', () => {
-  // ...existing tests...
-});

@@ -8,8 +8,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BrandService } from '../../services/brand.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
-import { BrandDocument, BrandUpdate, validateBrandName, validateBrandDescription } from '../../../../api/src/models/brand.model';
+import type { components } from '../../generated/models';
 import { Subscription } from 'rxjs';
+
+// Use correct generated types
+export type BrandDocument = components["schemas"]["BrandDocument"];
+export type BrandUpdate = components["schemas"]["BrandUpdate"];
 
 @Component({
   selector: 'app-brand-page',
@@ -94,25 +98,14 @@ export class BrandPageComponent implements OnInit, OnDestroy {
 
       this.brandForm.patchValue({
         brandInfo: {
-          name: brand.brandInfo.name,
-          description: brand.brandInfo.description || ''
+          name: brand.brand_info?.name || '',
+          description: brand.brand_info?.description || ''
         },
+        // Flatten socialAccounts array to object for form
         socialAccounts: {
-          instagram: {
-            enabled: brand.socialAccounts.instagram.enabled,
-            username: brand.socialAccounts.instagram.username,
-            accessToken: brand.socialAccounts.instagram.accessToken
-          },
-          facebook: {
-            enabled: brand.socialAccounts.facebook.enabled,
-            username: brand.socialAccounts.facebook.username,
-            accessToken: brand.socialAccounts.facebook.accessToken
-          },
-          tiktok: {
-            enabled: brand.socialAccounts.tiktok.enabled,
-            username: brand.socialAccounts.tiktok.username,
-            accessToken: brand.socialAccounts.tiktok.accessToken
-          }
+          instagram: this.getAccountByPlatform(brand.socialAccounts, 'instagram'),
+          facebook: this.getAccountByPlatform(brand.socialAccounts, 'facebook'),
+          tiktok: this.getAccountByPlatform(brand.socialAccounts, 'tiktok')
         }
       });
       this.brandForm.markAsPristine();
@@ -123,49 +116,48 @@ export class BrandPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  getAccountByPlatform(accounts: BrandDocument["socialAccounts"] | undefined, platform: string) {
+    const entry = accounts?.find(a => a.platform === platform);
+    return {
+      enabled: !!entry,
+      username: entry?.account?.username || '',
+      accessToken: entry?.account?.accessToken || ''
+    };
+  }
+
   async onSubmit() {
     if (!this.brandForm.valid || !this.brandId) return;
 
     try {
       this.loading = true;
       const formValue = this.brandForm.value;
-
-      // Client-side validation
-      if (!validateBrandName(formValue.brandInfo.name)) {
-        this.snackBar.open('Brand name must be between 1 and 100 characters', 'Close', {
-          duration: 3000
-        });
-        return;
-      }
-
-      if (formValue.brandInfo.description && !validateBrandDescription(formValue.brandInfo.description)) {
-        this.snackBar.open('Description must not exceed 500 characters', 'Close', {
-          duration: 3000
-        });
-        return;
-      }
-
+      // Convert form value to BrandUpdate type
       const updateData: BrandUpdate = {
-        name: formValue.brandInfo.name,
-        description: formValue.brandInfo.description,
-        socialAccounts: {
-          instagram: formValue.socialAccounts.instagram,
-          facebook: formValue.socialAccounts.facebook,
-          tiktok: formValue.socialAccounts.tiktok
-        }
+        brandInfo: {
+          name: formValue.brandInfo.name,
+          description: formValue.brandInfo.description
+        },
+        socialAccounts: ['instagram', 'facebook', 'tiktok']
+          .filter(platform => formValue.socialAccounts[platform].enabled)
+          .map(platform => ({
+            platform: platform as 'instagram' | 'facebook' | 'tiktok',
+            account: {
+              id: '', // id is required, but not present in form; backend should handle
+              username: formValue.socialAccounts[platform].username,
+              accessToken: formValue.socialAccounts[platform].accessToken,
+              profileUrl: '',
+              expiry_date: ''
+            }
+          }))
       };
 
       const result = await this.brandService.updateBrand(this.brandId, updateData).toPromise();
-      
-      // Only show success message if update was successful
       if (result) {
         this.snackBar.open('Brand updated successfully', 'Close', {
           duration: 3000,
           horizontalPosition: 'center',
           verticalPosition: 'top'
         });
-        
-        // Refresh form with latest data
         await this.loadBrandData(this.brandId);
       }
     } catch (error) {
