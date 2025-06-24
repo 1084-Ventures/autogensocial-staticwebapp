@@ -19,8 +19,8 @@
   </div>
   <!-- Main form content -->
   <div style="flex: 1; padding: 2rem; max-width: 1000px; margin: 0 auto; box-sizing: border-box; background: #fff;">
-    <ng-container *ngIf="brandId; else emptyState">
-      <div *ngIf="brandId; else emptyState">
+    <ng-container *ngIf="brandId && templateData && templateData.templateInfo && templateData.settings && templateData.settings.prompt_template; else emptyState">
+      <div *ngIf="brandId">
         <mat-card>
           <mat-card-header>
             <mat-card-title>{{ templateId ? 'Edit Content Template' : 'Create Content Template' }}</mat-card-title>
@@ -38,10 +38,7 @@
                   <mat-form-field class="form-field" appearance="outline">
                     <mat-label>Content Type</mat-label>
                     <mat-select [(ngModel)]="templateData.templateInfo.contentType" name="contentType" required>
-                      <mat-option value="text">Text</mat-option>
-                      <mat-option value="image">Image</mat-option>
-                      <mat-option value="multi-image">Multi-Image</mat-option>
-                      <mat-option value="video">Video</mat-option>
+                      <mat-option *ngFor="let type of supportedContentTypes" [value]="type">{{ type }}</mat-option>
                     </mat-select>
                   </mat-form-field>
                 </div>
@@ -52,9 +49,10 @@
                 <div class="form-row platform-row">
                   <div class="platform-label">Platforms</div>
                   <div class="platform-checkboxes">
-                    <mat-checkbox *ngFor="let platform of ['instagram', 'facebook', 'twitter', 'tiktok']"
-                      [checked]="templateData.templateInfo.targetPlatforms?.includes(platform)"
-                      (change)="togglePlatform(platform, $event.checked)">
+                    <mat-checkbox *ngFor="let platform of supportedPlatforms; let i = index"
+                      [checked]="(templateData.templateInfo.socialAccounts ?? []).includes(platform)"
+                      (change)="togglePlatform(platform, $event.checked)"
+                      [name]="'platformCheckbox' + i">
                       {{ platform.charAt(0).toUpperCase() + platform.slice(1) }}
                     </mat-checkbox>
                   </div>
@@ -66,7 +64,7 @@
                 <div class="subtitle">Configure the prompt that will be used for content generation, and define any variables that can be used in the prompt.</div>
                 <mat-form-field class="form-field" appearance="outline" style="width:100%;margin-top:1rem;">
                   <mat-label>User Prompt</mat-label>
-                  <textarea matInput [(ngModel)]="templateData.settings.promptTemplate.userPrompt" name="userPrompt" rows="2" maxlength="1000"></textarea>
+                  <textarea matInput [(ngModel)]="templateData.settings.prompt_template.user_prompt" name="userPrompt" rows="2" maxlength="1000"></textarea>
                 </mat-form-field>
                 <div class="prompt-variables-section">
                   <div class="prompt-variables-header" style="display: flex; align-items: center; gap: 1rem;">
@@ -75,14 +73,18 @@
                   <button mat-stroked-button color="primary" type="button" (click)="addVariable()" style="margin: 1rem 0;">
                     <mat-icon>add</mat-icon> Add Variable
                   </button>
-                  <div *ngFor="let variable of templateData.settings.promptTemplate.variables || []; let i = index" class="prompt-variable-row" style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;">
+                  <div *ngFor="let variable of templateData.settings.prompt_template.variables || []; let i = index" class="prompt-variable-row" style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;">
                     <mat-form-field appearance="outline" style="min-width: 180px;">
                       <mat-label>Variable Name</mat-label>
                       <input matInput [(ngModel)]="variable.name" [name]="'variableName' + i" required>
                     </mat-form-field>
                     <mat-form-field appearance="outline" style="min-width: 280px; flex: 1;">
                       <mat-label>Values (comma separated)</mat-label>
-                      <input matInput [(ngModel)]="variable.valuesString" [name]="'variableValues' + i" (blur)="updateVariableValues(i)">
+                      <input matInput [(ngModel)]="variable.values" [name]="'variableValues' + i">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" style="min-width: 220px; flex: 1;">
+                      <mat-label>Description</mat-label>
+                      <input matInput [(ngModel)]="variable.description" [name]="'variableDescription' + i">
                     </mat-form-field>
                     <button mat-icon-button color="warn" type="button" (click)="removeVariable(i)">
                       <mat-icon>delete</mat-icon>
@@ -90,172 +92,105 @@
                   </div>
                 </div>
               </div>
-              <!-- Image Section -->
+              <!-- Visual Style Section (basic, only for existing properties) -->
               <div class="form-section">
-                <h3>Image Settings</h3>
-                <div class="subtitle">Configure image generation settings for this template, including container layout.</div>
-                <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-end;">
-                  <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
-                    <mat-label>Aspect Ratio</mat-label>
-                    <mat-select [(ngModel)]="templateData.settings.image.aspectRatio" name="imageAspectRatio" (selectionChange)="onAspectRatioChange()">
-                      <mat-option value="1:1">1:1 (Square)</mat-option>
-                      <mat-option value="4:5">4:5 (Portrait)</mat-option>
-                      <mat-option value="16:9">16:9 (Landscape)</mat-option>
-                      <mat-option value="9:16">9:16 (Story)</mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                  <mat-form-field class="form-field" appearance="outline" style="min-width: 180px;">
-                    <mat-label>Background Type</mat-label>
-                    <mat-select [(ngModel)]="templateData.settings.image.backgroundType" name="imageBackgroundType">
-                      <mat-option value="color">Color</mat-option>
-                      <mat-option value="image">Image</mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                  <ng-container *ngIf="templateData.settings.image.backgroundType === 'image'">
+                <h3>Visual Style Settings</h3>
+                <div class="subtitle">Configure visual style settings for this template. (Advanced options may be available in code only)</div>
+                <ng-container *ngIf="templateData.settings?.visual_style?.themes?.length">
+                  <div *ngFor="let theme of templateData.settings?.visual_style?.themes; let tIdx = index" style="margin-bottom: 1rem;">
                     <mat-form-field class="form-field" appearance="outline" style="min-width: 180px;">
-                      <mat-label>Image Source Type</mat-label>
-                      <mat-select [(ngModel)]="templateData.settings.image.imageSourceType" name="imageSourceType">
-                        <mat-option value="set">Set Image</mat-option>
-                        <mat-option value="variable">Variable Image</mat-option>
-                      </mat-select>
+                      <mat-label>Background Color</mat-label>
+                      <input matInput [(ngModel)]="theme.background_color" [name]="'backgroundColor' + tIdx" placeholder="#FFFFFF">
                     </mat-form-field>
-                    <ng-container *ngIf="templateData.settings.image.imageSourceType === 'set'">
-                      <mat-form-field class="form-field" appearance="outline" style="min-width: 220px;">
-                        <mat-label>Background Image URL</mat-label>
-                        <input matInput [(ngModel)]="templateData.settings.image.backgroundImageUrl" name="imageBackgroundImageUrl" placeholder="https://...">
-                      </mat-form-field>
-                    </ng-container>
-                    <ng-container *ngIf="templateData.settings.image.imageSourceType === 'variable'">
-                      <mat-form-field class="form-field" appearance="outline" style="min-width: 180px;">
-                        <mat-label>Variable Image Type</mat-label>
-                        <mat-select [(ngModel)]="templateData.settings.image.variableImageType" name="variableImageType">
-                          <mat-option value="uploaded">Uploaded</mat-option>
-                          <mat-option value="online">Online</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                    </ng-container>
-                  </ng-container>
-                  <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
-                    <mat-label>Container Padding</mat-label>
-                    <input matInput type="number" [(ngModel)]="templateData.settings.image.containerPadding" name="imageContainerPadding" min="0" max="100">
-                  </mat-form-field>
-                  <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
-                    <mat-label>Text Box Horizontal Alignment</mat-label>
-                    <mat-select [(ngModel)]="templateData.settings.image.textBoxHorizontalAlignment" name="imageTextBoxHorizontalAlignment">
-                      <mat-option value="left">Left</mat-option>
-                      <mat-option value="center">Center</mat-option>
-                      <mat-option value="right">Right</mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                  <mat-form-field class="form-field" appearance="outline" style="min-width: 140px;">
-                    <mat-label>Text Box Vertical Alignment</mat-label>
-                    <mat-select [(ngModel)]="templateData.settings.image.textBoxVerticalAlignment" name="imageTextBoxVerticalAlignment">
-                      <mat-option value="top">Top</mat-option>
-                      <mat-option value="center">Center</mat-option>
-                      <mat-option value="bottom">Bottom</mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                </div>
-              </div>
-              <!-- Visual Style Section -->
-              <div class="form-section">
-                <h3>Visual Styles</h3>
-                <div class="subtitle">Configure one or more visual style themes for your content template.</div>
-                <div class="theme-list" style="margin-top: 2rem;">
-                  <div *ngFor="let theme of templateData.settings.visualStyle.themes; let i = index" class="theme-item">
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; width: 100%;">
-                      <mat-form-field appearance="outline" style="min-width: 160px;">
-                        <mat-label>Font</mat-label>
-                        <mat-select [(ngModel)]="theme.font" [name]="'themeFont' + i">
-                          <mat-option *ngFor="let font of fontOptions" [value]="font.value" [ngStyle]="{'font-family': font.value}">{{ font.label }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 120px;">
-                        <mat-label>Font Size</mat-label>
-                        <input matInput type="number" [(ngModel)]="theme.fontSize" [name]="'themeFontSize' + i" min="8" max="96">
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 120px;">
-                        <mat-label>Color</mat-label>
-                        <input matInput [(ngModel)]="theme.color" [name]="'themeColor' + i" type="color" style="height: 40px; padding: 0; min-width: 40px; max-width: 60px; border: none; background: none;">
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 120px;">
-                        <mat-label>Outline Color</mat-label>
-                        <input matInput [(ngModel)]="theme.outlineColor" [name]="'themeOutlineColor' + i" type="color" style="height: 40px; padding: 0; min-width: 40px; max-width: 60px; border: none; background: none;">
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 100px;">
-                        <mat-label>Outline Width</mat-label>
-                        <input matInput type="number" [(ngModel)]="theme.outlineWidth" [name]="'themeOutlineWidth' + i" min="0" max="10">
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 120px;">
-                        <mat-label>Alignment</mat-label>
-                        <mat-select [(ngModel)]="theme.alignment" [name]="'themeAlignment' + i">
-                          <mat-option value="left">Left</mat-option>
-                          <mat-option value="center">Center</mat-option>
-                          <mat-option value="right">Right</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 120px;">
-                        <mat-label>Background Color</mat-label>
-                        <input matInput [(ngModel)]="theme.backgroundColor" [name]="'themeBackgroundColor' + i" type="color" style="height: 40px; padding: 0; min-width: 40px; max-width: 60px; border: none; background: none;">
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 120px;">
-                        <mat-label>Box Color</mat-label>
-                        <input matInput [(ngModel)]="theme.box.color" [name]="'themeBoxColor' + i" type="color" style="height: 40px; padding: 0; min-width: 40px; max-width: 60px; border: none; background: none;">
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 120px;">
-                        <mat-label>Box Transparency</mat-label>
-                        <input matInput type="number" min="0" max="255" [(ngModel)]="theme.box.alpha" [name]="'themeBoxAlpha' + i">
-                        <mat-hint>0 = transparent, 255 = opaque</mat-hint>
-                      </mat-form-field>
-                    </div>
-                    <button mat-icon-button color="warn" type="button" (click)="removeTheme(i)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                    <!-- Add more controls for text_style, overlay_box, etc. as needed -->
                   </div>
-                  <button mat-stroked-button color="primary" type="button" (click)="addTheme()" style="margin-top: 1rem;">
-                    <mat-icon>add</mat-icon> Add Theme
-                  </button>
-                </div>
+                </ng-container>
+                <div *ngIf="!templateData.settings?.visual_style?.themes?.length" style="color: #888;">No visual style themes defined.</div>
               </div>
               <!-- Schedule Section -->
               <div class="form-section">
                 <h3>Schedule</h3>
-                <div class="subtitle">Set the days and time slots when this template should be used for content generation.</div>
-                <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-end;">
-                  <div>
-                    <label style="font-weight: 500; margin-bottom: 0.5rem; display: block;">Days of Week</label>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                      <mat-checkbox *ngFor="let day of daysOfWeekOptions"
-                        [checked]="templateData.schedule.daysOfWeek?.includes(day.value)"
-                        (change)="toggleDayOfWeek(day.label, $event.checked)">
-                        {{ day.label }}
-                      </mat-checkbox>
-                    </div>
-                  </div>
-                  <div style="flex: 1; min-width: 220px;">
-                    <label style="font-weight: 500; margin-bottom: 0.5rem; display: block;">Time Slots</label>
-                    <div *ngFor="let slot of templateData.schedule.timeSlots; let i = index" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                      <mat-form-field appearance="outline" style="min-width: 160px;">
-                        <mat-label>Time Slot</mat-label>
-                        <mat-select [ngModel]="slotString(i)" (ngModelChange)="onTimeSlotChange(i, $event)" [name]="'timeSlot' + i">
-                          <mat-option *ngFor="let t of timeSlotOptions" [value]="t.value">{{ t.label }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                      <mat-form-field appearance="outline" style="min-width: 140px;">
-                        <mat-label>Time Zone</mat-label>
-                        <mat-select [(ngModel)]="templateData.schedule.timeSlots[i].timezone" [name]="'timeZone' + i">
-                          <mat-option *ngFor="let tz of timeZoneOptions" [value]="tz">{{ tz }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                      <button mat-icon-button color="warn" type="button" (click)="removeTimeSlot(i)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </div>
-                    <button mat-stroked-button color="primary" type="button" (click)="addTimeSlot()" style="margin-top: 0.5rem;">
-                      <mat-icon>add</mat-icon> Add Time Slot
-                    </button>
+                <div class="subtitle">Set the days and time slots for content generation.</div>
+                <div class="form-row">
+                  <div class="days-of-week">
+                    <mat-checkbox *ngFor="let day of daysOfWeekOptions; let i = index"
+                      [checked]="templateData.schedule?.days_of_week?.includes(day.value)"
+                      (change)="toggleDayOfWeek(day.value, $event.checked)"
+                      [name]="'dayOfWeekCheckbox' + i">
+                      {{ day.label }}
+                    </mat-checkbox>
                   </div>
                 </div>
+                <div class="form-row">
+                  <div *ngFor="let slot of templateData.schedule?.time_slots; let i = index" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <mat-form-field appearance="outline" style="width: 80px;">
+                      <mat-label>Hour</mat-label>
+                      <input matInput type="number" [(ngModel)]="slot.hour" [name]="'hour' + i" min="0" max="23">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" style="width: 80px;">
+                      <mat-label>Minute</mat-label>
+                      <input matInput type="number" [(ngModel)]="slot.minute" [name]="'minute' + i" min="0" max="59">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" style="width: 160px;">
+                      <mat-label>Timezone</mat-label>
+                      <mat-select [(ngModel)]="slot.timezone" [name]="'timeZone' + i">
+                        <mat-option *ngFor="let tz of timeZoneOptions" [value]="tz">{{ tz }}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    <button mat-icon-button color="warn" type="button" (click)="removeTimeSlot(i)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                  <button mat-stroked-button color="primary" type="button" (click)="addTimeSlot()" style="margin-top: 0.5rem;">
+                    <mat-icon>add</mat-icon> Add Time Slot
+                  </button>
+                </div>
+              </div>
+              <!-- Image Section -->
+              <div class="form-section">
+                <h3>Image Settings</h3>
+                <div class="subtitle">Configure image properties for this template.</div>
+                <mat-form-field class="form-field" appearance="outline">
+                  <mat-label>Set URL</mat-label>
+                  <input matInput [(ngModel)]="image.set_url" name="imageSetUrl" placeholder="https://...">
+                </mat-form-field>
+                <mat-form-field class="form-field" appearance="outline">
+                  <mat-label>Media Type</mat-label>
+                  <mat-select [(ngModel)]="image.media_type" name="imageMediaType">
+                    <mat-option value="color">Color</mat-option>
+                    <mat-option value="set">Set</mat-option>
+                    <mat-option value="uploaded">Uploaded</mat-option>
+                    <mat-option value="online">Online</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <!-- VisualStyle is a nested object, so just show a placeholder for now -->
+                <div style="margin-bottom: 1rem; color: #888;">Visual Style: (edit in advanced settings)</div>
+                <div class="form-row">
+                  <mat-form-field class="form-field" appearance="outline">
+                    <mat-label>Width (px)</mat-label>
+                    <input matInput type="number" [(ngModel)]="imageDimensions.width" name="imageWidth" min="1">
+                  </mat-form-field>
+                  <mat-form-field class="form-field" appearance="outline">
+                    <mat-label>Height (px)</mat-label>
+                    <input matInput type="number" [(ngModel)]="imageDimensions.height" name="imageHeight" min="1">
+                  </mat-form-field>
+                  <mat-form-field class="form-field" appearance="outline">
+                    <mat-label>Aspect Ratio</mat-label>
+                    <mat-select [(ngModel)]="imageDimensions.aspect_ratio" name="imageAspectRatio">
+                      <mat-option *ngFor="let ratio of imageAspectRatios" [value]="ratio.value">{{ ratio.label }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <mat-form-field class="form-field" appearance="outline">
+                  <mat-label>Resolution</mat-label>
+                  <input matInput [(ngModel)]="image.resolution" name="imageResolution" placeholder="e.g. 300dpi">
+                </mat-form-field>
+                <mat-form-field class="form-field" appearance="outline">
+                  <mat-label>Format</mat-label>
+                  <mat-select [(ngModel)]="image.format" name="imageFormat">
+                    <mat-option *ngFor="let fmt of imageFormats" [value]="fmt.value">{{ fmt.label }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
               </div>
               <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
                 <button mat-stroked-button color="primary" type="submit">
@@ -275,13 +210,6 @@
           </mat-card-content>
         </mat-card>
       </div>
-      <ng-template #emptyState>
-        <div class="empty-state">
-          <mat-icon>auto_awesome</mat-icon>
-          <h2>No Brand Selected</h2>
-          <p>Select a brand to start generating content</p>
-        </div>
-      </ng-template>
     </ng-container>
     <ng-template #emptyState>
       <div class="empty-state">

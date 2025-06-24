@@ -4,7 +4,44 @@
  */
 
 export interface paths {
-    paths: {
+    "/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List media by brandId */
+        get: operations["listMedia"];
+        put?: never;
+        /** Create a new media item */
+        post: operations["createMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/media/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a media item by ID */
+        get: operations["getMediaById"];
+        /** Update a media item by ID */
+        put: operations["updateMediaById"];
+        post?: never;
+        /** Delete a media item by ID */
+        delete: operations["deleteMediaById"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/media/analyze": {
         parameters: {
             query?: never;
             header?: never;
@@ -13,7 +50,99 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Analyze a media file (image or video) */
+        post: operations["analyzeMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/content-generation-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List content generation templates by brandId */
+        get: operations["listContentGenerationTemplates"];
+        put?: never;
+        /** Create a new content generation template */
+        post: operations["createContentGenerationTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/content-generation-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a content generation template by ID */
+        get: operations["getContentGenerationTemplateById"];
+        put?: never;
         post?: never;
+        /** Delete a content generation template by ID */
+        delete: operations["deleteContentGenerationTemplateById"];
+        options?: never;
+        head?: never;
+        /** Update a content generation template by ID */
+        patch: operations["updateContentGenerationTemplateById"];
+        trace?: never;
+    };
+    "/brands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List brands by userId */
+        get: operations["listBrandsByUserId"];
+        put?: never;
+        /** Create a new brand */
+        post: operations["createBrand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/brands/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a brand by ID */
+        get: operations["getBrandById"];
+        put?: never;
+        post?: never;
+        /** Delete a brand by ID */
+        delete: operations["deleteBrandById"];
+        options?: never;
+        head?: never;
+        /** Update a brand by ID */
+        patch: operations["updateBrandById"];
+        trace?: never;
+    };
+    "/external/post-instagram-content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Instagram content */
+        post: operations["postInstagramContent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24,30 +153,28 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description Stub for PostDocument schema */
-        PostDocument: Record<string, never>;
-        MediaDocument: components["schemas"]["BaseModel_BaseModel"] & {
+        MediaDocument: components["schemas"]["BaseModel"] & {
             brandId?: string;
             blobUrl?: string;
             /** @enum {string} */
             mediaType?: "image" | "video";
-            mediaMetadata?: components["schemas"]["MediaMetadata_MediaMetadata"];
+            mediaMetadata?: components["schemas"]["MediaMetadata"];
         };
-        ContentGenerationTemplateDocument: components["schemas"]["BaseModel_BaseModel"] & {
+        ContentGenerationTemplateDocument: components["schemas"]["BaseModel"] & {
             brandId?: string;
-            templateInfo?: components["schemas"]["TemplateInfo_TemplateInfo"];
-            schedule?: components["schemas"]["Schedule_Schedule"];
-            settings?: components["schemas"]["TemplateSettings_TemplateSettings"];
+            templateInfo?: components["schemas"]["TemplateInfo"];
+            schedule?: components["schemas"]["Schedule"];
+            settings?: components["schemas"]["TemplateSettings"];
         };
-        BrandDocument: components["schemas"]["BaseModel_BaseModel"] & {
-            user_id?: string;
+        BrandDocument: components["schemas"]["BaseModel"] & {
+            userId?: string;
             brand_info?: components["schemas"]["BrandInfo"];
-            socialAccounts?: components["schemas"]["SocialAccountEntry_SocialAccountEntry"][];
+            socialAccounts?: components["schemas"]["SocialAccountEntry"][];
         };
         TemplateSettings: {
-            prompt_template?: components["schemas"]["PromptTemplate_PromptTemplate"];
-            visual_style?: components["schemas"]["VisualStyleObj_VisualStyleObj"];
-            contentItem?: components["schemas"]["ContentItem_ContentItem"];
+            prompt_template?: components["schemas"]["PromptTemplate"];
+            visual_style?: components["schemas"]["VisualStyleObj"];
+            contentItem?: components["schemas"]["ContentItem"];
         };
         TemplateInfo: {
             name?: string;
@@ -72,53 +199,27 @@ export interface components {
             themes?: components["schemas"]["VisualStyle"][];
         };
         VisualStyle: {
-            font?: {
-                /** @description Font family for the overlay text (e.g., Arial). */
-                family: string;
-                /** @description Font size (e.g., "32px"). */
-                size: string;
-                /**
-                 * @description Font weight for the overlay text.
-                 * @enum {string}
-                 */
-                weight?: "normal" | "bold";
-                /**
-                 * @description Font style for the overlay text.
-                 * @enum {string}
-                 */
-                style?: "normal" | "italic";
-            };
-            color?: {
-                /** @description Color for the overlay text (e.g., "#000000"). */
-                text: string;
-                /** @description Background color for the overlay area (e.g., "#FFFFFF"). */
-                background: string;
-                /** @description Color of the text box background (e.g., "#000000"). */
-                box?: string;
-                /** @description Color for text outline (if supported). */
-                outline?: string;
-            };
-            outline?: {
-                /** @description Color for text outline (if supported). */
-                color?: string;
-                width?: number;
-            };
+            text_style?: components["schemas"]["TextStyle"];
+            overlay_box?: components["schemas"]["OverlayBox"];
+            /** @description Background color */
+            background_color?: string;
         };
         TextStyle: {
             font?: components["schemas"]["Font"];
-            font_color?: string;
             outline?: components["schemas"]["Outline"];
             alignment?: components["schemas"]["Alignment"];
         };
         OverlayBox: {
             color?: string;
             transparency?: number;
-            vertical_location?: string;
-            horizontal_location?: string;
+            /** @enum {string} */
+            vertical_location?: "top" | "middle" | "bottom";
+            /** @enum {string} */
+            horizontal_location?: "left" | "middle" | "right";
         };
         Outline: {
             color?: string;
-            width?: number;
+            width?: string;
         };
         /** @description Font definitions for use by both backend and frontend */
         Fonts: {
@@ -134,12 +235,13 @@ export interface components {
         Font: {
             family?: string;
             size?: string;
-            weight?: string;
-            style?: string;
+            /** @enum {string} */
+            weight?: "normal" | "bold";
+            /** @enum {string} */
+            style?: "normal" | "italic";
         };
-        Alignment: {
-            text_align?: string;
-        };
+        /** @enum {string} */
+        Alignment: "left" | "center" | "right";
         SocialAccountEntry: {
             platform?: components["schemas"]["Platform"];
             account?: components["schemas"]["SocialAccount"];
@@ -157,10 +259,10 @@ export interface components {
              * Format: date-time
              * @description Token expiration timestamp
              */
-            expiry_date: string;
+            expiryDate: string;
         };
         /** @enum {string} */
-        Platform: "instagram" | "facebook" | "twitter" | "tiktok";
+        Platform: "instagram" | "facebook" | "twitter" | "youtube" | "tiktok";
         TimeSlot: {
             /** @description Hour in 24-hour format */
             hour: number;
@@ -177,49 +279,82 @@ export interface components {
             media_type?: components["schemas"]["MediaType"];
             set_url?: string;
             visualStyle?: components["schemas"]["VisualStyle"];
+            dimensions?: {
+                /** @description Video width in pixels */
+                width?: number;
+                /** @description Video height in pixels */
+                height?: number;
+                /** @description Aspect ratio (e.g., "16:9", "1:1") */
+                aspect_ratio?: string;
+            };
+            video_info?: {
+                /** @description Duration in seconds */
+                duration?: number;
+                /** @description Frames per second */
+                frame_rate?: number;
+                /** @description Video codec (e.g., "h264", "vp9") */
+                codec?: string;
+            };
+            audio_info?: {
+                /** @description Audio codec (e.g., "aac", "opus") */
+                audio_codec?: string;
+                /** @description Number of audio channels (e.g., 2 for stereo) */
+                channels?: number;
+            };
+            /** @description Video resolution (e.g., "1080p", "4K") */
+            resolution?: string;
+            /** @description Video file format (e.g., "mp4", "webm") */
+            format?: string;
         };
         MultiImage: {
-            images?: components["schemas"]["Image_Image"][];
+            images?: components["schemas"]["Image"][];
             min_images?: number;
             max_images?: number;
         };
         /** @enum {string} */
-        MediaType: "Color" | "Set" | "Uploaded" | "Online";
+        MediaType: "color" | "set" | "uploaded" | "online";
         MediaMetadata: {
             fileName: string;
             description?: string;
             tags: string[];
             suggestedName?: string;
-            cognitiveData: components["schemas"]["CognitiveData_CognitiveData"];
+            cognitiveData: components["schemas"]["CognitiveData"];
         };
         Image: {
             media_type?: components["schemas"]["MediaType"];
             set_url?: string;
             visualStyle?: components["schemas"]["VisualStyle"];
+            dimensions?: {
+                /** @description Image width in pixels */
+                width?: number;
+                /** @description Image height in pixels */
+                height?: number;
+                /** @description Aspect ratio (e.g., "16:9", "1:1") */
+                aspect_ratio?: string;
+            };
+            /** @description Image resolution (e.g., "300dpi") */
+            resolution?: string;
+            /** @description Image file format (e.g., "jpeg", "png") */
+            format?: string;
         };
         Rectangle: {
-            x: number;
-            y: number;
-            w: number;
-            h: number;
+            x?: number;
+            y?: number;
+            width?: number;
+            height?: number;
         };
         CognitiveTag: {
-            name: string;
-            confidence: number;
+            name?: string;
+            confidence?: number;
         };
         CognitivePerson: {
-            confidence: number;
-            rectangle: components["schemas"]["Rectangle"];
+            rectangle?: components["schemas"]["Rectangle"];
         };
         CognitiveObject: {
-            object: string;
-            confidence: number;
-            rectangle: components["schemas"]["Rectangle"];
+            rectangle?: components["schemas"]["Rectangle"];
         };
         CognitiveDenseCaption: {
-            text: string;
-            confidence: number;
-            boundingBox: components["schemas"]["Rectangle"];
+            rectangle?: components["schemas"]["Rectangle"];
         };
         CognitiveData: {
             tags?: components["schemas"]["CognitiveTag"][];
@@ -229,19 +364,19 @@ export interface components {
             denseCaptions?: components["schemas"]["CognitiveDenseCaption"][];
             brands?: components["schemas"]["CognitiveBrand"][];
             people?: components["schemas"]["CognitivePerson"][];
-            ocrText?: string;
+            rectangles?: components["schemas"]["Rectangle"][];
         };
         CognitiveCategory: {
-            name: string;
-            confidence: number;
+            name?: string;
+            confidence?: number;
         };
         CognitiveCaption: {
-            text: string;
-            confidence: number;
+            text?: string;
+            confidence?: number;
         };
         CognitiveBrand: {
-            name: string;
-            confidence: number;
+            name?: string;
+            confidence?: number;
         };
         Text: {
             value?: string;
@@ -286,6 +421,36 @@ export interface components {
             id: string;
             metadata: components["schemas"]["Metadata"];
         };
+        MediaUpdate: components["schemas"]["MediaDocument"] & {
+            brandId?: string;
+            blobUrl?: string;
+            /** @enum {string} */
+            mediaType?: "image" | "video";
+            mediaMetadata?: components["schemas"]["MediaMetadata"];
+        };
+        /** @description Response schema for retrieving a MediaDocument by id or brandId.
+         *      */
+        MediaGet: components["schemas"]["MediaDocument"];
+        MediaCreate: components["schemas"]["MediaDocument"] & {
+            brandId: string;
+            blobUrl: string;
+            /** @enum {string} */
+            mediaType: "image" | "video";
+            mediaMetadata: components["schemas"]["MediaMetadata"];
+        };
+        MediaAnalyze: {
+            suggestedName?: string;
+            description?: string;
+            tags?: components["schemas"]["CognitiveTag"][];
+            categories?: components["schemas"]["CognitiveCategory"][];
+            objects?: components["schemas"]["CognitiveObject"][];
+            caption?: components["schemas"]["CognitiveCaption"];
+            denseCaptions?: components["schemas"]["CognitiveDenseCaption"][];
+            brands?: components["schemas"]["CognitiveBrand"][];
+            people?: components["schemas"]["CognitivePerson"][];
+            ocrText?: string;
+            cognitiveData?: components["schemas"]["CognitiveData"];
+        };
         /** @description Payload for updating a ContentGenerationTemplateDocument. All fields are optional and may be provided for partial update.
          *      */
         ContentGenerationTemplateUpdate: {
@@ -303,12 +468,7 @@ export interface components {
         };
         /** @description Response schema for retrieving a ContentGenerationTemplateDocument by id or brandId.
          *      */
-        ContentGenerationTemplateGet: components["schemas"]["ContentGenerationTemplateDocument_ContentGenerationTemplateDocument"];
-        /** @description Payload for deleting a ContentGenerationTemplateDocument by id.
-         *      */
-        ContentGenerationTemplateDelete: {
-            id: string;
-        };
+        ContentGenerationTemplateGet: components["schemas"]["ContentGenerationTemplateDocument"];
         /** @description Payload for creating a new ContentGenerationTemplateDocument. 'brandId' and 'templateInfo' are required.
          *      */
         ContentGenerationTemplateCreate: {
@@ -331,114 +491,11 @@ export interface components {
         };
         /** @description Response schema for retrieving a Brand by id or user_id.
          *      */
-        BrandGet: components["schemas"]["BrandDocument_BrandDocument"];
-        /** @description Payload for deleting a Brand by id.
-         *      */
-        BrandDelete: {
-            id: string;
-        };
-        /** @description Payload for creating a new Brand. Only 'brandInfo' is required.
+        BrandGet: components["schemas"]["BrandDocument"];
+        /** @description Payload for creating a new Brand. Only 'brandInfo.name' is required.
          *      */
         BrandCreate: {
-            brandInfo: components["schemas"]["BrandInfo"];
-        };
-        BaseModel_BaseModel: {
-            /** @description unique identifier for the record */
-            id: string;
-            metadata: components["schemas"]["Metadata"];
-        };
-        CognitiveObject_CognitiveObject: {
-            object: string;
-            confidence: number;
-            rectangle: components["schemas"]["Rectangle"];
-        };
-        CognitiveDenseCaption_CognitiveDenseCaption: {
-            text: string;
-            confidence: number;
-            boundingBox: components["schemas"]["Rectangle"];
-        };
-        CognitivePerson_CognitivePerson: {
-            confidence: number;
-            rectangle: components["schemas"]["Rectangle"];
-        };
-        CognitiveData_CognitiveData: {
-            tags?: components["schemas"]["CognitiveTag"][];
-            categories?: components["schemas"]["CognitiveCategory"][];
-            objects?: components["schemas"]["CognitiveObject_CognitiveObject"][];
-            caption?: components["schemas"]["CognitiveCaption"];
-            denseCaptions?: components["schemas"]["CognitiveDenseCaption_CognitiveDenseCaption"][];
-            brands?: components["schemas"]["CognitiveBrand"][];
-            people?: components["schemas"]["CognitivePerson_CognitivePerson"][];
-            ocrText?: string;
-        };
-        MediaMetadata_MediaMetadata: {
-            fileName: string;
-            description?: string;
-            tags: string[];
-            suggestedName?: string;
-            cognitiveData: components["schemas"]["CognitiveData_CognitiveData"];
-        };
-        TemplateInfo_TemplateInfo: {
-            name?: string;
-            description?: string;
-            contentType?: components["schemas"]["ContentType"];
-            socialAccounts?: components["schemas"]["Platform"][];
-        };
-        Schedule_Schedule: {
-            days_of_week: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday")[];
-            time_slots: components["schemas"]["TimeSlot"][];
-        };
-        PromptTemplate_PromptTemplate: {
-            system_prompt?: string;
-            user_prompt?: string;
-            temperature?: number;
-            max_tokens?: number;
-            model?: string;
-            variables?: components["schemas"]["PromptVariable"][];
-        };
-        VisualStyleObj_VisualStyleObj: {
-            themes?: components["schemas"]["VisualStyle"][];
-        };
-        Image_Image: {
-            media_type?: components["schemas"]["MediaType"];
-            set_url?: string;
-            visualStyle?: components["schemas"]["VisualStyle"];
-        };
-        Video_Video: {
-            media_type?: components["schemas"]["MediaType"];
-            set_url?: string;
-            visualStyle?: components["schemas"]["VisualStyle"];
-        };
-        MultiImage_MultiImage: {
-            images?: components["schemas"]["Image_Image"][];
-            min_images?: number;
-            max_images?: number;
-        };
-        ContentItem_ContentItem: {
-            text?: components["schemas"]["Text"];
-            image?: components["schemas"]["Image_Image"];
-            video?: components["schemas"]["Video_Video"];
-            multiImage?: components["schemas"]["MultiImage_MultiImage"];
-        };
-        TemplateSettings_TemplateSettings: {
-            prompt_template?: components["schemas"]["PromptTemplate_PromptTemplate"];
-            visual_style?: components["schemas"]["VisualStyleObj_VisualStyleObj"];
-            contentItem?: components["schemas"]["ContentItem_ContentItem"];
-        };
-        SocialAccountEntry_SocialAccountEntry: {
-            platform?: components["schemas"]["Platform"];
-            account?: components["schemas"]["SocialAccount"];
-        };
-        ContentGenerationTemplateDocument_ContentGenerationTemplateDocument: components["schemas"]["BaseModel"] & {
-            brandId?: string;
-            templateInfo?: components["schemas"]["TemplateInfo"];
-            schedule?: components["schemas"]["Schedule"];
-            settings?: components["schemas"]["TemplateSettings"];
-        };
-        BrandDocument_BrandDocument: components["schemas"]["BaseModel"] & {
-            user_id?: string;
-            brand_info?: components["schemas"]["BrandInfo"];
-            socialAccounts?: components["schemas"]["SocialAccountEntry"][];
+            brandInfo: components["schemas"]["BrandInfo"] & unknown;
         };
     };
     responses: {
@@ -496,6 +553,7 @@ export interface components {
         };
     };
     parameters: {
+        /** @description Pagination and sorting options */
         pagination: {
             /** @default 20 */
             limit?: number;
@@ -512,19 +570,467 @@ export interface components {
              */
             sort_order?: "asc" | "desc";
         };
-        /** @description resource identifier (uuid) */
-        id: string;
-        /**
-         * @description filter criteria in the format field:operator:value (e.g., name:contains:test)
-         * @example name:contains:acme
-         */
-        filter: string;
-        /** @description brand identifier (uuid) */
-        brand_id: string;
     };
     requestBodies: never;
     headers: never;
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    listMedia: {
+        parameters: {
+            query: {
+                brand_id: string;
+                /** @description Pagination and sorting options */
+                pagination?: components["parameters"]["pagination"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of media for a brand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaGet"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    createMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaCreate"];
+            };
+        };
+        responses: {
+            /** @description Media created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaGet"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    getMediaById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Media item details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaGet"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    updateMediaById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaUpdate"];
+            };
+        };
+        responses: {
+            /** @description Media item updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaGet"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    deleteMediaById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Media item deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                        id?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    analyzeMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Base64-encoded image data */
+                    imageBase64?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Analysis results for the media file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAnalyze"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    listContentGenerationTemplates: {
+        parameters: {
+            query: {
+                brand_id: string;
+                /** @description Pagination and sorting options */
+                pagination?: components["parameters"]["pagination"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of content generation templates for a brand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentGenerationTemplateGet"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    createContentGenerationTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentGenerationTemplateCreate"];
+            };
+        };
+        responses: {
+            /** @description Content generation template created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentGenerationTemplateResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    getContentGenerationTemplateById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Content generation template details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentGenerationTemplateGet"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    deleteContentGenerationTemplateById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Content generation template deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    updateContentGenerationTemplateById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentGenerationTemplateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Content generation template updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentGenerationTemplateResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    listBrandsByUserId: {
+        parameters: {
+            query: {
+                user_id: string;
+                /** @description Pagination and sorting options */
+                pagination?: components["parameters"]["pagination"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of brands for a user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandGet"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    createBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrandCreate"];
+            };
+        };
+        responses: {
+            /** @description Brand created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    getBrandById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Brand details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandGet"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    deleteBrandById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Brand deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    updateBrandById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrandUpdate"];
+            };
+        };
+        responses: {
+            /** @description Brand updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    postInstagramContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+}

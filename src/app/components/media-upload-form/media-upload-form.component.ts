@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MediaService, AnalyzeMediaResult } from '../../services/media.service';
-import { MediaDocument } from '../../../../api/src/models/media.model';
+import { MediaService } from '../../services/media.service';
+import { components } from '../../generated/models';
 import { MaterialModule } from '../../material.module';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -15,14 +15,14 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 })
 export class MediaUploadFormComponent {
   @Input() brandId!: string;
-  @Output() uploadSuccess = new EventEmitter<MediaDocument>();
+  @Output() uploadSuccess = new EventEmitter<components['schemas']['MediaDocument']>();
   form: FormGroup;
   file: File | null = null;
   uploading = false;
   fileOver = false;
   analyzing = false;
   analyzeError: string | null = null;
-  analyzedCognitiveData: AnalyzeMediaResult | null = null;
+  analyzedCognitiveData: components['schemas']['MediaAnalyze'] | null = null;
 
   constructor(private fb: FormBuilder, private mediaService: MediaService) {
     this.form = this.fb.group({
@@ -80,18 +80,18 @@ export class MediaUploadFormComponent {
     try {
       const base64 = await this.fileToBase64(this.file);
       this.mediaService.analyzeMedia(base64).subscribe({
-        next: (result: AnalyzeMediaResult) => {
+        next: (result: components['schemas']['MediaAnalyze']) => {
           this.form.patchValue({
-            name: result.caption?.text || '', // Map caption to fileName (Name)
-            tags: (result.tags || []).map(t => t.name).join(', '), // Tags stays tags
-            description: (result.denseCaptions || []).map(dc => dc.text).join(', '), // Description becomes denseCaptions
+            name: result.caption?.text || '',
+            tags: (result.tags || []).map(t => t.name).join(', '),
+            description: result.description || '',
             categories: (result.categories || []).map(c => c.name).join(', '),
-            objects: (result.objects || []).map(o => o.object).join(', '),
+            objects: (result.objects || []).map(o => o.rectangle ? `(${o.rectangle.x},${o.rectangle.y},${o.rectangle.width},${o.rectangle.height})` : '').join(', '),
             brands: (result.brands || []).map(b => b.name).join(', '),
             people: (result.people || []).length,
             ocrText: result.ocrText || '',
             caption: result.caption?.text || '',
-            denseCaptions: (result.denseCaptions || []).map(dc => dc.text).join(', '),
+            denseCaptions: (result.denseCaptions || []).map(dc => dc.rectangle ? `(${dc.rectangle.x},${dc.rectangle.y},${dc.rectangle.width},${dc.rectangle.height})` : '').join(', '),
             cognitiveData: JSON.stringify(result)
           });
           this.analyzedCognitiveData = result;

@@ -4,7 +4,6 @@ import { Observable, catchError } from 'rxjs';
 import type { components } from '../generated/models';
 import { ErrorHandlerService } from './error-handler.service';
 
-// Use correct generated types
 export type BrandDocument = components["schemas"]["BrandDocument"];
 export type BrandCreate = components["schemas"]["BrandCreate"];
 export type BrandUpdate = components["schemas"]["BrandUpdate"];

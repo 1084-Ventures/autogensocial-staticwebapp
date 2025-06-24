@@ -67,6 +67,10 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
                 context.log('handleGet: Media not found for id:', id);
                 return createErrorResponse(404, 'Media not found', 'NOT_FOUND');
             }
+            if (!resource.blobUrl) {
+                context.log('handleGet: blobUrl is undefined');
+                return createErrorResponse(500, 'Media blobUrl missing', 'INTERNAL_ERROR');
+            }
             // Generate SAS URL for blob
             const azureBlob = require('@azure/storage-blob');
             const BlobServiceClient = azureBlob.BlobServiceClient;
@@ -101,11 +105,11 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
             resource.blobUrl = sasUrl;
             return createResponse(200, resource);
         } else {
-            // List all media for user
-            context.log('handleGet: Listing all media for user:', userId);
+            // List all media for brandId (userId is not in OpenAPI model)
+            context.log('handleGet: Listing all media for brandId:', userId);
             const query = {
-                query: 'SELECT * FROM c WHERE c.userId = @userId',
-                parameters: [{ name: '@userId', value: userId }]
+                query: 'SELECT * FROM c WHERE c.brandId = @brandId',
+                parameters: [{ name: '@brandId', value: userId }]
             };
             const { resources } = await mediaContainer.items.query<MediaDocument>(query).fetchAll();
             // Add SAS URL to each resource
@@ -127,6 +131,7 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
             const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
             const containerName = 'media';
             for (const resource of resources) {
+                if (!resource.blobUrl) continue;
                 const urlObj = new URL(resource.blobUrl);
                 const blobPath = urlObj.pathname.replace(/^\//, '');
                 const blobName = blobPath.substring(blobPath.indexOf(containerName) + containerName.length + 1);
@@ -250,54 +255,41 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         const blobUrl = `${blockBlobClient.url}?${sasToken}`;
         context.log('handleUpload: Uploaded to blobUrl with SAS:', blobUrl);
         // Use form's metaFileName as fileName in metadata
-        // Compose metadata using new cognitive structure if available in fields
-        // If cognitiveData is sent in the form, parse and use it
-        if (fields.cognitiveData) {
-          try {
-            cognitiveData = JSON.parse(fields.cognitiveData);
-            tags = cognitiveData.tags || [];
-            categories = cognitiveData.categories || [];
-            objects = cognitiveData.objects || [];
-            caption = cognitiveData.caption;
-            denseCaptions = cognitiveData.denseCaptions || [];
-            brands = cognitiveData.brands || [];
-            people = cognitiveData.people || [];
-            ocrText = cognitiveData.ocrText;
-          } catch (e) {
-            context.log('Failed to parse cognitiveData:', e);
-          }
-        } else if (fields.tags && typeof fields.tags === 'string') {
-          // fallback: parse tags as comma-separated string if not cognitive
+        // Compose mediaMetadata using correct structure
+        // Ensure tags is a string[]
+        if (fields.tags && typeof fields.tags === 'string') {
           tags = String(fields.tags).split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => ({ name: t, confidence: 1 }));
+        } else if (Array.isArray(tags)) {
+          tags = tags.map((t: any) => typeof t === 'string' ? t : (t && t.name ? t.name : '')).filter((t: string) => !!t);
+        } else {
+          tags = [];
         }
-        const metadata: MediaMetadata = {
+        // cognitiveData is required in MediaMetadata
+        const mediaMetadata: MediaMetadata = {
           fileName: metaFileName,
-          tags,
+          tags: Array.isArray(tags) ? tags.map((t: any) => typeof t === 'string' ? t : t.name).filter((t: string) => typeof t === 'string') : [],
           description,
-          categories,
-          objects,
-          caption,
-          denseCaptions,
-          brands,
-          people,
-          ocrText,
-          cognitiveData
+          cognitiveData: cognitiveData || {}
+        };
+        // Compose audit metadata
+        const now = new Date().toISOString();
+        const metadata = {
+          created_date: now,
+          updated_date: now,
+          is_active: true
         };
         // Infer mediaType from MIME type
         let mediaType: 'image' | 'video' = 'image';
         if (fileMimeType.startsWith('video/')) {
             mediaType = 'video';
         }
-        const now = new Date().toISOString();
         const mediaDoc: MediaDocument = {
             id,
-            userId,
+            metadata,
             brandId,
             blobUrl,
-            metadata,
-            createdAt: now,
-            updatedAt: now,
             mediaType,
+            mediaMetadata
         };
         await mediaContainer.items.create(mediaDoc);
         context.log('handleUpload: Media document created in Cosmos DB:', JSON.stringify(mediaDoc));
@@ -338,7 +330,7 @@ async function handleDelete(request: HttpRequest, userId: string, context: Invoc
             return createErrorResponse(404, 'Media not found', 'NOT_FOUND');
         }
         // Verify user/brand ownership
-        if (mediaDoc.userId !== userId) {
+        if (mediaDoc.brandId !== userId) {
             context.log('handleDelete: Forbidden, not owner');
             return createErrorResponse(403, 'Forbidden: not owner', 'FORBIDDEN');
         }
@@ -348,6 +340,10 @@ async function handleDelete(request: HttpRequest, userId: string, context: Invoc
         const containerClient = blobServiceClient.getContainerClient('media');
         // Extract blob path from blobUrl
         const blobUrl = mediaDoc.blobUrl;
+        if (!blobUrl) {
+            context.log('handleDelete: blobUrl is undefined');
+            return createErrorResponse(500, 'Media blobUrl missing', 'INTERNAL_ERROR');
+        }
         const urlObj = new URL(blobUrl);
         // Remove leading slash from pathname
         const blobPath = urlObj.pathname.replace(/^\//, '');
@@ -395,7 +391,7 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
             return createErrorResponse(404, 'Media not found', 'NOT_FOUND');
         }
         // Verify user/brand ownership
-        if (mediaDoc.userId !== userId) {
+        if (mediaDoc.brandId !== userId) {
             context.log('handleUpdate: Forbidden, not owner');
             return createErrorResponse(403, 'Forbidden: not owner', 'FORBIDDEN');
         }

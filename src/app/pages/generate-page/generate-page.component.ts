@@ -7,6 +7,58 @@ import { NavigationService } from '../../services/navigation.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ErrorHandlerService } from '../../services/error-handler.service';
 
+// Import generated types
+import type { components } from '../../generated/models';
+
+// Use correct generated types
+export type ContentGenerationTemplateDocument = components["schemas"]["ContentGenerationTemplateDocument"];
+export type TemplateInfo = components["schemas"]["TemplateInfo"];
+export type Platform = components["schemas"]["Platform"];
+export type ContentType = components["schemas"]["ContentType"];
+
+// Import the Schedule type and the days_of_week union type
+type DayOfWeek = components["schemas"]["Schedule"]["days_of_week"][number];
+
+// Helper: runtime array of supported platforms (from Platform type)
+const SUPPORTED_PLATFORMS: Platform[] = ["instagram", "facebook", "twitter", "tiktok"];
+const SUPPORTED_CONTENT_TYPES: ContentType[] = ["text", "image", "multi_image", "video"];
+
+function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplateDocument {
+  return {
+    id: '',
+    metadata: {
+      created_date: '',
+      updated_date: '',
+      is_active: true
+    },
+    brandId,
+    templateInfo: {
+      name: '',
+      description: '',
+      contentType: 'text', // must match the ContentType union
+      socialAccounts: []
+    },
+    schedule: {
+      days_of_week: [],
+      time_slots: []
+    },
+    settings: {
+      prompt_template: {
+        system_prompt: '',
+        user_prompt: '',
+        model: '',
+        temperature: 1,
+        max_tokens: 256,
+        variables: []
+      },
+      visual_style: {
+        themes: []
+      },
+      contentItem: {}
+    }
+  };
+}
+
 @Component({
   selector: 'app-generate-page',
   imports: [
@@ -20,38 +72,13 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 export class GeneratePageComponent implements OnDestroy, OnInit {
   brandId: string | null = null;
   templateId: string | null = null;
-  templateData: any = {
-    templateInfo: {
-      name: '',
-      description: '',
-      contentType: '',
-      brandId: '',
-      targetPlatforms: []
-    },
-    settings: {
-      promptTemplate: {
-        systemPrompt: '',
-        userPrompt: '',
-        model: '',
-        temperature: 1,
-        maxTokens: 256,
-        variables: []
-      },
-      visualStyle: {
-        themes: [
-          // Each theme should match the structure in visual-style.yaml
-          // Example:
-          // { font: {...}, color: {...}, outline: {...}, alignment: {...}, ... }
-        ]
-      },
-      image: {}, // Should match image.yaml structure
-    },
-    schedule: {
-      daysOfWeek: [],
-      timeSlots: []
-    }
-  };
+  templates: ContentGenerationTemplateDocument[] = [];
+  templateData: ContentGenerationTemplateDocument = getDefaultTemplateData();
+  loading = false;
   private subscription: any;
+
+  readonly supportedPlatforms = SUPPORTED_PLATFORMS;
+  readonly supportedContentTypes = SUPPORTED_CONTENT_TYPES;
 
   fontOptions = [
     { label: 'Arial', value: 'Arial' },
@@ -66,7 +93,8 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   ];
 
   // Helper for UI: display capitalized, store lowercase
-  daysOfWeekOptions = [
+  // Now typed as DayOfWeek for value
+  daysOfWeekOptions: { label: string; value: DayOfWeek }[] = [
     { label: 'Monday', value: 'monday' },
     { label: 'Tuesday', value: 'tuesday' },
     { label: 'Wednesday', value: 'wednesday' },
@@ -118,8 +146,19 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     { name: 'Black', value: '#000000' }
   ];
 
-  templates: any[] = [];
-  loading = false;
+  // Add image aspect ratio and format options for UI
+  imageAspectRatios = [
+    { label: '1:1 (Square)', value: '1:1' },
+    { label: '4:5 (Portrait)', value: '4:5' },
+    { label: '16:9 (Landscape)', value: '16:9' },
+    { label: '9:16 (Story)', value: '9:16' }
+  ];
+  imageFormats = [
+    { label: 'JPEG', value: 'jpeg' },
+    { label: 'PNG', value: 'png' },
+    { label: 'WEBP', value: 'webp' },
+    { label: 'GIF', value: 'gif' }
+  ];
 
   constructor(
     private navigationService: NavigationService,
@@ -134,7 +173,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     this.subscription = this.navigationService.currentBrand$.subscribe(
       id => {
         this.brandId = id;
-        this.templateData.templateInfo.brandId = id;
+        this.templateData.brandId = id || '';
         if (id) {
           this.fetchTemplatesForBrand(id);
         }
@@ -143,58 +182,37 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   }
 
   fetchTemplatesForBrand(brandId: string) {
-    this.http.get<any[]>(`/api/content_generation_template_management?brandId=${brandId}`)
+    this.http.get<ContentGenerationTemplateDocument[]>(`/api/content_generation_template_management?brandId=${brandId}`)
       .subscribe(
         (templates) => { this.templates = templates || []; },
         (err) => { this.templates = []; }
       );
   }
 
-  selectTemplate(template: any) {
+  selectTemplate(template: ContentGenerationTemplateDocument) {
     this.templateId = template.id;
-    this.http.get<any>(`/api/content_generation_template_management/${template.id}`)
+    this.http.get<ContentGenerationTemplateDocument>(`/api/content_generation_template_management/${template.id}`)
       .subscribe(
         (fullTemplate) => {
-          const info = fullTemplate.templateInfo || {};
-          const settings = fullTemplate.settings || {};
-          const promptTemplate = settings.promptTemplate || {};
-          let visualStyle = settings.visualStyle || {};
-          if (visualStyle.themes) {
-            visualStyle.themes = visualStyle.themes.map((theme: any) => ({
-              ...theme,
-              box: theme.box || { color: '#000000', alpha: 128 }
-            }));
-          }
-          const image = settings.image || {};
-          const sched = fullTemplate.schedule || { daysOfWeek: [], timeSlots: [] };
-          const platformsObj = info.targetPlatforms || {};
           this.templateData = {
+            ...fullTemplate,
             templateInfo: {
-              name: info.name || '',
-              description: info.description || '',
-              contentType: info.contentType || '',
-              brandId: info.brandId || this.brandId || '',
-              targetPlatforms: platformsObj
-            },
-            settings: {
-              promptTemplate: {
-                systemPrompt: promptTemplate.systemPrompt || '',
-                userPrompt: promptTemplate.userPrompt || '',
-                model: promptTemplate.model || '',
-                temperature: promptTemplate.temperature !== undefined ? promptTemplate.temperature : 1,
-                maxTokens: promptTemplate.maxTokens !== undefined ? promptTemplate.maxTokens : 256,
-                variables: (promptTemplate.variables || []).map((v: any) => ({
-                  name: v.name || '',
-                  values: v.values || [],
-                  valuesString: (v.values || []).join(', ')
-                }))
-              },
-              visualStyle: visualStyle,
-              image: image
+              ...fullTemplate.templateInfo,
+              contentType: fullTemplate.templateInfo?.contentType || 'text',
+              socialAccounts: fullTemplate.templateInfo?.socialAccounts || []
             },
             schedule: {
-              daysOfWeek: sched.daysOfWeek || [],
-              timeSlots: sched.timeSlots || []
+              days_of_week: fullTemplate.schedule?.days_of_week || [],
+              time_slots: fullTemplate.schedule?.time_slots || []
+            },
+            settings: {
+              ...fullTemplate.settings,
+              prompt_template: {
+                ...fullTemplate.settings?.prompt_template,
+                variables: (fullTemplate.settings?.prompt_template?.variables || [])
+              },
+              visual_style: fullTemplate.settings?.visual_style || { themes: [] },
+              contentItem: fullTemplate.settings?.contentItem || {}
             }
           };
         },
@@ -212,8 +230,11 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   addVariableValue(event: any, variableIndex: number) {
     const input = event.input;
     const value = event.value;
-    if ((value || '').trim()) {
-      this.templateData.settings.promptTemplate.variables[variableIndex].values.push(value.trim());
+    const variables = this.templateData.settings?.prompt_template?.variables;
+    if (variables && variables[variableIndex] && Array.isArray(variables[variableIndex].values)) {
+      if ((value || '').trim()) {
+        variables[variableIndex].values!.push(value.trim());
+      }
     }
     if (input) {
       input.value = '';
@@ -221,50 +242,90 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   }
 
   removeVariableValue(variableIndex: number, valueIndex: number) {
-    this.templateData.settings.promptTemplate.variables[variableIndex].values.splice(valueIndex, 1);
+    const variables = this.templateData.settings?.prompt_template?.variables;
+    if (variables && variables[variableIndex] && Array.isArray(variables[variableIndex].values)) {
+      variables[variableIndex].values!.splice(valueIndex, 1);
+    }
+  }
+
+  updateVariableValues(index: number): void {
+    const variables = this.templateData.settings?.prompt_template?.variables;
+    if (!variables || !variables[index] || !Array.isArray(variables[index].values)) return;
+    // If you need to parse a string to array, do it in the UI logic, not in the model object
+  }
+
+  addTheme() {
+    const visualStyle = this.templateData.settings?.visual_style;
+    if (visualStyle && Array.isArray(visualStyle.themes)) {
+      visualStyle.themes.push({
+        // Provide a default theme object as needed
+      });
+    }
+  }
+  removeTheme(index: number) {
+    const visualStyle = this.templateData.settings?.visual_style;
+    if (visualStyle && Array.isArray(visualStyle.themes)) {
+      visualStyle.themes.splice(index, 1);
+    }
+  }
+
+  addVariable() {
+    const variables = this.templateData.settings?.prompt_template?.variables;
+    if (variables) {
+      variables.push({
+        name: '',
+        values: []
+      });
+    }
+  }
+
+  removeVariable(index: number) {
+    const variables = this.templateData.settings?.prompt_template?.variables;
+    if (variables && variables.length > index) {
+      variables.splice(index, 1);
+    }
   }
 
   addTimeSlot() {
     if (!this.templateData.schedule) {
-      this.templateData.schedule = { daysOfWeek: [], timeSlots: [] };
+      this.templateData.schedule = { days_of_week: [], time_slots: [] };
     }
-    if (!this.templateData.schedule.timeSlots) {
-      this.templateData.schedule.timeSlots = [];
+    if (!this.templateData.schedule.time_slots) {
+      this.templateData.schedule.time_slots = [];
     }
-    // Default to first time slot and current or default timezone
     const first = this.timeSlotOptions[0];
     const [hour, minute] = first.value.split(':').map(Number);
-    const timezone = this.templateData.schedule.timeZone || this.timeZoneOptions[0];
-    this.templateData.schedule.timeSlots.push({ hour, minute, timezone });
+    const timezone = this.timeZoneOptions[0];
+    this.templateData.schedule.time_slots.push({ hour, minute, timezone });
   }
 
   onTimeSlotChange(i: number, value: string) {
     const [hour, minute] = value.split(':').map(Number);
-    if (this.templateData.schedule.timeSlots[i]) {
-      this.templateData.schedule.timeSlots[i].hour = hour;
-      this.templateData.schedule.timeSlots[i].minute = minute;
+    if (this.templateData.schedule?.time_slots && this.templateData.schedule.time_slots[i]) {
+      this.templateData.schedule.time_slots[i].hour = hour;
+      this.templateData.schedule.time_slots[i].minute = minute;
     }
   }
 
   removeTimeSlot(index: number) {
-    if (this.templateData.schedule && this.templateData.schedule.timeSlots) {
-      this.templateData.schedule.timeSlots.splice(index, 1);
+    if (this.templateData.schedule?.time_slots) {
+      this.templateData.schedule.time_slots.splice(index, 1);
     }
   }
 
   toggleDayOfWeek(day: string, checked: boolean) {
     if (!this.templateData.schedule) {
-      this.templateData.schedule = { daysOfWeek: [], timeSlots: [] };
+      this.templateData.schedule = { days_of_week: [], time_slots: [] };
     }
-    if (!this.templateData.schedule.daysOfWeek) {
-      this.templateData.schedule.daysOfWeek = [];
+    if (!this.templateData.schedule.days_of_week) {
+      this.templateData.schedule.days_of_week = [];
     }
     const dayValue = this.daysOfWeekOptions.find(d => d.label === day)?.value || day.toLowerCase();
-    const idx = this.templateData.schedule.daysOfWeek.indexOf(dayValue);
+    const idx = this.templateData.schedule.days_of_week.indexOf(dayValue as any);
     if (checked && idx === -1) {
-      this.templateData.schedule.daysOfWeek.push(dayValue);
+      this.templateData.schedule.days_of_week.push(dayValue as any);
     } else if (!checked && idx !== -1) {
-      this.templateData.schedule.daysOfWeek.splice(idx, 1);
+      this.templateData.schedule.days_of_week.splice(idx, 1);
     }
   }
 
@@ -284,11 +345,10 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
 
   onSubmit() {
     this.loading = true;
-    // Ensure all variable values are up to date from valuesString
-    this.templateData.settings.promptTemplate.variables.forEach((v: any, i: number) => this.updateVariableValues(i));
-    let backendContentType: string;
+    (this.templateData.settings?.prompt_template?.variables || []).forEach((v: any, i: number) => this.updateVariableValues(i));
+    let backendContentType: ContentType;
     try {
-      backendContentType = this.mapContentType(this.templateData.templateInfo.contentType);
+      backendContentType = (this.templateData.templateInfo?.contentType || 'text') as ContentType;
     } catch (err: any) {
       this.snackBar.open('Invalid content type selected. Please choose a valid type.', 'Close', {
         duration: 4000,
@@ -298,37 +358,35 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
       this.loading = false;
       return;
     }
-    // Set systemPrompt dynamically based on contentType
     const contentType = backendContentType;
     let systemPrompt = '';
-    if (contentType === 'multi-image') {
+    if (contentType === 'multi_image') {
       systemPrompt = `You are a helpful assistant creating social content for multiple images.  \nAlways respond with a single JSON object containing exactly three keys (all lowercase):\n  • "comment": a brief caption for the entire post, as a string  \n  • "hashtags": an array of hashtag strings for the entire post  \n  • "images": an array of objects, each with exactly one key:\n      – "text": the main content for that image, as a string  \nThe number of entries in "images" must exactly match the number of images requested.  \nDo not include any extra fields, wrapping objects, or explanatory text—only the JSON object.`;
     } else {
       systemPrompt = `You are a helpful assistant creating social content. Always respond with a single JSON object containing exactly three keys:\n  • "text": the main post content as a string\n  • "comment": a brief comment or caption as a string\n  • "hashtags": an array of hashtag strings\nDo not include any extra fields or explanatory text.`;
     }
-    // Always include non-editable standards
     const promptTemplate = {
-      ...this.templateData.settings.promptTemplate,
-      systemPrompt,
-      model: 'gpt-4.1', // or your required model
+      ...this.templateData.settings?.prompt_template,
+      system_prompt: systemPrompt,
+      model: 'gpt-4.1',
       temperature: 0.7,
-      maxTokens: 512,
-      variables: this.templateData.settings.promptTemplate.variables.map((v: any) => ({
+      max_tokens: 512,
+      variables: (this.templateData.settings?.prompt_template?.variables || []).map((v: any) => ({
         name: v.name,
         values: v.values
       }))
     };
-    const data: any = {
+    const data: ContentGenerationTemplateDocument = {
       ...this.templateData,
       templateInfo: {
         ...this.templateData.templateInfo,
         contentType: backendContentType,
-        targetPlatforms: this.getSelectedPlatforms(),
-        description: this.templateData.templateInfo.description || ''
+        socialAccounts: this.getSelectedPlatforms(),
+        description: this.templateData.templateInfo?.description || ''
       },
       settings: {
         ...this.templateData.settings,
-        promptTemplate
+        prompt_template: promptTemplate
       }
     };
     // Debug log for outgoing payload
@@ -380,11 +438,10 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   onUpdate() {
     if (!this.templateId) return;
     this.loading = true;
-    // Ensure all variable values are up to date from valuesString
-    this.templateData.settings.promptTemplate.variables.forEach((v: any, i: number) => this.updateVariableValues(i));
-    let backendContentType: string;
+    (this.templateData.settings?.prompt_template?.variables || []).forEach((v: any, i: number) => this.updateVariableValues(i));
+    let backendContentType: ContentType;
     try {
-      backendContentType = this.mapContentType(this.templateData.templateInfo.contentType);
+      backendContentType = (this.templateData.templateInfo?.contentType || 'text') as ContentType;
     } catch (err: any) {
       this.snackBar.open('Invalid content type selected. Please choose a valid type.', 'Close', {
         duration: 4000,
@@ -394,37 +451,35 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
       this.loading = false;
       return;
     }
-    // Set systemPrompt dynamically based on contentType
     const contentType = backendContentType;
     let systemPrompt = '';
-    if (contentType === 'multi-image') {
+    if (contentType === 'multi_image') {
       systemPrompt = `You are a helpful assistant creating social content for multiple images.  \nAlways respond with a single JSON object containing exactly three keys (all lowercase):\n  • "comment": a brief caption for the entire post, as a string  \n  • "hashtags": an array of hashtag strings for the entire post  \n  • "images": an array of objects, each with exactly one key:\n      – "text": the main content for that image, as a string  \nThe number of entries in "images" must exactly match the number of images requested.  \nDo not include any extra fields, wrapping objects, or explanatory text—only the JSON object.`;
     } else {
       systemPrompt = `You are a helpful assistant creating social content. Always respond with a single JSON object containing exactly three keys:\n  • "text": the main post content as a string\n  • "comment": a brief comment or caption as a string\n  • "hashtags": an array of hashtag strings\nDo not include any extra fields or explanatory text.`;
     }
-    // Always include non-editable standards
     const promptTemplate = {
-      ...this.templateData.settings.promptTemplate,
-      systemPrompt,
-      model: 'gpt-4.1', // or your required model
+      ...this.templateData.settings?.prompt_template,
+      system_prompt: systemPrompt,
+      model: 'gpt-4.1',
       temperature: 0.7,
-      maxTokens: 512,
-      variables: this.templateData.settings.promptTemplate.variables.map((v: any) => ({
+      max_tokens: 512,
+      variables: (this.templateData.settings?.prompt_template?.variables || []).map((v: any) => ({
         name: v.name,
         values: v.values
       }))
     };
-    const data: any = {
+    const data: ContentGenerationTemplateDocument = {
       ...this.templateData,
       templateInfo: {
         ...this.templateData.templateInfo,
         contentType: backendContentType,
-        targetPlatforms: this.getSelectedPlatforms(),
-        description: this.templateData.templateInfo.description || ''
+        socialAccounts: this.getSelectedPlatforms(),
+        description: this.templateData.templateInfo?.description || ''
       },
       settings: {
         ...this.templateData.settings,
-        promptTemplate
+        prompt_template: promptTemplate
       }
     };
     // Debug log for outgoing payload
@@ -473,62 +528,9 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     });
   }
 
-  onFontChange() {
-    // Optionally handle font change logic here
-  }
-
   createNewTemplate() {
     this.templateId = null;
-    this.templateData = {
-      templateInfo: {
-        name: '',
-        description: '',
-        contentType: '',
-        brandId: this.brandId || '',
-        targetPlatforms: []
-      },
-      settings: {
-        promptTemplate: {
-          systemPrompt: '',
-          userPrompt: '',
-          model: '',
-          temperature: 1,
-          maxTokens: 256,
-          variables: []
-        },
-        visualStyle: {
-          // Pre-populate with one default theme so the form always renders correctly
-          themes: [{
-            font: {
-              family: 'Arial',
-              weight: 'normal',
-              style: 'normal'
-            },
-            fontSize: 32,
-            color: '#222222',
-            outlineColor: '#000000',
-            outlineWidth: 0,
-            alignment: 'center',
-            backgroundColor: '#ffffff',
-            box: {
-              color: '#000000',
-              alpha: 128
-            }
-          }]
-        },
-        image: {
-          aspectRatio: '1:1',
-          backgroundType: 'color',
-          containerPadding: 0,
-          textBoxHorizontalAlignment: 'center',
-          textBoxVerticalAlignment: 'center'
-        }
-      },
-      schedule: {
-        daysOfWeek: [],
-        timeSlots: []
-      }
-    };
+    this.templateData = getDefaultTemplateData(this.brandId || '');
   }
 
   onCancel() {
@@ -541,88 +543,42 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   }
 
   // Ensure getSelectedPlatforms and updateVariableValues exist and are typed
-  getSelectedPlatforms(): string[] {
-    return Object.entries(this.templateData.templateInfo.targetPlatforms)
-      .filter(([_, checked]) => checked)
-      .map(([platform]) => platform);
-  }
-
-  updateVariableValues(index: number): void {
-    const variable = this.templateData.settings.promptTemplate.variables[index];
-    if (variable.valuesString !== undefined) {
-      variable.values = variable.valuesString.split(',').map((v: string) => v.trim()).filter((v: string) => v);
-    }
-  }
-
-  // Add methods to manage container and themes
-  addTheme() {
-    this.templateData.settings.visualStyle.themes.push({
-      font: {
-        family: 'Arial',
-        weight: 'normal',
-        style: 'normal'
-      },
-      fontSize: 32,
-      color: '#222222',
-      outlineColor: '#000000',
-      outlineWidth: 0,
-      alignment: 'center',
-      backgroundColor: '#ffffff',
-      box: {
-        color: '#000000',
-        alpha: 128
-      }
-    });
-  }
-  removeTheme(index: number) {
-    this.templateData.settings.visualStyle.themes.splice(index, 1);
-  }
-
-  addVariable() {
-    if (!this.templateData.settings.promptTemplate.variables) {
-      this.templateData.settings.promptTemplate.variables = [];
-    }
-    this.templateData.settings.promptTemplate.variables.push({
-      name: '',
-      values: [],
-      valuesString: ''
-    });
-  }
-
-  removeVariable(index: number) {
-    if (this.templateData.settings.promptTemplate.variables && this.templateData.settings.promptTemplate.variables.length > index) {
-      this.templateData.settings.promptTemplate.variables.splice(index, 1);
-    }
-  }
-
-  onAspectRatioChange() {
-    const aspectRatio = this.templateData.settings.image.container.aspectRatio;
-    if (aspectRatio === 'square') {
-      this.templateData.settings.image.container.width = 1080;
-      this.templateData.settings.image.container.height = 1080;
-    } else if (aspectRatio === 'portrait') {
-      this.templateData.settings.image.container.width = 1080;
-      this.templateData.settings.image.container.height = 1350;
-    } else if (aspectRatio === 'landscape') {
-      this.templateData.settings.image.container.width = 1200;
-      this.templateData.settings.image.container.height = 628;
-    }
-  }
-
-  // Update platform selection logic to work with array of strings
-  togglePlatform(platform: string, checked: boolean) {
-    const arr = this.templateData.templateInfo.targetPlatforms;
-    if (checked && !arr.includes(platform)) arr.push(platform);
-    if (!checked) this.templateData.templateInfo.targetPlatforms = arr.filter((p: string) => p !== platform);
+  getSelectedPlatforms(): Platform[] {
+    return this.templateData.templateInfo?.socialAccounts || [];
   }
 
   // Helper to get the string value for a time slot (for binding)
   slotString(i: number): string {
-    const slot = this.templateData.schedule.timeSlots[i];
+    if (!this.templateData.schedule || !this.templateData.schedule.time_slots) return '';
+    const slot = this.templateData.schedule.time_slots[i];
     if (!slot) return '';
     const hour = slot.hour?.toString().padStart(2, '0') ?? '00';
     const minute = slot.minute?.toString().padStart(2, '0') ?? '00';
     return `${hour}:${minute}`;
+  }
+
+  // Helper to get or initialize the image object for form input only (no actual image data or preview)
+  get image() {
+    if (!this.templateData.settings) {
+      this.templateData.settings = { contentItem: {} } as any;
+    }
+    // Defensive: if settings is still undefined, return empty object
+    if (!this.templateData.settings) return {};
+    if (!this.templateData.settings.contentItem) {
+      this.templateData.settings.contentItem = {};
+    }
+    if (!this.templateData.settings.contentItem) return {};
+    if (!this.templateData.settings.contentItem.image) {
+      this.templateData.settings.contentItem.image = {};
+    }
+    return this.templateData.settings.contentItem.image || {};
+  }
+
+  get imageDimensions() {
+    if (!this.image.dimensions) {
+      this.image.dimensions = {};
+    }
+    return this.image.dimensions;
   }
 
   onDeleteTemplate() {

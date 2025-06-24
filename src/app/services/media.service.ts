@@ -5,20 +5,7 @@ import type { components } from '../generated/models';
 
 export type MediaDocument = components["schemas"]["MediaDocument"];
 export type MediaUpdate = Partial<components["schemas"]["MediaDocument"]>;
-
-export interface AnalyzeMediaResult {
-  suggestedName: string;
-  description: string;
-  tags: { name: string; confidence: number }[];
-  categories: { name: string; confidence: number }[];
-  objects: { object: string; confidence: number; rectangle: { x: number; y: number; w: number; h: number } }[];
-  caption?: { text: string; confidence: number };
-  denseCaptions?: { text: string; confidence: number; boundingBox: { x: number; y: number; w: number; h: number } }[];
-  brands?: { name: string; confidence: number }[];
-  people?: { confidence: number; rectangle: { x: number; y: number; w: number; h: number } }[];
-  ocrText?: string;
-  cognitiveData?: any;
-}
+export type MediaAnalyze = components["schemas"]["MediaAnalyze"];
 
 @Injectable({ providedIn: 'root' })
 export class MediaService {
@@ -46,8 +33,8 @@ export class MediaService {
     return this.http.post<MediaDocument>(this.apiUrl, formData);
   }
 
-  analyzeMedia(imageBase64: string) {
-    return this.http.post<AnalyzeMediaResult>(
+  analyzeMedia(imageBase64: string): Observable<MediaAnalyze> {
+    return this.http.post<MediaAnalyze>(
       '/api/analyze-media',
       { imageBase64 }
     );

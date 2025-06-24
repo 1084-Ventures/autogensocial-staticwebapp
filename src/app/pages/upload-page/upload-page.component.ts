@@ -3,9 +3,12 @@ import { NavigationService } from '../../services/navigation.service';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../material.module';
 import { MediaService } from '../../services/media.service';
-import { MediaDocument, MediaUpdate } from '../../../../api/src/models/media.model';
+import type { components } from '../../../../api/generated/models';
 import { MediaUploadFormComponent } from '../../components/media-upload-form/media-upload-form.component';
 import { FormsModule } from '@angular/forms';
+
+type MediaDocument = components["schemas"]["MediaDocument"];
+type MediaUpdate = components["schemas"]["MediaUpdate"];
 
 @Component({
   selector: 'app-upload-page',
@@ -45,7 +48,7 @@ export class UploadPageComponent implements OnDestroy {
   selectMedia(media: MediaDocument) {
     this.selectedMedia = media;
     this.showUploadForm = false;
-    this.tagsString = (media.metadata.tags || []).map((t: any) => t.name).join(', ');
+    this.tagsString = (media.mediaMetadata?.tags || []).join(', ');
   }
 
   openUploadForm() {
@@ -56,12 +59,16 @@ export class UploadPageComponent implements OnDestroy {
 
   submitMediaEditForm(form: any) {
     if (!this.selectedMedia) return;
-    const tags = this.tagsString.split(',').map(t => t.trim()).filter(t => t).map(t => ({ name: t, confidence: 1 }));
+    const tags = this.tagsString.split(',').map(t => t.trim()).filter(t => t);
     const update: MediaUpdate = {
-      metadata: {
-        fileName: this.selectedMedia.metadata.fileName,
+      id: this.selectedMedia.id,
+      metadata: this.selectedMedia.metadata,
+      mediaMetadata: {
+        ...this.selectedMedia.mediaMetadata,
+        fileName: this.selectedMedia.mediaMetadata?.fileName || '',
         tags,
-        description: this.selectedMedia.metadata.description
+        description: this.selectedMedia.mediaMetadata?.description || '',
+        cognitiveData: this.selectedMedia.mediaMetadata?.cognitiveData || {}
       }
     };
     this.onUpdateMedia(update);
@@ -71,7 +78,7 @@ export class UploadPageComponent implements OnDestroy {
     this.showUploadForm = false;
     this.loadMedia();
     this.selectedMedia = media;
-    this.tagsString = (media.metadata.tags || []).map((t: any) => t.name).join(', ');
+    this.tagsString = (media.mediaMetadata?.tags || []).join(', ');
   }
 
   onUpdateMedia(update: MediaUpdate) {
@@ -79,7 +86,7 @@ export class UploadPageComponent implements OnDestroy {
     this.mediaService.updateMedia(this.selectedMedia.id, update).subscribe(updated => {
       this.selectedMedia = updated;
       this.loadMedia();
-      this.tagsString = (updated.metadata.tags || []).map((t: any) => t.name).join(', ');
+      this.tagsString = (updated.mediaMetadata?.tags || []).join(', ');
     });
   }
 
