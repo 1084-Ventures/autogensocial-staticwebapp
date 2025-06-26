@@ -97,8 +97,8 @@ export class SidenavComponent implements OnInit, OnDestroy {
       const params: PaginationParams = {
         offset: this.currentPage * this.pageSize,
         limit: this.pageSize,
-        sort_by: 'name',
-        sort_order: 'asc'
+        sortBy: 'name',
+        sortOrder: 'asc'
       };
 
       const newBrands = await this.brandService.getBrands(params).toPromise();
@@ -121,7 +121,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   selectBrand(brand: BrandDocument, route?: BrandRoute) {
     this.selectedBrandId = brand.id;
-    this.brandSelected.emit(brand.brand_info?.name || brand.id);
+    this.brandSelected.emit(brand.brandInfo?.name || brand.id);
     // Use the current route from NavigationService if not explicitly provided
     let navRoute: BrandRoute = route as BrandRoute;
     if (!navRoute) {

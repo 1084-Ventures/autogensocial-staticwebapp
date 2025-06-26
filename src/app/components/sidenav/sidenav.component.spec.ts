@@ -20,8 +20,8 @@ describe('SidenavComponent', () => {
   const currentBrand$ = new BehaviorSubject<string | null>(null);
 
   const mockBrands: BrandDocument[] = [
-    { id: '1', metadata: { created_date: '', updated_date: '', is_active: true }, brand_info: { name: 'Brand 1' } },
-    { id: '2', metadata: { created_date: '', updated_date: '', is_active: true }, brand_info: { name: 'Brand 2' } }
+    { id: '1', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 1' } },
+    { id: '2', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 2' } }
   ];
 
   beforeEach(async () => {
@@ -64,16 +64,16 @@ describe('SidenavComponent', () => {
       expect(brandService.getBrands).toHaveBeenCalledWith({
         offset: 0,
         limit: 20,
-        sort_by: 'name',
-        sort_order: 'asc'
+        sortBy: 'name',
+        sortOrder: 'asc'
       });
       expect(component.brands).toEqual(mockBrands);
     });
 
     it('should handle pagination correctly', fakeAsync(async () => {
       const moreBrands: BrandDocument[] = [
-        { id: '3', metadata: { created_date: '', updated_date: '', is_active: true }, brand_info: { name: 'Brand 3' } },
-        { id: '4', metadata: { created_date: '', updated_date: '', is_active: true }, brand_info: { name: 'Brand 4' } }
+        { id: '3', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 3' } },
+        { id: '4', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 4' } }
       ];
 
       // Clear previous calls and set up the test state
@@ -92,8 +92,8 @@ describe('SidenavComponent', () => {
       expect(brandService.getBrands).toHaveBeenCalledWith({
         offset: 2, // offset should be currentPage(1) * pageSize(2)
         limit: 2,  // limit should match pageSize
-        sort_by: 'name',
-        sort_order: 'asc'
+        sortBy: 'name',
+        sortOrder: 'asc'
       });
 
       // Verify the brands array was updated correctly
@@ -137,7 +137,7 @@ describe('SidenavComponent', () => {
     });
 
     it('should create new brand successfully', fakeAsync(() => {
-      const newBrand: BrandDocument = { id: '5', metadata: { created_date: '', updated_date: '', is_active: true }, brand_info: { name: 'New Brand' } };
+      const newBrand: BrandDocument = { id: '5', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'New Brand' } };
       brandService.createBrand.and.returnValue(of(newBrand));
       
       component.newBrandName = 'New Brand';
@@ -184,7 +184,7 @@ describe('SidenavComponent', () => {
       component.selectBrand(brand);
 
       expect(component.selectedBrandId).toBe(brand.id);
-      expect(component.brandSelected.emit).toHaveBeenCalledWith(brand.brand_info?.name || brand.id);
+      expect(component.brandSelected.emit).toHaveBeenCalledWith(brand.brandInfo?.name || brand.id);
       expect(navigationService.navigateToBrand).toHaveBeenCalledWith(brand.id, 'brand_details');
     });
 

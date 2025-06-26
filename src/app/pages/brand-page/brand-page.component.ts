@@ -106,8 +106,8 @@ export class BrandPageComponent implements OnInit, OnDestroy {
 
       this.brandForm.patchValue({
         brandInfo: {
-          name: brand.brand_info?.name || '',
-          description: brand.brand_info?.description || ''
+          name: brand.brandInfo?.name || '',
+          description: brand.brandInfo?.description || ''
         },
         // Flatten socialAccounts array to object for form
         socialAccounts: {

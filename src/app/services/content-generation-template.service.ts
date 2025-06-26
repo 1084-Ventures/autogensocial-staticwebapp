@@ -20,8 +20,8 @@ export class ContentGenerationTemplateService {
     if (params) {
       if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
       if (params.offset) httpParams = httpParams.set('offset', params.offset.toString());
-      if (params.sort_by) httpParams = httpParams.set('sortBy', params.sort_by);
-      if (params.sort_order) httpParams = httpParams.set('sortOrder', params.sort_order);
+      if (params.sortBy) httpParams = httpParams.set('sortBy', params.sortBy);
+      if (params.sortOrder) httpParams = httpParams.set('sortOrder', params.sortOrder);
     }
     return this.http.get<components["schemas"]["ContentGenerationTemplateDocument"][]>(this.apiUrl, { params: httpParams })
       .pipe(

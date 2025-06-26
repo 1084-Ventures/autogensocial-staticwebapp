@@ -16,20 +16,20 @@ export type TemplateInfo = components["schemas"]["TemplateInfo"];
 export type Platform = components["schemas"]["Platform"];
 export type ContentType = components["schemas"]["ContentType"];
 
-// Import the Schedule type and the days_of_week union type
-type DayOfWeek = components["schemas"]["Schedule"]["days_of_week"][number];
+// Import the Schedule type and the daysOfWeek union type
+type DayOfWeek = components["schemas"]["Schedule"]["daysOfWeek"][number];
 
 // Helper: runtime array of supported platforms (from Platform type)
 const SUPPORTED_PLATFORMS: Platform[] = ["instagram", "facebook", "twitter", "tiktok"];
-const SUPPORTED_CONTENT_TYPES: ContentType[] = ["text", "image", "multi_image", "video"];
+const SUPPORTED_CONTENT_TYPES: ContentType[] = ["text", "image", "multi-image", "video"];
 
 function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplateDocument {
   return {
     id: '',
     metadata: {
-      created_date: '',
-      updated_date: '',
-      is_active: true
+      createdDate: '',
+      updatedDate: '',
+      isActive: true
     },
     brandId,
     templateInfo: {
@@ -39,19 +39,19 @@ function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplate
       socialAccounts: []
     },
     schedule: {
-      days_of_week: [],
-      time_slots: []
+      daysOfWeek: [],
+      timeSlots: []
     },
     settings: {
-      prompt_template: {
-        system_prompt: '',
-        user_prompt: '',
+      promptTemplate: {
+        systemPrompt: '',
+        userPrompt: '',
         model: '',
         temperature: 1,
-        max_tokens: 256,
+        maxTokens: 256,
         variables: []
       },
-      visual_style: {
+      visualStyle: {
         themes: []
       },
       contentItem: {}
@@ -202,16 +202,16 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
               socialAccounts: fullTemplate.templateInfo?.socialAccounts || []
             },
             schedule: {
-              days_of_week: fullTemplate.schedule?.days_of_week || [],
-              time_slots: fullTemplate.schedule?.time_slots || []
+              daysOfWeek: fullTemplate.schedule?.daysOfWeek || [],
+              timeSlots: fullTemplate.schedule?.timeSlots || []
             },
             settings: {
               ...fullTemplate.settings,
-              prompt_template: {
-                ...fullTemplate.settings?.prompt_template,
-                variables: (fullTemplate.settings?.prompt_template?.variables || [])
+              promptTemplate: {
+                ...fullTemplate.settings?.promptTemplate,
+                variables: (fullTemplate.settings?.promptTemplate?.variables || [])
               },
-              visual_style: fullTemplate.settings?.visual_style || { themes: [] },
+              visualStyle: fullTemplate.settings?.visualStyle || { themes: [] },
               contentItem: fullTemplate.settings?.contentItem || {}
             }
           };
@@ -230,7 +230,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   addVariableValue(event: any, variableIndex: number) {
     const input = event.input;
     const value = event.value;
-    const variables = this.templateData.settings?.prompt_template?.variables;
+    const variables = this.templateData.settings?.promptTemplate?.variables;
     if (variables && variables[variableIndex] && Array.isArray(variables[variableIndex].values)) {
       if ((value || '').trim()) {
         variables[variableIndex].values!.push(value.trim());
@@ -242,20 +242,20 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   }
 
   removeVariableValue(variableIndex: number, valueIndex: number) {
-    const variables = this.templateData.settings?.prompt_template?.variables;
+    const variables = this.templateData.settings?.promptTemplate?.variables;
     if (variables && variables[variableIndex] && Array.isArray(variables[variableIndex].values)) {
       variables[variableIndex].values!.splice(valueIndex, 1);
     }
   }
 
   updateVariableValues(index: number): void {
-    const variables = this.templateData.settings?.prompt_template?.variables;
+    const variables = this.templateData.settings?.promptTemplate?.variables;
     if (!variables || !variables[index] || !Array.isArray(variables[index].values)) return;
     // If you need to parse a string to array, do it in the UI logic, not in the model object
   }
 
   addTheme() {
-    const visualStyle = this.templateData.settings?.visual_style;
+    const visualStyle = this.templateData.settings?.visualStyle;
     if (visualStyle && Array.isArray(visualStyle.themes)) {
       visualStyle.themes.push({
         // Provide a default theme object as needed
@@ -263,14 +263,14 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     }
   }
   removeTheme(index: number) {
-    const visualStyle = this.templateData.settings?.visual_style;
+    const visualStyle = this.templateData.settings?.visualStyle;
     if (visualStyle && Array.isArray(visualStyle.themes)) {
       visualStyle.themes.splice(index, 1);
     }
   }
 
   addVariable() {
-    const variables = this.templateData.settings?.prompt_template?.variables;
+    const variables = this.templateData.settings?.promptTemplate?.variables;
     if (variables) {
       variables.push({
         name: '',
@@ -280,7 +280,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   }
 
   removeVariable(index: number) {
-    const variables = this.templateData.settings?.prompt_template?.variables;
+    const variables = this.templateData.settings?.promptTemplate?.variables;
     if (variables && variables.length > index) {
       variables.splice(index, 1);
     }
@@ -288,44 +288,58 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
 
   addTimeSlot() {
     if (!this.templateData.schedule) {
-      this.templateData.schedule = { days_of_week: [], time_slots: [] };
+      this.templateData.schedule = { daysOfWeek: [], timeSlots: [] };
     }
-    if (!this.templateData.schedule.time_slots) {
-      this.templateData.schedule.time_slots = [];
+    if (!this.templateData.schedule.timeSlots) {
+      this.templateData.schedule.timeSlots = [];
     }
     const first = this.timeSlotOptions[0];
     const [hour, minute] = first.value.split(':').map(Number);
     const timezone = this.timeZoneOptions[0];
-    this.templateData.schedule.time_slots.push({ hour, minute, timezone });
+    this.templateData.schedule.timeSlots.push({ hour, minute, timezone });
   }
 
   onTimeSlotChange(i: number, value: string) {
     const [hour, minute] = value.split(':').map(Number);
-    if (this.templateData.schedule?.time_slots && this.templateData.schedule.time_slots[i]) {
-      this.templateData.schedule.time_slots[i].hour = hour;
-      this.templateData.schedule.time_slots[i].minute = minute;
+    if (this.templateData.schedule?.timeSlots && this.templateData.schedule.timeSlots[i]) {
+      this.templateData.schedule.timeSlots[i].hour = hour;
+      this.templateData.schedule.timeSlots[i].minute = minute;
     }
   }
 
   removeTimeSlot(index: number) {
-    if (this.templateData.schedule?.time_slots) {
-      this.templateData.schedule.time_slots.splice(index, 1);
+    if (this.templateData.schedule?.timeSlots) {
+      this.templateData.schedule.timeSlots.splice(index, 1);
     }
   }
 
   toggleDayOfWeek(day: string, checked: boolean) {
     if (!this.templateData.schedule) {
-      this.templateData.schedule = { days_of_week: [], time_slots: [] };
+      this.templateData.schedule = { daysOfWeek: [], timeSlots: [] };
     }
-    if (!this.templateData.schedule.days_of_week) {
-      this.templateData.schedule.days_of_week = [];
+    if (!this.templateData.schedule.daysOfWeek) {
+      this.templateData.schedule.daysOfWeek = [];
     }
     const dayValue = this.daysOfWeekOptions.find(d => d.label === day)?.value || day.toLowerCase();
-    const idx = this.templateData.schedule.days_of_week.indexOf(dayValue as any);
+    const idx = this.templateData.schedule.daysOfWeek.indexOf(dayValue as any);
     if (checked && idx === -1) {
-      this.templateData.schedule.days_of_week.push(dayValue as any);
+      this.templateData.schedule.daysOfWeek.push(dayValue as any);
     } else if (!checked && idx !== -1) {
-      this.templateData.schedule.days_of_week.splice(idx, 1);
+      this.templateData.schedule.daysOfWeek.splice(idx, 1);
+    }
+  }
+
+  togglePlatform(platform: Platform, checked: boolean) {
+    if (!this.templateData.templateInfo) return;
+    if (!this.templateData.templateInfo.socialAccounts) {
+      this.templateData.templateInfo.socialAccounts = [];
+    }
+    const accounts = this.templateData.templateInfo.socialAccounts;
+    const idx = accounts.indexOf(platform);
+    if (checked && idx === -1) {
+      accounts.push(platform);
+    } else if (!checked && idx !== -1) {
+      accounts.splice(idx, 1);
     }
   }
 
@@ -345,7 +359,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
 
   onSubmit() {
     this.loading = true;
-    (this.templateData.settings?.prompt_template?.variables || []).forEach((v: any, i: number) => this.updateVariableValues(i));
+    (this.templateData.settings?.promptTemplate?.variables || []).forEach((v: any, i: number) => this.updateVariableValues(i));
     let backendContentType: ContentType;
     try {
       backendContentType = (this.templateData.templateInfo?.contentType || 'text') as ContentType;
@@ -360,18 +374,18 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     }
     const contentType = backendContentType;
     let systemPrompt = '';
-    if (contentType === 'multi_image') {
+    if (contentType === 'multi-image') {
       systemPrompt = `You are a helpful assistant creating social content for multiple images.  \nAlways respond with a single JSON object containing exactly three keys (all lowercase):\n  • "comment": a brief caption for the entire post, as a string  \n  • "hashtags": an array of hashtag strings for the entire post  \n  • "images": an array of objects, each with exactly one key:\n      – "text": the main content for that image, as a string  \nThe number of entries in "images" must exactly match the number of images requested.  \nDo not include any extra fields, wrapping objects, or explanatory text—only the JSON object.`;
     } else {
       systemPrompt = `You are a helpful assistant creating social content. Always respond with a single JSON object containing exactly three keys:\n  • "text": the main post content as a string\n  • "comment": a brief comment or caption as a string\n  • "hashtags": an array of hashtag strings\nDo not include any extra fields or explanatory text.`;
     }
     const promptTemplate = {
-      ...this.templateData.settings?.prompt_template,
-      system_prompt: systemPrompt,
+      ...this.templateData.settings?.promptTemplate,
+      systemPrompt: systemPrompt,
       model: 'gpt-4.1',
       temperature: 0.7,
-      max_tokens: 512,
-      variables: (this.templateData.settings?.prompt_template?.variables || []).map((v: any) => ({
+      maxTokens: 512,
+      variables: (this.templateData.settings?.promptTemplate?.variables || []).map((v: any) => ({
         name: v.name,
         values: v.values
       }))
@@ -386,7 +400,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
       },
       settings: {
         ...this.templateData.settings,
-        prompt_template: promptTemplate
+        promptTemplate: promptTemplate
       }
     };
     // Debug log for outgoing payload
@@ -438,7 +452,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   onUpdate() {
     if (!this.templateId) return;
     this.loading = true;
-    (this.templateData.settings?.prompt_template?.variables || []).forEach((v: any, i: number) => this.updateVariableValues(i));
+    (this.templateData.settings?.promptTemplate?.variables || []).forEach((v: any, i: number) => this.updateVariableValues(i));
     let backendContentType: ContentType;
     try {
       backendContentType = (this.templateData.templateInfo?.contentType || 'text') as ContentType;
@@ -453,18 +467,18 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     }
     const contentType = backendContentType;
     let systemPrompt = '';
-    if (contentType === 'multi_image') {
+    if (contentType === 'multi-image') {
       systemPrompt = `You are a helpful assistant creating social content for multiple images.  \nAlways respond with a single JSON object containing exactly three keys (all lowercase):\n  • "comment": a brief caption for the entire post, as a string  \n  • "hashtags": an array of hashtag strings for the entire post  \n  • "images": an array of objects, each with exactly one key:\n      – "text": the main content for that image, as a string  \nThe number of entries in "images" must exactly match the number of images requested.  \nDo not include any extra fields, wrapping objects, or explanatory text—only the JSON object.`;
     } else {
       systemPrompt = `You are a helpful assistant creating social content. Always respond with a single JSON object containing exactly three keys:\n  • "text": the main post content as a string\n  • "comment": a brief comment or caption as a string\n  • "hashtags": an array of hashtag strings\nDo not include any extra fields or explanatory text.`;
     }
     const promptTemplate = {
-      ...this.templateData.settings?.prompt_template,
-      system_prompt: systemPrompt,
+      ...this.templateData.settings?.promptTemplate,
+      systemPrompt: systemPrompt,
       model: 'gpt-4.1',
       temperature: 0.7,
-      max_tokens: 512,
-      variables: (this.templateData.settings?.prompt_template?.variables || []).map((v: any) => ({
+      maxTokens: 512,
+      variables: (this.templateData.settings?.promptTemplate?.variables || []).map((v: any) => ({
         name: v.name,
         values: v.values
       }))
@@ -479,7 +493,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
       },
       settings: {
         ...this.templateData.settings,
-        prompt_template: promptTemplate
+        promptTemplate: promptTemplate
       }
     };
     // Debug log for outgoing payload
@@ -549,8 +563,8 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
 
   // Helper to get the string value for a time slot (for binding)
   slotString(i: number): string {
-    if (!this.templateData.schedule || !this.templateData.schedule.time_slots) return '';
-    const slot = this.templateData.schedule.time_slots[i];
+    if (!this.templateData.schedule || !this.templateData.schedule.timeSlots) return '';
+    const slot = this.templateData.schedule.timeSlots[i];
     if (!slot) return '';
     const hour = slot.hour?.toString().padStart(2, '0') ?? '00';
     const minute = slot.minute?.toString().padStart(2, '0') ?? '00';

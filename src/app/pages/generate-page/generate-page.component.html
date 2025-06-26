@@ -19,7 +19,7 @@
   </div>
   <!-- Main form content -->
   <div style="flex: 1; padding: 2rem; max-width: 1000px; margin: 0 auto; box-sizing: border-box; background: #fff;">
-    <ng-container *ngIf="brandId && templateData && templateData.templateInfo && templateData.settings && templateData.settings.prompt_template; else emptyState">
+    <ng-container *ngIf="brandId && templateData && templateData.templateInfo && templateData.settings && templateData.settings.promptTemplate; else emptyState">
       <div *ngIf="brandId">
         <mat-card>
           <mat-card-header>
@@ -50,8 +50,8 @@
                   <div class="platform-label">Platforms</div>
                   <div class="platform-checkboxes">
                     <mat-checkbox *ngFor="let platform of supportedPlatforms; let i = index"
-                      [checked]="(templateData.templateInfo.socialAccounts ?? []).includes(platform)"
-                      (change)="togglePlatform(platform, $event.checked)"
+                        [checked]="(templateData.templateInfo.socialAccounts ?? []).includes(platform)"
+                        (change)="togglePlatform(platform, $event.checked)"
                       [name]="'platformCheckbox' + i">
                       {{ platform.charAt(0).toUpperCase() + platform.slice(1) }}
                     </mat-checkbox>
@@ -64,7 +64,7 @@
                 <div class="subtitle">Configure the prompt that will be used for content generation, and define any variables that can be used in the prompt.</div>
                 <mat-form-field class="form-field" appearance="outline" style="width:100%;margin-top:1rem;">
                   <mat-label>User Prompt</mat-label>
-                  <textarea matInput [(ngModel)]="templateData.settings.prompt_template.user_prompt" name="userPrompt" rows="2" maxlength="1000"></textarea>
+                  <textarea matInput [(ngModel)]="templateData.settings.promptTemplate.userPrompt" name="userPrompt" rows="2" maxlength="1000"></textarea>
                 </mat-form-field>
                 <div class="prompt-variables-section">
                   <div class="prompt-variables-header" style="display: flex; align-items: center; gap: 1rem;">
@@ -73,7 +73,7 @@
                   <button mat-stroked-button color="primary" type="button" (click)="addVariable()" style="margin: 1rem 0;">
                     <mat-icon>add</mat-icon> Add Variable
                   </button>
-                  <div *ngFor="let variable of templateData.settings.prompt_template.variables || []; let i = index" class="prompt-variable-row" style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;">
+                  <div *ngFor="let variable of templateData.settings.promptTemplate.variables || []; let i = index" class="prompt-variable-row" style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;">
                     <mat-form-field appearance="outline" style="min-width: 180px;">
                       <mat-label>Variable Name</mat-label>
                       <input matInput [(ngModel)]="variable.name" [name]="'variableName' + i" required>
@@ -96,16 +96,16 @@
               <div class="form-section">
                 <h3>Visual Style Settings</h3>
                 <div class="subtitle">Configure visual style settings for this template. (Advanced options may be available in code only)</div>
-                <ng-container *ngIf="templateData.settings?.visual_style?.themes?.length">
-                  <div *ngFor="let theme of templateData.settings?.visual_style?.themes; let tIdx = index" style="margin-bottom: 1rem;">
+                <ng-container *ngIf="templateData.settings?.visualStyle?.themes?.length">
+                  <div *ngFor="let theme of templateData.settings?.visualStyle?.themes; let tIdx = index" style="margin-bottom: 1rem;">
                     <mat-form-field class="form-field" appearance="outline" style="min-width: 180px;">
                       <mat-label>Background Color</mat-label>
-                      <input matInput [(ngModel)]="theme.background_color" [name]="'backgroundColor' + tIdx" placeholder="#FFFFFF">
+                      <input matInput [(ngModel)]="theme.backgroundColor" [name]="'backgroundColor' + tIdx" placeholder="#FFFFFF">
                     </mat-form-field>
                     <!-- Add more controls for text_style, overlay_box, etc. as needed -->
                   </div>
                 </ng-container>
-                <div *ngIf="!templateData.settings?.visual_style?.themes?.length" style="color: #888;">No visual style themes defined.</div>
+                <div *ngIf="!templateData.settings?.visualStyle?.themes?.length" style="color: #888;">No visual style themes defined.</div>
               </div>
               <!-- Schedule Section -->
               <div class="form-section">
@@ -114,7 +114,7 @@
                 <div class="form-row">
                   <div class="days-of-week">
                     <mat-checkbox *ngFor="let day of daysOfWeekOptions; let i = index"
-                      [checked]="templateData.schedule?.days_of_week?.includes(day.value)"
+                      [checked]="templateData.schedule?.daysOfWeek?.includes(day.value)"
                       (change)="toggleDayOfWeek(day.value, $event.checked)"
                       [name]="'dayOfWeekCheckbox' + i">
                       {{ day.label }}
@@ -122,7 +122,7 @@
                   </div>
                 </div>
                 <div class="form-row">
-                  <div *ngFor="let slot of templateData.schedule?.time_slots; let i = index" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <div *ngFor="let slot of templateData.schedule?.timeSlots; let i = index" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                     <mat-form-field appearance="outline" style="width: 80px;">
                       <mat-label>Hour</mat-label>
                       <input matInput type="number" [(ngModel)]="slot.hour" [name]="'hour' + i" min="0" max="23">
@@ -152,11 +152,11 @@
                 <div class="subtitle">Configure image properties for this template.</div>
                 <mat-form-field class="form-field" appearance="outline">
                   <mat-label>Set URL</mat-label>
-                  <input matInput [(ngModel)]="image.set_url" name="imageSetUrl" placeholder="https://...">
+                  <input matInput [(ngModel)]="image.setUrl" name="imageSetUrl" placeholder="https://...">
                 </mat-form-field>
                 <mat-form-field class="form-field" appearance="outline">
                   <mat-label>Media Type</mat-label>
-                  <mat-select [(ngModel)]="image.media_type" name="imageMediaType">
+                  <mat-select [(ngModel)]="image.mediaType" name="imageMediaType">
                     <mat-option value="color">Color</mat-option>
                     <mat-option value="set">Set</mat-option>
                     <mat-option value="uploaded">Uploaded</mat-option>
@@ -176,7 +176,7 @@
                   </mat-form-field>
                   <mat-form-field class="form-field" appearance="outline">
                     <mat-label>Aspect Ratio</mat-label>
-                    <mat-select [(ngModel)]="imageDimensions.aspect_ratio" name="imageAspectRatio">
+                    <mat-select [(ngModel)]="imageDimensions.aspectRatio" name="imageAspectRatio">
                       <mat-option *ngFor="let ratio of imageAspectRatios" [value]="ratio.value">{{ ratio.label }}</mat-option>
                     </mat-select>
                   </mat-form-field>

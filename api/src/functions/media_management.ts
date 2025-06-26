@@ -274,9 +274,9 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         // Compose audit metadata
         const now = new Date().toISOString();
         const metadata = {
-          created_date: now,
-          updated_date: now,
-          is_active: true
+          createdDate: now,
+          updatedDate: now,
+          isActive: true
         };
         // Infer mediaType from MIME type
         let mediaType: 'image' | 'video' = 'image';
@@ -399,7 +399,7 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
         const updatedDoc = {
             ...mediaDoc,
             ...update,
-            updatedAt: new Date().toISOString(),
+            updatedDate: new Date().toISOString(),
         };
         await mediaContainer.item(id, mediaDoc.brandId).replace(updatedDoc);
         context.log('handleUpdate: Updated media document in Cosmos DB:', JSON.stringify(updatedDoc));

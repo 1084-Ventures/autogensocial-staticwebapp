@@ -11,7 +11,7 @@
       <mat-nav-list>
         <a mat-list-item *ngFor="let media of mediaList" (click)="selectMedia(media)" [class.selected]="media === selectedMedia">
           <mat-icon matListItemIcon>{{ media.mediaType === 'image' ? 'image' : 'movie' }}</mat-icon>
-          <span matLine>{{ media.metadata.created_date }}</span>
+          <span matLine>{{ media.metadata.createdDate }}</span>
         </a>
         <div *ngIf="!mediaList.length" style="color: #888; font-size: 0.98em; margin-top: 1rem;">No media found for this brand.</div>
       </mat-nav-list>
@@ -50,7 +50,7 @@
           <div class="meta-info">
             <div><strong>File Name:</strong> {{ selectedMedia.mediaMetadata.fileName }}</div>
             <div><strong>Type:</strong> {{ selectedMedia.mediaType }}</div>
-            <div><strong>Uploaded:</strong> {{ selectedMedia.metadata.created_date | date:'short' }}</div>
+            <div><strong>Uploaded:</strong> {{ selectedMedia.metadata.createdDate | date:'short' }}</div>
           </div>
         </div>
       </ng-container>

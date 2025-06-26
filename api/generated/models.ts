@@ -168,12 +168,12 @@ export interface components {
         };
         BrandDocument: components["schemas"]["BaseModel"] & {
             userId?: string;
-            brand_info?: components["schemas"]["BrandInfo"];
+            brandInfo?: components["schemas"]["BrandInfo"];
             socialAccounts?: components["schemas"]["SocialAccountEntry"][];
         };
         TemplateSettings: {
-            prompt_template?: components["schemas"]["PromptTemplate"];
-            visual_style?: components["schemas"]["VisualStyleObj"];
+            promptTemplate?: components["schemas"]["PromptTemplate"];
+            visualStyle?: components["schemas"]["VisualStyleObj"];
             contentItem?: components["schemas"]["ContentItem"];
         };
         TemplateInfo: {
@@ -188,10 +188,10 @@ export interface components {
             description?: string;
         };
         PromptTemplate: {
-            system_prompt?: string;
-            user_prompt?: string;
+            systemPrompt?: string;
+            userPrompt?: string;
             temperature?: number;
-            max_tokens?: number;
+            maxTokens?: number;
             model?: string;
             variables?: components["schemas"]["PromptVariable"][];
         };
@@ -199,10 +199,10 @@ export interface components {
             themes?: components["schemas"]["VisualStyle"][];
         };
         VisualStyle: {
-            text_style?: components["schemas"]["TextStyle"];
-            overlay_box?: components["schemas"]["OverlayBox"];
+            textStyle?: components["schemas"]["TextStyle"];
+            overlayBox?: components["schemas"]["OverlayBox"];
             /** @description Background color */
-            background_color?: string;
+            backgroundColor?: string;
         };
         TextStyle: {
             font?: components["schemas"]["Font"];
@@ -213,9 +213,9 @@ export interface components {
             color?: string;
             transparency?: number;
             /** @enum {string} */
-            vertical_location?: "top" | "middle" | "bottom";
+            verticalLocation?: "top" | "middle" | "bottom";
             /** @enum {string} */
-            horizontal_location?: "left" | "middle" | "right";
+            horizontalLocation?: "left" | "middle" | "right";
         };
         Outline: {
             color?: string;
@@ -224,12 +224,12 @@ export interface components {
         /** @description Font definitions for use by both backend and frontend */
         Fonts: {
             family?: string;
-            display_name?: string;
+            displayName?: string;
             styles?: {
                 regular?: string;
                 bold?: string;
                 italic?: string;
-                bold_italic?: string;
+                boldItalic?: string;
             };
         }[];
         Font: {
@@ -268,16 +268,16 @@ export interface components {
             hour: number;
             /** @description Minute */
             minute: number;
-            /** @description Timezone string (e.g., 'America/New_York') */
+            /** @description Timezone string (e.g., 'America/NewYork') */
             timezone: string;
         };
         Schedule: {
-            days_of_week: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday")[];
-            time_slots: components["schemas"]["TimeSlot"][];
+            daysOfWeek: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday")[];
+            timeSlots: components["schemas"]["TimeSlot"][];
         };
         Video: {
-            media_type?: components["schemas"]["MediaType"];
-            set_url?: string;
+            mediaType?: components["schemas"]["MediaType"];
+            setUrl?: string;
             visualStyle?: components["schemas"]["VisualStyle"];
             dimensions?: {
                 /** @description Video width in pixels */
@@ -285,19 +285,19 @@ export interface components {
                 /** @description Video height in pixels */
                 height?: number;
                 /** @description Aspect ratio (e.g., "16:9", "1:1") */
-                aspect_ratio?: string;
+                aspectRatio?: string;
             };
-            video_info?: {
+            videoInfo?: {
                 /** @description Duration in seconds */
                 duration?: number;
                 /** @description Frames per second */
-                frame_rate?: number;
+                frameRate?: number;
                 /** @description Video codec (e.g., "h264", "vp9") */
                 codec?: string;
             };
-            audio_info?: {
+            audioInfo?: {
                 /** @description Audio codec (e.g., "aac", "opus") */
-                audio_codec?: string;
+                audioCodec?: string;
                 /** @description Number of audio channels (e.g., 2 for stereo) */
                 channels?: number;
             };
@@ -308,8 +308,8 @@ export interface components {
         };
         MultiImage: {
             images?: components["schemas"]["Image"][];
-            min_images?: number;
-            max_images?: number;
+            minImages?: number;
+            maxImages?: number;
         };
         /** @enum {string} */
         MediaType: "color" | "set" | "uploaded" | "online";
@@ -321,8 +321,8 @@ export interface components {
             cognitiveData: components["schemas"]["CognitiveData"];
         };
         Image: {
-            media_type?: components["schemas"]["MediaType"];
-            set_url?: string;
+            mediaType?: components["schemas"]["MediaType"];
+            setUrl?: string;
             visualStyle?: components["schemas"]["VisualStyle"];
             dimensions?: {
                 /** @description Image width in pixels */
@@ -330,7 +330,7 @@ export interface components {
                 /** @description Image height in pixels */
                 height?: number;
                 /** @description Aspect ratio (e.g., "16:9", "1:1") */
-                aspect_ratio?: string;
+                aspectRatio?: string;
             };
             /** @description Image resolution (e.g., "300dpi") */
             resolution?: string;
@@ -386,14 +386,14 @@ export interface components {
              * Format: date-time
              * @description Creation timestamp
              */
-            created_date: string;
+            createdDate: string;
             /**
              * Format: date-time
              * @description Last update timestamp
              */
-            updated_date: string;
+            updatedDate: string;
             /** @description Whether the record is active or soft-deleted */
-            is_active: boolean;
+            isActive: boolean;
         };
         /** @description Standard error response object */
         Error: {
@@ -405,7 +405,7 @@ export interface components {
             details?: string | null;
         };
         /** @enum {string} */
-        ContentType: "text" | "video" | "multi_image" | "image";
+        ContentType: "text" | "video" | "multi-image" | "image";
         ContentItem: {
             text?: components["schemas"]["Text"];
             image?: components["schemas"]["Image"];
@@ -489,10 +489,10 @@ export interface components {
             id?: string;
             name?: string;
         };
-        /** @description Response schema for retrieving a Brand by id or user_id.
+        /** @description Response schema for retrieving a Brand by id or userId.
          *      */
         BrandGet: components["schemas"]["BrandDocument"];
-        /** @description Payload for creating a new Brand. Only 'brandInfo.name' is required.
+        /** @description Payload for creating a new Brand. 'brandInfo.name' and 'brandInfo.userId' is required.
          *      */
         BrandCreate: {
             brandInfo: components["schemas"]["BrandInfo"] & unknown;
@@ -560,15 +560,15 @@ export interface components {
             /** @default 0 */
             offset?: number;
             /**
-             * @default created_at
+             * @default createdAt
              * @enum {string}
              */
-            sort_by?: "created_at" | "updated_at" | "name";
+            sortBy?: "createdAt" | "updatedAt" | "name";
             /**
              * @default desc
              * @enum {string}
              */
-            sort_order?: "asc" | "desc";
+            sortOrder?: "asc" | "desc";
         };
     };
     requestBodies: never;
@@ -582,7 +582,7 @@ export interface operations {
             query: {
                 brand_id: string;
                 /** @description Pagination and sorting options */
-                pagination?: components["parameters"]["pagination"];
+                Pagination?: components["parameters"]["pagination"];
             };
             header?: never;
             path?: never;
@@ -749,7 +749,7 @@ export interface operations {
             query: {
                 brand_id: string;
                 /** @description Pagination and sorting options */
-                pagination?: components["parameters"]["pagination"];
+                Pagination?: components["parameters"]["pagination"];
             };
             header?: never;
             path?: never;
@@ -879,9 +879,9 @@ export interface operations {
     listBrandsByUserId: {
         parameters: {
             query: {
-                user_id: string;
+                userId: string;
                 /** @description Pagination and sorting options */
-                pagination?: components["parameters"]["pagination"];
+                Pagination?: components["parameters"]["pagination"];
             };
             header?: never;
             path?: never;
