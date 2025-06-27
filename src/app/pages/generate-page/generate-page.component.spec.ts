@@ -46,16 +46,26 @@ describe('GeneratePageComponent', () => {
   });
 
   it('should add and remove platforms correctly', () => {
-    component.templateData.templateInfo.targetPlatforms = [];
+    if (!component.templateData) component.templateData = {} as any;
+    if (!component.templateData.templateInfo) component.templateData.templateInfo = { name: '', description: '', contentType: 'text', socialAccounts: [] };
+    if (!component.templateData.templateInfo.socialAccounts) {
+      component.templateData.templateInfo.socialAccounts = [];
+    }
+    component.templateData.templateInfo.socialAccounts = [];
     component.togglePlatform('instagram', true);
-    expect(component.templateData.templateInfo.targetPlatforms).toContain('instagram');
+    expect(component.templateData.templateInfo.socialAccounts).toContain('instagram');
     component.togglePlatform('facebook', true);
-    expect(component.templateData.templateInfo.targetPlatforms).toContain('facebook');
+    expect(component.templateData.templateInfo.socialAccounts).toContain('facebook');
     component.togglePlatform('instagram', false);
-    expect(component.templateData.templateInfo.targetPlatforms).not.toContain('instagram');
+    expect(component.templateData.templateInfo.socialAccounts).not.toContain('instagram');
   });
 
   it('should add and remove themes correctly', () => {
+    if (!component.templateData) component.templateData = {} as any;
+    if (!component.templateData.settings) component.templateData.settings = { promptTemplate: { userPrompt: '', variables: [] }, visualStyle: { themes: [] }, contentItem: { type: 'text', text: { type: 'text', value: '' } } };
+    if (!component.templateData.settings.visualStyle) {
+      component.templateData.settings.visualStyle = { themes: [] };
+    }
     component.templateData.settings.visualStyle.themes = [];
     component.addTheme();
     expect(component.templateData.settings.visualStyle.themes.length).toBe(1);

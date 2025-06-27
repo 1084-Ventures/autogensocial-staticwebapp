@@ -1,0 +1,46 @@
+<p>content-image-editor works!</p>
+<section class="form-section" *ngIf="image">
+  <h3 mat-subheader>Image Settings</h3>
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Set URL</mat-label>
+    <input matInput [(ngModel)]="image.setUrl" (ngModelChange)="onImageChange()" name="imageSetUrl" placeholder="https://...">
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Media Type</mat-label>
+    <mat-select [(ngModel)]="image.mediaType" (selectionChange)="onImageChange()" name="imageMediaType">
+      <mat-option *ngFor="let type of mediaTypes" [value]="type">{{ type }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-grid-list cols="3" rowHeight="fit" gutterSize="16px">
+    <mat-grid-tile *ngIf="image.dimensions">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Width (px)</mat-label>
+        <input matInput type="number" [(ngModel)]="image.dimensions.width" (ngModelChange)="onImageChange()" name="imageWidth" min="1">
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile *ngIf="image.dimensions">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Height (px)</mat-label>
+        <input matInput type="number" [(ngModel)]="image.dimensions.height" (ngModelChange)="onImageChange()" name="imageHeight" min="1">
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile *ngIf="image.dimensions">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Aspect Ratio</mat-label>
+        <mat-select [(ngModel)]="image.dimensions.aspectRatio" (selectionChange)="onImageChange()" name="imageAspectRatio">
+          <mat-option *ngFor="let ratio of aspectRatios" [value]="ratio.value">{{ ratio.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-grid-tile>
+  </mat-grid-list>
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Resolution</mat-label>
+    <input matInput [(ngModel)]="image.resolution" (ngModelChange)="onImageChange()" name="imageResolution" placeholder="e.g. 300dpi">
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Format</mat-label>
+    <mat-select [(ngModel)]="image.format" (selectionChange)="onImageChange()" name="imageFormat">
+      <mat-option *ngFor="let fmt of imageFormats" [value]="fmt.value">{{ fmt.label }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+</section>

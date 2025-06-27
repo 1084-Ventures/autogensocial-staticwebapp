@@ -305,11 +305,21 @@ export interface components {
             resolution?: string;
             /** @description Video file format (e.g., "mp4", "webm") */
             format?: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "video";
         };
         MultiImage: {
             images?: components["schemas"]["Image"][];
             minImages?: number;
             maxImages?: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "multiImage";
         };
         /** @enum {string} */
         MediaType: "color" | "set" | "uploaded" | "online";
@@ -336,6 +346,11 @@ export interface components {
             resolution?: string;
             /** @description Image file format (e.g., "jpeg", "png") */
             format?: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "image";
         };
         Rectangle: {
             x?: number;
@@ -380,6 +395,11 @@ export interface components {
         };
         Text: {
             value?: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "text";
         };
         Metadata: {
             /**
@@ -407,11 +427,13 @@ export interface components {
         /** @enum {string} */
         ContentType: "text" | "video" | "multi-image" | "image";
         ContentItem: {
+            /** @enum {string} */
+            type?: "text" | "image" | "video" | "multiImage";
             text?: components["schemas"]["Text"];
             image?: components["schemas"]["Image"];
             video?: components["schemas"]["Video"];
             multiImage?: components["schemas"]["MultiImage"];
-        };
+        } & (components["schemas"]["Text"] | components["schemas"]["Image"] | components["schemas"]["Video"] | components["schemas"]["MultiImage"]);
         BrandInfo: {
             name?: string;
             description?: string;

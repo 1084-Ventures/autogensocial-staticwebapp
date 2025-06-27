@@ -23,8 +23,20 @@ type DayOfWeek = components["schemas"]["Schedule"]["daysOfWeek"][number];
 const SUPPORTED_PLATFORMS: Platform[] = ["instagram", "facebook", "twitter", "tiktok"];
 const SUPPORTED_CONTENT_TYPES: ContentType[] = ["text", "image", "multi-image", "video"];
 
+// Patch: Use correct ContentItem type from generated OpenAPI types
+export type ContentItem = components["schemas"]["ContentItem"];
+
+// Add ContentItem discriminated union type for clarity
+export type ContentItemUnion =
+  | ({ type: 'text' } & components["schemas"]["Text"])
+  | ({ type: 'image' } & components["schemas"]["Image"])
+  | ({ type: 'video' } & components["schemas"]["Video"])
+  | ({ type: 'multiImage' } & components["schemas"]["MultiImage"]);
+
 function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplateDocument {
+  // For new templates, do not include id or metadata (backend will generate)
   return {
+    // id and metadata will be added by backend, but are required by the type for display
     id: '',
     metadata: {
       createdDate: '',
@@ -35,7 +47,7 @@ function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplate
     templateInfo: {
       name: '',
       description: '',
-      contentType: 'text', // must match the ContentType union
+      contentType: 'text',
       socialAccounts: []
     },
     schedule: {
@@ -44,17 +56,13 @@ function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplate
     },
     settings: {
       promptTemplate: {
-        systemPrompt: '',
         userPrompt: '',
-        model: '',
-        temperature: 1,
-        maxTokens: 256,
         variables: []
       },
       visualStyle: {
         themes: []
       },
-      contentItem: {}
+      contentItem: { type: 'text', text: { value: '' } } as ContentItem // Default to text type, correct structure
     }
   };
 }
@@ -79,6 +87,20 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
 
   readonly supportedPlatforms = SUPPORTED_PLATFORMS;
   readonly supportedContentTypes = SUPPORTED_CONTENT_TYPES;
+
+  // Helpers for discriminated union
+  isTextType(): boolean {
+    return this.templateData.settings?.contentItem?.type === 'text';
+  }
+  isImageType(): boolean {
+    return this.templateData.settings?.contentItem?.type === 'image';
+  }
+  isMultiImageType(): boolean {
+    return this.templateData.settings?.contentItem?.type === 'multiImage';
+  }
+  isVideoType(): boolean {
+    return this.templateData.settings?.contentItem?.type === 'video';
+  }
 
   fontOptions = [
     { label: 'Arial', value: 'Arial' },
@@ -212,9 +234,12 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
                 variables: (fullTemplate.settings?.promptTemplate?.variables || [])
               },
               visualStyle: fullTemplate.settings?.visualStyle || { themes: [] },
-              contentItem: fullTemplate.settings?.contentItem || {}
+              contentItem: fullTemplate.settings?.contentItem && fullTemplate.settings.contentItem.type
+                ? fullTemplate.settings.contentItem
+                : { type: 'text', text: { type: 'text', value: '' } }
             }
           };
+          this.ensureAtLeastOneMultiImage();
         },
         (err) => {
           this.snackBar.open('Error fetching template details', 'Close', {
@@ -255,10 +280,40 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   }
 
   addTheme() {
-    const visualStyle = this.templateData.settings?.visualStyle;
-    if (visualStyle && Array.isArray(visualStyle.themes)) {
-      visualStyle.themes.push({
-        // Provide a default theme object as needed
+    // Ensure settings and visualStyle and themes array exist
+    if (!this.templateData.settings) {
+      this.templateData.settings = {
+        promptTemplate: { userPrompt: '', variables: [] },
+        visualStyle: { themes: [] },
+        contentItem: { type: 'text', text: { type: 'text', value: '' } }
+      };
+    }
+    if (!this.templateData.settings.visualStyle) {
+      this.templateData.settings.visualStyle = { themes: [] };
+    }
+    if (!Array.isArray(this.templateData.settings.visualStyle && this.templateData.settings.visualStyle.themes)) {
+      if (this.templateData.settings.visualStyle) {
+        this.templateData.settings.visualStyle.themes = [];
+      }
+    }
+    if (this.templateData.settings.visualStyle && Array.isArray(this.templateData.settings.visualStyle.themes)) {
+      this.templateData.settings.visualStyle.themes.push({
+        backgroundColor: '',
+        textStyle: {
+          font: {
+            family: '',
+            size: '',
+            weight: undefined,
+            style: undefined,
+          },
+          alignment: undefined,
+        },
+        overlayBox: {
+          color: '',
+          transparency: 1,
+          verticalLocation: undefined,
+          horizontalLocation: undefined,
+        }
       });
     }
   }
@@ -299,6 +354,7 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     this.templateData.schedule.timeSlots.push({ hour, minute, timezone });
   }
 
+  // Fix onTimeSlotChange to use correct property
   onTimeSlotChange(i: number, value: string) {
     const [hour, minute] = value.split(':').map(Number);
     if (this.templateData.schedule?.timeSlots && this.templateData.schedule.timeSlots[i]) {
@@ -360,91 +416,49 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
   onSubmit() {
     this.loading = true;
     (this.templateData.settings?.promptTemplate?.variables || []).forEach((v: any, i: number) => this.updateVariableValues(i));
-    let backendContentType: ContentType;
-    try {
-      backendContentType = (this.templateData.templateInfo?.contentType || 'text') as ContentType;
-    } catch (err: any) {
-      this.snackBar.open('Invalid content type selected. Please choose a valid type.', 'Close', {
-        duration: 4000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top'
-      });
-      this.loading = false;
-      return;
-    }
-    const contentType = backendContentType;
-    let systemPrompt = '';
-    if (contentType === 'multi-image') {
-      systemPrompt = `You are a helpful assistant creating social content for multiple images.  \nAlways respond with a single JSON object containing exactly three keys (all lowercase):\n  • "comment": a brief caption for the entire post, as a string  \n  • "hashtags": an array of hashtag strings for the entire post  \n  • "images": an array of objects, each with exactly one key:\n      – "text": the main content for that image, as a string  \nThe number of entries in "images" must exactly match the number of images requested.  \nDo not include any extra fields, wrapping objects, or explanatory text—only the JSON object.`;
-    } else {
-      systemPrompt = `You are a helpful assistant creating social content. Always respond with a single JSON object containing exactly three keys:\n  • "text": the main post content as a string\n  • "comment": a brief comment or caption as a string\n  • "hashtags": an array of hashtag strings\nDo not include any extra fields or explanatory text.`;
-    }
-    const promptTemplate = {
-      ...this.templateData.settings?.promptTemplate,
-      systemPrompt: systemPrompt,
-      model: 'gpt-4.1',
-      temperature: 0.7,
-      maxTokens: 512,
-      variables: (this.templateData.settings?.promptTemplate?.variables || []).map((v: any) => ({
-        name: v.name,
-        values: v.values
-      }))
-    };
-    const data: ContentGenerationTemplateDocument = {
-      ...this.templateData,
+    // Prepare payload for backend: remove id and metadata, and remove systemPrompt, model, temperature, maxTokens
+    const { id, metadata, ...rest } = this.templateData;
+    const { systemPrompt, model, temperature, maxTokens, ...promptTemplateRest } = this.templateData.settings?.promptTemplate || {};
+    const payload: any = {
+      ...rest,
       templateInfo: {
         ...this.templateData.templateInfo,
-        contentType: backendContentType,
         socialAccounts: this.getSelectedPlatforms(),
         description: this.templateData.templateInfo?.description || ''
       },
       settings: {
         ...this.templateData.settings,
-        promptTemplate: promptTemplate
+        promptTemplate: {
+          ...promptTemplateRest,
+          variables: (this.templateData.settings?.promptTemplate?.variables || []).map((v: any) => ({
+            name: v.name,
+            values: v.values
+          }))
+        }
       }
     };
     // Debug log for outgoing payload
-    console.log('Submitting template data:', data);
+    console.log('Submitting template data:', payload);
     const url = `/api/content_generation_template_management`;
-    this.http.post(url, data).subscribe({
+    this.http.post(url, payload).subscribe({
       next: () => {
+        this.loading = false;
         this.snackBar.open('Template created successfully', 'Close', {
           duration: 3000,
           horizontalPosition: 'center',
           verticalPosition: 'top'
         });
+        this.createNewTemplate();
         if (this.brandId) this.fetchTemplatesForBrand(this.brandId);
-        this.loading = false;
       },
       error: (err) => {
-        // Enhanced error handling: log error and show details if available
-        console.error('Create template error:', err);
-        let message = 'Failed to create template.';
-        if (err?.error) {
-          if (typeof err.error === 'string') {
-            try {
-              const parsed = JSON.parse(err.error);
-              message = parsed.error || message;
-              if (parsed.details && Array.isArray(parsed.details)) {
-                message += '\n' + parsed.details.map((d: any) => `${d.field}: ${d.message}`).join('\n');
-              }
-            } catch {
-              message = err.error;
-            }
-          } else if (typeof err.error === 'object') {
-            message = err.error.error || message;
-            if (err.error.details && Array.isArray(err.error.details)) {
-              message += '\n' + err.error.details.map((d: any) => `${d.field}: ${d.message}`).join('\n');
-            }
-          }
-        }
-        this.snackBar.open(message, 'Close', {
-          duration: 6000,
+        this.loading = false;
+        this.snackBar.open('Error creating template', 'Close', {
+          duration: 3000,
           horizontalPosition: 'center',
           verticalPosition: 'top'
         });
         this.errorHandler.handleError(err);
-        this.loading = false;
       }
     });
   }
@@ -453,91 +467,48 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
     if (!this.templateId) return;
     this.loading = true;
     (this.templateData.settings?.promptTemplate?.variables || []).forEach((v: any, i: number) => this.updateVariableValues(i));
-    let backendContentType: ContentType;
-    try {
-      backendContentType = (this.templateData.templateInfo?.contentType || 'text') as ContentType;
-    } catch (err: any) {
-      this.snackBar.open('Invalid content type selected. Please choose a valid type.', 'Close', {
-        duration: 4000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top'
-      });
-      this.loading = false;
-      return;
-    }
-    const contentType = backendContentType;
-    let systemPrompt = '';
-    if (contentType === 'multi-image') {
-      systemPrompt = `You are a helpful assistant creating social content for multiple images.  \nAlways respond with a single JSON object containing exactly three keys (all lowercase):\n  • "comment": a brief caption for the entire post, as a string  \n  • "hashtags": an array of hashtag strings for the entire post  \n  • "images": an array of objects, each with exactly one key:\n      – "text": the main content for that image, as a string  \nThe number of entries in "images" must exactly match the number of images requested.  \nDo not include any extra fields, wrapping objects, or explanatory text—only the JSON object.`;
-    } else {
-      systemPrompt = `You are a helpful assistant creating social content. Always respond with a single JSON object containing exactly three keys:\n  • "text": the main post content as a string\n  • "comment": a brief comment or caption as a string\n  • "hashtags": an array of hashtag strings\nDo not include any extra fields or explanatory text.`;
-    }
-    const promptTemplate = {
-      ...this.templateData.settings?.promptTemplate,
-      systemPrompt: systemPrompt,
-      model: 'gpt-4.1',
-      temperature: 0.7,
-      maxTokens: 512,
-      variables: (this.templateData.settings?.promptTemplate?.variables || []).map((v: any) => ({
-        name: v.name,
-        values: v.values
-      }))
-    };
-    const data: ContentGenerationTemplateDocument = {
-      ...this.templateData,
+    // Prepare payload for backend: remove id and metadata, and remove systemPrompt, model, temperature, maxTokens
+    const { id, metadata, ...rest } = this.templateData;
+    const { systemPrompt, model, temperature, maxTokens, ...promptTemplateRest } = this.templateData.settings?.promptTemplate || {};
+    const payload: any = {
+      ...rest,
       templateInfo: {
         ...this.templateData.templateInfo,
-        contentType: backendContentType,
         socialAccounts: this.getSelectedPlatforms(),
         description: this.templateData.templateInfo?.description || ''
       },
       settings: {
         ...this.templateData.settings,
-        promptTemplate: promptTemplate
+        promptTemplate: {
+          ...promptTemplateRest,
+          variables: (this.templateData.settings?.promptTemplate?.variables || []).map((v: any) => ({
+            name: v.name,
+            values: v.values
+          }))
+        }
       }
     };
     // Debug log for outgoing payload
-    console.log('Updating template data:', data);
+    console.log('Updating template data:', payload);
     const url = `/api/content_generation_template_management/${this.templateId}`;
-    this.http.put(url, data).subscribe({
+    this.http.put(url, payload).subscribe({
       next: () => {
+        this.loading = false;
         this.snackBar.open('Template updated successfully', 'Close', {
           duration: 3000,
           horizontalPosition: 'center',
           verticalPosition: 'top'
         });
         if (this.brandId) this.fetchTemplatesForBrand(this.brandId);
-        this.loading = false;
       },
       error: (err) => {
-        // Enhanced error handling: log error and show details if available
-        console.error('Update template error:', err);
-        let message = 'Failed to update template.';
-        if (err?.error) {
-          if (typeof err.error === 'string') {
-            try {
-              const parsed = JSON.parse(err.error);
-              message = parsed.error || message;
-              if (parsed.details && Array.isArray(parsed.details)) {
-                message += '\n' + parsed.details.map((d: any) => `${d.field}: ${d.message}`).join('\n');
-              }
-            } catch {
-              message = err.error;
-            }
-          } else if (typeof err.error === 'object') {
-            message = err.error.error || message;
-            if (err.error.details && Array.isArray(err.error.details)) {
-              message += '\n' + err.error.details.map((d: any) => `${d.field}: ${d.message}`).join('\n');
-            }
-          }
-        }
-        this.snackBar.open(message, 'Close', {
-          duration: 6000,
+        this.loading = false;
+        this.snackBar.open('Error updating template', 'Close', {
+          duration: 3000,
           horizontalPosition: 'center',
           verticalPosition: 'top'
         });
         this.errorHandler.handleError(err);
-        this.loading = false;
       }
     });
   }
@@ -573,43 +544,125 @@ export class GeneratePageComponent implements OnDestroy, OnInit {
 
   // Helper to get or initialize the image object for form input only (no actual image data or preview)
   get image() {
+    // Always return a valid Image object or a default
     if (!this.templateData.settings) {
-      this.templateData.settings = { contentItem: {} } as any;
+      this.templateData.settings = {
+        promptTemplate: { userPrompt: '', variables: [] },
+        visualStyle: { themes: [] },
+        contentItem: { type: 'image', image: { type: 'image', setUrl: '', mediaType: undefined, resolution: '', format: '', dimensions: { width: undefined, height: undefined, aspectRatio: '' } } }
+      };
     }
-    // Defensive: if settings is still undefined, return empty object
-    if (!this.templateData.settings) return {};
-    if (!this.templateData.settings.contentItem) {
-      this.templateData.settings.contentItem = {};
+    if (!this.templateData.settings.contentItem || typeof this.templateData.settings.contentItem !== 'object') {
+      this.templateData.settings.contentItem = { type: 'image', image: { type: 'image', setUrl: '', mediaType: undefined, resolution: '', format: '', dimensions: { width: undefined, height: undefined, aspectRatio: '' } } };
     }
-    if (!this.templateData.settings.contentItem) return {};
-    if (!this.templateData.settings.contentItem.image) {
-      this.templateData.settings.contentItem.image = {};
+    if (!('image' in this.templateData.settings.contentItem) || !this.templateData.settings.contentItem.image) {
+      this.templateData.settings.contentItem = { type: 'image', image: { type: 'image', setUrl: '', mediaType: undefined, resolution: '', format: '', dimensions: { width: undefined, height: undefined, aspectRatio: '' } } };
     }
-    return this.templateData.settings.contentItem.image || {};
+    return this.templateData.settings.contentItem.image;
   }
 
   get imageDimensions() {
-    if (!this.image.dimensions) {
-      this.image.dimensions = {};
+    const img = this.image;
+    if (img && !img.dimensions) {
+      img.dimensions = { width: undefined, height: undefined, aspectRatio: '' };
     }
-    return this.image.dimensions;
+    return img ? img.dimensions : { width: undefined, height: undefined, aspectRatio: '' };
   }
 
-  onDeleteTemplate() {
-    if (!this.templateId) return;
-    if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
-      this.http.delete(`/api/content_generation_template_management/${this.templateId}`)
-        .subscribe(
-          () => {
-            this.snackBar.open('Template deleted', 'Close', { duration: 3000 });
-            this.templateId = null;
-            this.createNewTemplate();
-            this.fetchTemplatesForBrand(this.brandId!);
-          },
-          (err) => {
-            this.snackBar.open('Failed to delete template', 'Close', { duration: 3000 });
-          }
-        );
+  addMultiImage() {
+    const contentItem = this.templateData.settings?.contentItem;
+    if (contentItem?.type === 'multiImage' && contentItem.multiImage) {
+      if (!Array.isArray(contentItem.multiImage.images)) {
+        contentItem.multiImage.images = [];
+      }
+      contentItem.multiImage.images.push({
+        type: 'image',
+        setUrl: '',
+        mediaType: undefined,
+        resolution: '',
+        format: '',
+        dimensions: { width: undefined, height: undefined, aspectRatio: '' }
+      });
+    }
+  }
+
+  removeMultiImage(index: number) {
+    const contentItem = this.templateData.settings?.contentItem;
+    if (contentItem?.type === 'multiImage' && contentItem.multiImage && Array.isArray(contentItem.multiImage.images)) {
+      if (contentItem.multiImage.images.length > 1) {
+        contentItem.multiImage.images.splice(index, 1);
+      }
+    }
+  }
+
+  // Patch setContentItemDefaults to always ensure at least one image for multiImage
+  setContentItemDefaults(contentType: string) {
+    if (!this.templateData.settings) {
+      this.templateData.settings = {
+        promptTemplate: { userPrompt: '', variables: [] },
+        visualStyle: { themes: [] },
+        contentItem: { type: 'text', text: { type: 'text', value: '' } }
+      };
+    }
+    const settings = this.templateData.settings;
+    if (!settings) return;
+    if (contentType === 'multi-image' || contentType === 'multiImage') {
+      settings.contentItem = {
+        type: 'multiImage',
+        multiImage: { type: 'multiImage', minImages: 1, maxImages: 5, images: [] }
+      };
+      this.ensureAtLeastOneMultiImage();
+    } else if (contentType === 'video') {
+      settings.contentItem = {
+        type: 'video',
+        video: {
+          type: 'video',
+          setUrl: '',
+          mediaType: undefined,
+          resolution: '',
+          format: '',
+          dimensions: { width: undefined, height: undefined, aspectRatio: '' },
+          videoInfo: { duration: undefined, frameRate: undefined, codec: '' },
+          audioInfo: { audioCodec: '', channels: undefined }
+        }
+      };
+    } else if (contentType === 'image') {
+      settings.contentItem = {
+        type: 'image',
+        image: {
+          type: 'image',
+          setUrl: '',
+          mediaType: undefined,
+          resolution: '',
+          format: '',
+          dimensions: { width: undefined, height: undefined, aspectRatio: '' }
+        }
+      };
+    } else {
+      // Default to text
+      settings.contentItem = {
+        type: 'text',
+        text: { type: 'text', value: '' }
+      };
+    }
+  }
+
+  ensureAtLeastOneMultiImage() {
+    const contentItem = this.templateData.settings?.contentItem;
+    if (contentItem?.type === 'multiImage' && contentItem.multiImage) {
+      if (!Array.isArray(contentItem.multiImage.images)) {
+        contentItem.multiImage.images = [];
+      }
+      if (contentItem.multiImage.images.length === 0) {
+        contentItem.multiImage.images.push({
+          type: 'image',
+          setUrl: '',
+          mediaType: undefined,
+          resolution: '',
+          format: '',
+          dimensions: { width: undefined, height: undefined, aspectRatio: '' }
+        });
+      }
     }
   }
 }

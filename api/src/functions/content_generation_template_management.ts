@@ -166,7 +166,8 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
     context.log('[handleCreate] Document to be created:', JSON.stringify(newTemplate));
     let createdTemplate;
     try {
-        const result = await container.items.create(newTemplate);
+        // Pass the partition key as part of the options object (type assertion to bypass type error)
+        const result = await container.items.create(newTemplate, { partitionKey: newTemplate.brandId } as any);
         createdTemplate = result.resource;
     } catch (err) {
         context.log(`[handleCreate] DB error after ${Date.now() - start}ms`, err);

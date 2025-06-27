@@ -1,0 +1,38 @@
+// Material theming and layout for content-image-editor
+@use '@angular/material' as mat;
+
+:host {
+  display: block;
+  background: var(--mdc-elevated-card-container-color, #fff);
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+mat-form-field.form-field {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+mat-grid-list {
+  margin-bottom: 1rem;
+}
+
+h3[mat-subheader] {
+  color: var(--mdc-theme-text-secondary-on-background, #666);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+// Responsive adjustments
+@media (max-width: 600px) {
+  :host {
+    padding: 0.5rem;
+  }
+  .form-section {
+    gap: 1rem;
+  }
+}
