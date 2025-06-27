@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MaterialModule } from '../../material.module';
-import type { components } from '../../generated/models';
+import { MaterialModule } from '../../../material.module';
+import type { components } from '../../../generated/models';
 
 type Text = components["schemas"]["Text"];
 
