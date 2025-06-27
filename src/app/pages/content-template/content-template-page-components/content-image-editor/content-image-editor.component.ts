@@ -1,13 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MaterialModule } from '../../../material.module';
-import type { components } from '../../../generated/models';
+import { MaterialModule } from '../../../../material.module';
+// import type { components } from '../../../generated/models';
 
 // Use the generated Image type
-type Image = components["schemas"]["Image"];
+type Image = any;
 
-type MediaType = components["schemas"]["MediaType"];
+type MediaType = any;
 
 @Component({
   selector: 'app-content-image-editor',

@@ -147,7 +147,7 @@ describe('SidenavComponent', () => {
       expect(brandService.createBrand).toHaveBeenCalledWith({ brandInfo: { name: 'New Brand' } });
       expect(component.showForm).toBeFalse();
       expect(component.newBrandName).toBe('');
-      expect(navigationService.navigateToBrand).toHaveBeenCalledWith(newBrand.id, 'brand_details');
+      expect(navigationService.navigateToBrand).toHaveBeenCalledWith(newBrand.id, 'brand-details');
     }));
 
     it('should not submit empty brand name', fakeAsync(() => {
@@ -185,7 +185,7 @@ describe('SidenavComponent', () => {
 
       expect(component.selectedBrandId).toBe(brand.id);
       expect(component.brandSelected.emit).toHaveBeenCalledWith(brand.brandInfo?.name || brand.id);
-      expect(navigationService.navigateToBrand).toHaveBeenCalledWith(brand.id, 'brand_details');
+      expect(navigationService.navigateToBrand).toHaveBeenCalledWith(brand.id, 'brand-details');
     });
 
     it('should update selected brand when navigation service emits', () => {

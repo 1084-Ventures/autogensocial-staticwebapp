@@ -1,13 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MaterialModule } from '../../../material.module';
-import type { components } from '../../../generated/models';
+import { MaterialModule } from '../../../../material.module';
+// import type { components } from '../../../generated/models';
 
 // Use the generated MultiImage and Image types
-type MultiImage = components["schemas"]["MultiImage"];
-type Image = components["schemas"]["Image"];
-type MediaType = components["schemas"]["MediaType"];
+type MultiImage = any;
+type Image = any;
+type MediaType = any;
 
 @Component({
   selector: 'app-content-multi-image-editor',

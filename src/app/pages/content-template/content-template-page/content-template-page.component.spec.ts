@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { ContentTemplatePageComponent } from './content-template-page.component';
-import { NavigationService } from '../../services/navigation.service';
-import { MaterialModule } from '../../material.module';
+import { NavigationService } from '../../../services/navigation.service';
+import { MaterialModule } from '../../../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ContentTemplatePageComponent', () => {

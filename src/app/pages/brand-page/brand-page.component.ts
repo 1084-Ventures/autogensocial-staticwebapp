@@ -193,7 +193,7 @@ export class BrandPageComponent implements OnInit, OnDestroy {
         horizontalPosition: 'center',
         verticalPosition: 'top'
       });
-      this.navigationService.navigateToBrand('', 'brand_details');
+      this.navigationService.navigateToBrand('', 'brand-details');
     } catch (error) {
       this.errorHandler.handleError(error as any);
     } finally {

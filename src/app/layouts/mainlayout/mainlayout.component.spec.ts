@@ -18,7 +18,7 @@ describe('MainlayoutComponent', () => {
   let brandService: jasmine.SpyObj<BrandService>;
   let errorHandler: jasmine.SpyObj<ErrorHandlerService>;
   const currentBrand$ = new BehaviorSubject<string | null>(null);
-  const currentRoute$ = new BehaviorSubject<'brand_details' | 'upload' | 'generate' | 'settings' | null>('brand_details');
+  const currentRoute$ = new BehaviorSubject<'brand-details' | 'upload' | 'content-template' | 'settings' | null>('brand-details');
 
   beforeEach(async () => {
     navigationService = jasmine.createSpyObj('NavigationService', 

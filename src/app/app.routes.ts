@@ -9,11 +9,11 @@ export const routes: Routes = [
     path: '',
     component: MainlayoutComponent,
     children: [
-      { path: '', redirectTo: 'brand_details', pathMatch: 'full' },
+      { path: '', redirectTo: 'brand-details', pathMatch: 'full' },
       // Empty state routes (no brand selected)
-      { path: 'brand_details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule) },
+      { path: 'brand-details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule) },
       { path: 'upload', loadChildren: () => import('./pages/upload-page/upload-page.module').then(m => m.UploadPageModule) },
-      { path: 'generate', loadChildren: () => import('./pages/generate-page/generate-page.module').then(m => m.GeneratePageModule) },
+      { path: 'content-template', loadChildren: () => import('./pages/content-template/content-template.module').then(m => m.ContentTemplateModule) },
       { path: 'brands', component: SidenavComponent },
       
       // Brand-specific routes
@@ -21,9 +21,9 @@ export const routes: Routes = [
         path: 'brand/:id',
         canActivate: [BrandGuard],
         children: [
-          { path: 'brand_details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule), data: { type: 'brand_details' } },
+          { path: 'brand-details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule), data: { type: 'brand-details' } },
           { path: 'upload', loadChildren: () => import('./pages/upload-page/upload-page.module').then(m => m.UploadPageModule), data: { type: 'upload' } },
-          { path: 'generate', loadChildren: () => import('./pages/generate-page/generate-page.module').then(m => m.GeneratePageModule), data: { type: 'generate' } }
+          { path: 'content-template', loadChildren: () => import('./pages/content-template/content-template.module').then(m => m.ContentTemplateModule), data: { type: 'content-template' } }
         ]
       }
     ]

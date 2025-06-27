@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
-export type BrandRoute = 'brand_details' | 'generate' | 'upload';
+export type BrandRoute = 'brand-details' | 'content-template' | 'upload';
 
 @Injectable({
   providedIn: 'root'

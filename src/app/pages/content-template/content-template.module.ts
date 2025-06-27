@@ -7,12 +7,6 @@ import { ContentTemplatePageComponent } from './content-template-page/content-te
 
 @NgModule({
   imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MaterialModule
-  ],
-  imports: [
     ContentTemplatePageComponent
   ],
   exports: [

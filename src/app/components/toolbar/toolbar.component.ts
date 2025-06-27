@@ -4,7 +4,7 @@ import { MaterialModule } from '../../material.module';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 
-export type NavItem = 'brand_details' | 'upload' | 'generate' | 'settings' | null;
+export type NavItem = 'brand-details' | 'upload' | 'content-template' | 'settings' | null;
 
 @Component({
   selector: 'app-toolbar',
@@ -18,7 +18,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   @Output() toggleMenu = new EventEmitter<void>();
   @Output() navSelected = new EventEmitter<NavItem>();
 
-  currentRoute: NavItem = 'brand_details';
+  currentRoute: NavItem = 'brand-details';
   currentBrandId: string | null = null;
   private routeSubscription: Subscription;
   private brandSubscription: Subscription;
