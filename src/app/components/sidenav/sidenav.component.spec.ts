@@ -7,7 +7,9 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 import { MaterialModule } from '../../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { BrandNameResponse } from '../../../../api/src/models/brand.model';
+import type { components } from '../../generated/models';
+
+type BrandDocument = components['schemas']['BrandDocument'];
 
 describe('SidenavComponent', () => {
   let component: SidenavComponent;
@@ -17,9 +19,9 @@ describe('SidenavComponent', () => {
   let errorHandler: jasmine.SpyObj<ErrorHandlerService>;
   const currentBrand$ = new BehaviorSubject<string | null>(null);
 
-  const mockBrands: BrandNameResponse[] = [
-    { id: '1', name: 'Brand 1' },
-    { id: '2', name: 'Brand 2' }
+  const mockBrands: BrandDocument[] = [
+    { id: '1', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 1' } },
+    { id: '2', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 2' } }
   ];
 
   beforeEach(async () => {
@@ -69,9 +71,9 @@ describe('SidenavComponent', () => {
     });
 
     it('should handle pagination correctly', fakeAsync(async () => {
-      const moreBrands = [
-        { id: '3', name: 'Brand 3' },
-        { id: '4', name: 'Brand 4' }
+      const moreBrands: BrandDocument[] = [
+        { id: '3', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 3' } },
+        { id: '4', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 4' } }
       ];
 
       // Clear previous calls and set up the test state
@@ -135,14 +137,14 @@ describe('SidenavComponent', () => {
     });
 
     it('should create new brand successfully', fakeAsync(() => {
-      const newBrand = { id: '5', name: 'New Brand', metadata: { version: 1 } };
+      const newBrand: BrandDocument = { id: '5', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'New Brand' } };
       brandService.createBrand.and.returnValue(of(newBrand));
       
       component.newBrandName = 'New Brand';
       component.submitBrand();
       tick();
 
-      expect(brandService.createBrand).toHaveBeenCalledWith({ name: 'New Brand' });
+      expect(brandService.createBrand).toHaveBeenCalledWith({ brandInfo: { name: 'New Brand' } });
       expect(component.showForm).toBeFalse();
       expect(component.newBrandName).toBe('');
       expect(navigationService.navigateToBrand).toHaveBeenCalledWith(newBrand.id, 'brand_details');
@@ -182,7 +184,7 @@ describe('SidenavComponent', () => {
       component.selectBrand(brand);
 
       expect(component.selectedBrandId).toBe(brand.id);
-      expect(component.brandSelected.emit).toHaveBeenCalledWith(brand.name);
+      expect(component.brandSelected.emit).toHaveBeenCalledWith(brand.brandInfo?.name || brand.id);
       expect(navigationService.navigateToBrand).toHaveBeenCalledWith(brand.id, 'brand_details');
     });
 

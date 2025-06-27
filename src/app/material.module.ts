@@ -19,6 +19,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatGridListModule } from '@angular/material/grid-list';
 
 @NgModule({
   imports: [
@@ -40,6 +41,7 @@ import { MatChipsModule } from '@angular/material/chips';
     MatSelectModule,
     MatOptionModule,
     MatChipsModule,
+    MatGridListModule,
   ],
   exports: [
     MatButtonModule,
@@ -59,6 +61,7 @@ import { MatChipsModule } from '@angular/material/chips';
     MatSelectModule,
     MatOptionModule,
     MatChipsModule,
-  ]
+    MatGridListModule,
+  ],
 })
-export class MaterialModule { }
+export class MaterialModule {}

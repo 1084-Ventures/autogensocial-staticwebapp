@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:autogensocial-swa": "node dist/autogensocial-swa/server/server.mjs",
-    "generate:models": "openapi-typescript '../specs/generated_openapi.yaml' --output api/generated/models.ts && openapi-typescript '../specs/generated_openapi.yaml' --output src/app/generated/models.ts"
+    "generate:models": "openapi-typescript '../specs/openapi-bundled.json' --output api/generated/models.ts && openapi-typescript '../specs/openapi-bundled.json' --output src/app/generated/models.ts"
   },
   "private": true,
   "dependencies": {
@@ -36,6 +36,7 @@
     "@azure/static-web-apps-cli": "^2.0.4",
     "@types/express": "^4.17.17",
     "@types/jasmine": "~5.1.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^18.18.0",
     "jasmine-core": "~5.6.0",
     "karma": "~6.4.0",

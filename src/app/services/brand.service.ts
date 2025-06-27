@@ -4,7 +4,6 @@ import { Observable, catchError } from 'rxjs';
 import type { components } from '../generated/models';
 import { ErrorHandlerService } from './error-handler.service';
 
-// Use correct generated types
 export type BrandDocument = components["schemas"]["BrandDocument"];
 export type BrandCreate = components["schemas"]["BrandCreate"];
 export type BrandUpdate = components["schemas"]["BrandUpdate"];
@@ -26,8 +25,8 @@ export class BrandService {
     if (params) {
       if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
       if (params.offset) httpParams = httpParams.set('offset', params.offset.toString());
-      if (params.sort_by) httpParams = httpParams.set('sortBy', params.sort_by);
-      if (params.sort_order) httpParams = httpParams.set('sortOrder', params.sort_order);
+      if (params.sortBy) httpParams = httpParams.set('sortBy', params.sortBy);
+      if (params.sortOrder) httpParams = httpParams.set('sortOrder', params.sortOrder);
     }
 
     return this.http.get<BrandDocument[]>(this.apiUrl, { params: httpParams })
@@ -79,7 +78,3 @@ export class BrandService {
       );
   }
 }
-
-describe('brand_service', () => {
-  // ...existing tests...
-});

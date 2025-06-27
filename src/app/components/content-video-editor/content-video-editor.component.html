@@ -1,0 +1,69 @@
+<section class="form-section" *ngIf="video">
+  <h3 mat-subheader>Video Settings</h3>
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Set URL</mat-label>
+    <input matInput [(ngModel)]="video.setUrl" (ngModelChange)="onVideoChange()" name="videoSetUrl" placeholder="https://...">
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Media Type</mat-label>
+    <mat-select [(ngModel)]="video.mediaType" (selectionChange)="onVideoChange()" name="videoMediaType">
+      <mat-option *ngFor="let type of mediaTypes" [value]="type">{{ type }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-grid-list cols="3" rowHeight="fit" gutterSize="16px">
+    <mat-grid-tile *ngIf="video.dimensions">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Width (px)</mat-label>
+        <input matInput type="number" [(ngModel)]="video.dimensions.width" (ngModelChange)="onVideoChange()" name="videoWidth" min="1">
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile *ngIf="video.dimensions">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Height (px)</mat-label>
+        <input matInput type="number" [(ngModel)]="video.dimensions.height" (ngModelChange)="onVideoChange()" name="videoHeight" min="1">
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile *ngIf="video.dimensions">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Aspect Ratio</mat-label>
+        <mat-select [(ngModel)]="video.dimensions.aspectRatio" (selectionChange)="onVideoChange()" name="videoAspectRatio">
+          <mat-option *ngFor="let ratio of aspectRatios" [value]="ratio.value">{{ ratio.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-grid-tile>
+  </mat-grid-list>
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Resolution</mat-label>
+    <input matInput [(ngModel)]="video.resolution" (ngModelChange)="onVideoChange()" name="videoResolution" placeholder="e.g. 1080p">
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Format</mat-label>
+    <mat-select [(ngModel)]="video.format" (selectionChange)="onVideoChange()" name="videoFormat">
+      <mat-option *ngFor="let fmt of videoFormats" [value]="fmt.value">{{ fmt.label }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <div class="video-info-row" *ngIf="video.videoInfo">
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Duration (s)</mat-label>
+      <input matInput type="number" [(ngModel)]="video.videoInfo.duration" (ngModelChange)="onVideoChange()" name="videoDuration" min="0">
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Frame Rate (fps)</mat-label>
+      <input matInput type="number" [(ngModel)]="video.videoInfo.frameRate" (ngModelChange)="onVideoChange()" name="videoFrameRate" min="0">
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Codec</mat-label>
+      <input matInput [(ngModel)]="video.videoInfo.codec" (ngModelChange)="onVideoChange()" name="videoCodec">
+    </mat-form-field>
+  </div>
+  <div class="audio-info-row" *ngIf="video.audioInfo">
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Audio Codec</mat-label>
+      <input matInput [(ngModel)]="video.audioInfo.audioCodec" (ngModelChange)="onVideoChange()" name="audioCodec">
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Channels</mat-label>
+      <input matInput type="number" [(ngModel)]="video.audioInfo.channels" (ngModelChange)="onVideoChange()" name="audioChannels" min="1">
+    </mat-form-field>
+  </div>
+</section>

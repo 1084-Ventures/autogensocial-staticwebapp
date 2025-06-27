@@ -6,7 +6,6 @@ import type { components } from '../../generated/models';
 export type BrandDocument = components["schemas"]["BrandDocument"];
 export type BrandCreate = components["schemas"]["BrandCreate"];
 export type BrandUpdate = components["schemas"]["BrandUpdate"];
-export type BrandDelete = components["schemas"]["BrandDelete"];
 export type BrandResponse = components["schemas"]["BrandResponse"];
 export type PaginationParams = components["parameters"]["pagination"];
 export type ErrorResponse = components["schemas"]["Error"];
@@ -59,12 +58,13 @@ async function handleCreate(request: HttpRequest, userId: string): Promise<HttpR
   }
   const newBrand: BrandDocument = {
     id: randomUUID(),
+    userId, // userId at top level
     metadata: {
-      created_date: new Date().toISOString(),
-      updated_date: new Date().toISOString(),
-      is_active: true
+      createdDate: new Date().toISOString(),
+      updatedDate: new Date().toISOString(),
+      isActive: true
     },
-    brand_info: {
+    brandInfo: {
       name: body.brandInfo.name,
       description: body.brandInfo.description || ''
     }
@@ -73,7 +73,7 @@ async function handleCreate(request: HttpRequest, userId: string): Promise<HttpR
   if (!createdBrand) {
     return createErrorResponse(500, 'Failed to create brand');
   }
-  const response: BrandResponse = { id: createdBrand.id, name: createdBrand.brand_info?.name };
+  const response: BrandResponse = { id: createdBrand.id, name: createdBrand.brandInfo?.name };
   return createResponse(201, response);
 }
 
@@ -119,26 +119,26 @@ async function handleDelete(request: HttpRequest, userId: string): Promise<HttpR
   let brandId = request.params.id;
   if (!brandId && request.method === 'DELETE') {
     try {
-      const body = (await request.json()) as BrandDelete;
+      const body = await request.json() as any;
       brandId = body.id;
     } catch {}
   }
   if (!brandId) {
     return createErrorResponse(400, 'Brand ID is required', 'MISSING_ID');
   }
-  // Fetch the brand document using a cross-partition query to get the correct partition key (/brand_info/user_id)
+  // Fetch the brand document using a cross-partition query to get the correct partition key (/userId)
   const query = {
     query: 'SELECT * FROM c WHERE c.id = @id',
     parameters: [{ name: '@id', value: brandId }]
   };
   const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
   const brand = resources[0];
-  if (!brand || brand.user_id !== userId) {
+  if (!brand || brand.userId !== userId) {
     return createErrorResponse(404, 'Brand not found', 'RESOURCE_NOT_FOUND');
   }
   try {
-    await container.item(brandId, brand.user_id).delete();
-    const response: BrandResponse = { id: brandId, name: brand.brand_info?.name };
+    await container.item(brandId, brand.userId).delete();
+    const response: BrandResponse = { id: brandId, name: brand.brandInfo?.name };
     return createResponse(200, response);
   } catch (error) {
     return createErrorResponse(500, 'Failed to delete brand', 'DELETE_ERROR');
@@ -150,18 +150,18 @@ function extractPaginationParams(request: HttpRequest): PaginationParams {
   return {
     limit: Math.min(parseInt(searchParams.get('limit') || DEFAULT_PAGE_SIZE.toString(), 10), MAX_PAGE_SIZE),
     offset: Math.max(parseInt(searchParams.get('offset') || '0', 10), 0),
-    sort_by: (searchParams.get('sort_by') || 'created_at') as 'created_at' | 'updated_at' | 'name',
-    sort_order: (searchParams.get('sort_order') || 'desc') as 'asc' | 'desc'
+    sortBy: (searchParams.get('sortBy') || 'createdAt') as 'createdAt' | 'updatedAt' | 'name',
+    sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc'
   };
 }
 
 async function getBrandsByUserId(userId: string, pagination: PaginationParams): Promise<BrandDocument[]> {
-  const { limit, offset, sort_by, sort_order } = pagination;
+  const { limit, offset, sortBy, sortOrder } = pagination;
   const querySpec = {
     query: `
       SELECT * FROM c 
-      WHERE c.user_id = @userId 
-      ORDER BY c.${sort_by} ${sort_order}
+      WHERE c.userId = @userId 
+      ORDER BY c.${sortBy} ${sortOrder}
       OFFSET @offset LIMIT @limit
     `,
     parameters: [
@@ -182,7 +182,7 @@ async function getBrandById(brandId: string, userId: string): Promise<BrandDocum
   };
   const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
   const brand = resources[0];
-  if (!brand || brand.user_id !== userId) {
+  if (!brand || brand.userId !== userId) {
     return undefined;
   }
   return brand;
@@ -196,22 +196,22 @@ async function updateBrand(brandId: string, userId: string, updateData: BrandUpd
   };
   const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
   const existingBrand = resources[0];
-  if (!existingBrand || existingBrand.user_id !== userId) {
+  if (!existingBrand || existingBrand.userId !== userId) {
     return undefined;
   }
   const updatedBrand: BrandDocument = {
     ...existingBrand,
     metadata: {
       ...existingBrand.metadata,
-      updated_date: new Date().toISOString()
+      updatedDate: new Date().toISOString()
     },
-    brand_info: {
-      ...existingBrand.brand_info,
+    brandInfo: {
+      ...existingBrand.brandInfo,
       ...(updateData.brandInfo || {})
     },
     socialAccounts: updateData.socialAccounts || existingBrand.socialAccounts
   };
-  const { resource: savedBrand } = await container.item(brandId, existingBrand.user_id).replace(updatedBrand);
+  const { resource: savedBrand } = await container.item(brandId, existingBrand.userId).replace(updatedBrand);
   return savedBrand;
 }
 

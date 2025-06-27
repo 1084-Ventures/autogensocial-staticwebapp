@@ -11,7 +11,7 @@
       <mat-nav-list>
         <a mat-list-item *ngFor="let media of mediaList" (click)="selectMedia(media)" [class.selected]="media === selectedMedia">
           <mat-icon matListItemIcon>{{ media.mediaType === 'image' ? 'image' : 'movie' }}</mat-icon>
-          <span matLine>{{ media.metadata.fileName }}</span>
+          <span matLine>{{ media.metadata.createdDate }}</span>
         </a>
         <div *ngIf="!mediaList.length" style="color: #888; font-size: 0.98em; margin-top: 1rem;">No media found for this brand.</div>
       </mat-nav-list>
@@ -23,7 +23,7 @@
       <ng-container *ngIf="showUploadForm">
         <app-media-upload-form [brandId]="brandId" (uploadSuccess)="onUploadSuccess($event)"></app-media-upload-form>
       </ng-container>
-      <ng-container *ngIf="selectedMedia && !showUploadForm">
+      <ng-container *ngIf="selectedMedia && selectedMedia.mediaMetadata && !showUploadForm">
         <div class="media-details-card">
           <div class="media-preview">
             <img *ngIf="selectedMedia.mediaType === 'image'" [src]="selectedMedia.blobUrl" alt="Media preview" />
@@ -32,7 +32,7 @@
           <form (ngSubmit)="submitMediaEditForm(mediaEditForm)" #mediaEditForm="ngForm" class="media-edit-form">
             <mat-form-field appearance="fill">
               <mat-label>File Name</mat-label>
-              <input matInput name="fileName" [(ngModel)]="selectedMedia.metadata.fileName" placeholder="File Name" required />
+              <input matInput name="fileName" [(ngModel)]="selectedMedia.mediaMetadata.fileName" placeholder="File Name" required />
             </mat-form-field>
             <mat-form-field appearance="fill">
               <mat-label>Tags</mat-label>
@@ -40,7 +40,7 @@
             </mat-form-field>
             <mat-form-field appearance="fill">
               <mat-label>Description</mat-label>
-              <textarea matInput name="description" [(ngModel)]="selectedMedia.metadata.description" placeholder="Description"></textarea>
+              <textarea matInput name="description" [(ngModel)]="selectedMedia.mediaMetadata.description" placeholder="Description"></textarea>
             </mat-form-field>
             <div class="media-edit-actions">
               <button mat-raised-button color="primary" type="submit">Save</button>
@@ -48,9 +48,9 @@
             </div>
           </form>
           <div class="meta-info">
-            <div><strong>File Name:</strong> {{ selectedMedia.metadata.fileName }}</div>
+            <div><strong>File Name:</strong> {{ selectedMedia.mediaMetadata.fileName }}</div>
             <div><strong>Type:</strong> {{ selectedMedia.mediaType }}</div>
-            <div><strong>Uploaded:</strong> {{ selectedMedia.createdAt | date:'short' }}</div>
+            <div><strong>Uploaded:</strong> {{ selectedMedia.metadata.createdDate | date:'short' }}</div>
           </div>
         </div>
       </ng-container>

@@ -14,6 +14,11 @@ import { Subscription } from 'rxjs';
 // Use correct generated types
 export type BrandDocument = components["schemas"]["BrandDocument"];
 export type BrandUpdate = components["schemas"]["BrandUpdate"];
+export type SocialAccountEntry = components["schemas"]["SocialAccountEntry"];
+export type Platform = components["schemas"]["Platform"];
+
+// Helper: runtime array of supported platforms (from Platform enum type)
+const SUPPORTED_PLATFORMS: Platform[] = ["instagram"];
 
 @Component({
   selector: 'app-brand-page',
@@ -34,6 +39,9 @@ export class BrandPageComponent implements OnInit, OnDestroy {
   brandForm: FormGroup;
   loading = false;
   private subscription: Subscription;
+
+  // Define supported platforms for the form (runtime array)
+  readonly supportedPlatforms = SUPPORTED_PLATFORMS;
 
   constructor(
     private navigationService: NavigationService,
@@ -98,8 +106,8 @@ export class BrandPageComponent implements OnInit, OnDestroy {
 
       this.brandForm.patchValue({
         brandInfo: {
-          name: brand.brand_info?.name || '',
-          description: brand.brand_info?.description || ''
+          name: brand.brandInfo?.name || '',
+          description: brand.brandInfo?.description || ''
         },
         // Flatten socialAccounts array to object for form
         socialAccounts: {
@@ -131,24 +139,25 @@ export class BrandPageComponent implements OnInit, OnDestroy {
     try {
       this.loading = true;
       const formValue = this.brandForm.value;
-      // Convert form value to BrandUpdate type
+      // Use Platform enum for platform values
+      const socialAccounts: SocialAccountEntry[] = this.supportedPlatforms
+        .filter(platform => formValue.socialAccounts[platform]?.enabled)
+        .map(platform => ({
+          platform,
+          account: {
+            id: '', // id is required, but not present in form; backend should handle
+            username: formValue.socialAccounts[platform].username,
+            accessToken: formValue.socialAccounts[platform].accessToken,
+            profileUrl: '',
+            expiryDate: ''
+          }
+        }));
       const updateData: BrandUpdate = {
         brandInfo: {
           name: formValue.brandInfo.name,
           description: formValue.brandInfo.description
         },
-        socialAccounts: ['instagram', 'facebook', 'tiktok']
-          .filter(platform => formValue.socialAccounts[platform].enabled)
-          .map(platform => ({
-            platform: platform as 'instagram' | 'facebook' | 'tiktok',
-            account: {
-              id: '', // id is required, but not present in form; backend should handle
-              username: formValue.socialAccounts[platform].username,
-              accessToken: formValue.socialAccounts[platform].accessToken,
-              profileUrl: '',
-              expiry_date: ''
-            }
-          }))
+        socialAccounts
       };
 
       const result = await this.brandService.updateBrand(this.brandId, updateData).toPromise();

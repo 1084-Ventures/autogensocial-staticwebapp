@@ -26,8 +26,16 @@
           <span *ngFor="let cat of analyzedCognitiveData.categories; let last = last">{{ cat.name }}<span *ngIf="cat.confidence != null"> ({{ cat.confidence | percent:'1.0-0' }})</span><span *ngIf="!last">, </span></span>
         </div>
         <div *ngIf="analyzedCognitiveData.objects?.length">
-          <strong>Objects:</strong>
-          <span *ngFor="let obj of analyzedCognitiveData.objects; let last = last">{{ obj.object }}<span *ngIf="obj.confidence != null"> ({{ obj.confidence | percent:'1.0-0' }})</span><span *ngIf="!last">, </span></span>
+          <strong>Objects (rectangles):</strong>
+          <span *ngFor="let obj of analyzedCognitiveData.objects; let last = last">
+            <span *ngIf="obj.rectangle">({{ obj.rectangle.x }},{{ obj.rectangle.y }},{{ obj.rectangle.width }},{{ obj.rectangle.height }})</span><span *ngIf="!last">, </span>
+          </span>
+        </div>
+        <div *ngIf="analyzedCognitiveData.denseCaptions?.length">
+          <strong>Dense Captions (rectangles):</strong>
+          <span *ngFor="let dc of analyzedCognitiveData.denseCaptions; let last = last">
+            <span *ngIf="dc.rectangle">({{ dc.rectangle.x }},{{ dc.rectangle.y }},{{ dc.rectangle.width }},{{ dc.rectangle.height }})</span><span *ngIf="!last">, </span>
+          </span>
         </div>
         <div *ngIf="analyzedCognitiveData.brands?.length">
           <strong>Brands:</strong>

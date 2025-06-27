@@ -6,7 +6,6 @@ import type { components } from '../../generated/models';
 export type ContentGenerationTemplateDocument = components["schemas"]["ContentGenerationTemplateDocument"];
 export type ContentGenerationTemplateCreate = components["schemas"]["ContentGenerationTemplateCreate"];
 export type ContentGenerationTemplateUpdate = components["schemas"]["ContentGenerationTemplateUpdate"];
-export type ContentGenerationTemplateDelete = components["schemas"]["ContentGenerationTemplateDelete"];
 export type ContentGenerationTemplateResponse = components["schemas"]["ContentGenerationTemplateResponse"];
 export type ContentGenerationTemplateGet = components["schemas"]["ContentGenerationTemplateGet"];
 export type PaginationParams = components["parameters"]["pagination"];
@@ -156,18 +155,19 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
         id: randomUUID(),
         brandId: body.brandId,
         metadata: {
-            created_date: new Date().toISOString(),
-            updated_date: new Date().toISOString(),
-            is_active: true
+            createdDate: new Date().toISOString(),
+            updatedDate: new Date().toISOString(),
+            isActive: true
         },
         templateInfo: body.templateInfo,
-        schedule: body.schedule ?? { days_of_week: [], time_slots: [] },
-        settings: body.settings ?? { prompt_template: {}, visual_style: {} }
+        schedule: body.schedule ?? { daysOfWeek: [], timeSlots: [] },
+        settings: body.settings ?? { promptTemplate: {}, visualStyle: {} }
     };
     context.log('[handleCreate] Document to be created:', JSON.stringify(newTemplate));
     let createdTemplate;
     try {
-        const result = await container.items.create(newTemplate);
+        // Pass the partition key as part of the options object (type assertion to bypass type error)
+        const result = await container.items.create(newTemplate, { partitionKey: newTemplate.brandId } as any);
         createdTemplate = result.resource;
     } catch (err) {
         context.log(`[handleCreate] DB error after ${Date.now() - start}ms`, err);
@@ -195,7 +195,7 @@ async function verifyBrandOwnership(brandId: string, userId: string, context?: I
         const { resources } = await brandContainer.items.query<BrandDocument>(query).fetchAll();
         const brand = resources[0];
         if (context) context.log('[verifyBrandOwnership] brand:', JSON.stringify(brand));
-        return brand?.user_id === userId;
+        return brand?.userId === userId;
     } catch (error) {
         if (context) context.log('[verifyBrandOwnership] error:', error);
         return false;
@@ -276,7 +276,7 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
         ...updateData,
         metadata: {
             ...existingTemplate.metadata,
-            updated_date: new Date().toISOString()
+            updatedDate: new Date().toISOString()
         },
         templateInfo: updateData.templateInfo ? {
             ...existingTemplate.templateInfo,
@@ -285,7 +285,7 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
         schedule: updateData.schedule ? {
             ...existingTemplate.schedule,
             ...updateData.schedule
-        } : (existingTemplate.schedule ?? { days_of_week: [], time_slots: [] }),
+        } : (existingTemplate.schedule ?? { daysOfWeek: [], timeSlots: [] }),
         settings: updateData.settings ? {
             ...existingTemplate.settings,
             ...updateData.settings
@@ -314,18 +314,18 @@ function extractPaginationParams(request: HttpRequest): PaginationParams {
     return {
         limit: Math.min(parseInt(searchParams.get('limit') || DEFAULT_PAGE_SIZE.toString(), 10), MAX_PAGE_SIZE),
         offset: Math.max(parseInt(searchParams.get('offset') || '0', 10), 0),
-        sort_by: (searchParams.get('sort_by') || 'created_at') as 'created_at' | 'updated_at' | 'name',
-        sort_order: (searchParams.get('sort_order') || 'desc') as 'asc' | 'desc'
+        sortBy: (searchParams.get('sortBy') || 'createdAt') as 'createdAt' | 'updatedAt' | 'name',
+        sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc'
     };
 }
 
 async function getTemplatesByBrandId(brandId: string | null, userId: string, pagination: PaginationParams): Promise<ContentGenerationTemplateDocument[]> {
-    const { limit, offset, sort_by, sort_order } = pagination;
+    const { limit, offset, sortBy, sortOrder } = pagination;
     const querySpec = {
         query: `
             SELECT * FROM c 
             WHERE c.brandId = @brandId
-            ORDER BY c.${sort_by} ${sort_order}
+            ORDER BY c.${sortBy} ${sortOrder}
             OFFSET @offset LIMIT @limit
         `,
         parameters: [
@@ -353,7 +353,7 @@ async function updateTemplate(templateId: string, userId: string, updateData: Co
         ...updateData,
         metadata: {
             ...existingTemplate.metadata,
-            updated_date: new Date().toISOString()
+            updatedDate: new Date().toISOString()
         },
         templateInfo: updateData.templateInfo ? {
             ...existingTemplate.templateInfo,
@@ -362,7 +362,7 @@ async function updateTemplate(templateId: string, userId: string, updateData: Co
         schedule: updateData.schedule ? {
             ...existingTemplate.schedule,
             ...updateData.schedule
-        } : (existingTemplate.schedule ?? { days_of_week: [], time_slots: [] }),
+        } : (existingTemplate.schedule ?? { daysOfWeek: [], timeSlots: [] }),
         settings: updateData.settings ? {
             ...existingTemplate.settings,
             ...updateData.settings

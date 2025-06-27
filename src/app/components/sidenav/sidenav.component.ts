@@ -8,8 +8,10 @@ import { NavigationService, BrandRoute } from '../../services/navigation.service
 import { BrandService } from '../../services/brand.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
 import { Subscription } from 'rxjs';
-import { BrandNameResponse } from '../../../../api/src/models/brand.model';
-import { PaginationParams } from '../../../../api/src/models/base.model';
+import type { components } from '../../generated/models';
+
+export type BrandDocument = components['schemas']['BrandDocument'];
+export type PaginationParams = components['parameters']['pagination'];
 
 @Component({
   selector: 'app-sidenav',
@@ -27,7 +29,7 @@ import { PaginationParams } from '../../../../api/src/models/base.model';
 export class SidenavComponent implements OnInit, OnDestroy {
   @Output() brandSelected = new EventEmitter<string>();
   
-  brands: BrandNameResponse[] = [];
+  brands: BrandDocument[] = [];
   showForm = false;
   newBrandName = '';
   loading = false;
@@ -67,8 +69,8 @@ export class SidenavComponent implements OnInit, OnDestroy {
     if (!this.newBrandName.trim()) return;
 
     try {
-      const brandCreate = { name: this.newBrandName.trim() };
-      const response = await this.brandService.createBrand(brandCreate).toPromise();
+      const brandCreate = { brandInfo: { name: this.newBrandName.trim() } };
+      const response = await this.brandService.createBrand(brandCreate as any).toPromise();
       
       // Reset form
       this.newBrandName = '';
@@ -117,9 +119,9 @@ export class SidenavComponent implements OnInit, OnDestroy {
     await this.loadBrands(true);
   }
 
-  selectBrand(brand: BrandNameResponse, route?: BrandRoute) {
+  selectBrand(brand: BrandDocument, route?: BrandRoute) {
     this.selectedBrandId = brand.id;
-    this.brandSelected.emit(brand.name);
+    this.brandSelected.emit(brand.brandInfo?.name || brand.id);
     // Use the current route from NavigationService if not explicitly provided
     let navRoute: BrandRoute = route as BrandRoute;
     if (!navRoute) {

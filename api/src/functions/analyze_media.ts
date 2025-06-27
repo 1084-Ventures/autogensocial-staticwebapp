@@ -113,12 +113,12 @@ export async function analyzeMedia(request: HttpRequest, context: InvocationCont
         }
         // Suggested name: prefer most specific object, then brand, then tag, then caption
         let suggestedName = '';
-        if (objects.length) {
-          suggestedName = objects[0].object;
+        if (objects.length && (objects[0] as any).object) {
+          suggestedName = (objects[0] as any).object;
         } else if (brands.length) {
-          suggestedName = brands[0].name;
+          suggestedName = brands[0].name ?? "";
         } else if (tags.length) {
-          suggestedName = tags[0].name;
+          suggestedName = tags[0].name ?? "";
         } else if (caption?.text) {
           suggestedName = caption.text;
         } else {

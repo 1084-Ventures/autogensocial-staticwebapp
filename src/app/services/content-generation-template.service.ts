@@ -4,11 +4,6 @@ import { Observable, catchError } from 'rxjs';
 import type { components } from '../generated/models';
 import { ErrorHandlerService } from './error-handler.service';
 
-export type ContentGenerationTemplateDocument = components["schemas"]["ContentGenerationTemplateDocument"];
-export type ContentGenerationTemplateCreate = components["schemas"]["ContentGenerationTemplateCreate"];
-export type ContentGenerationTemplateUpdate = components["schemas"]["ContentGenerationTemplateUpdate"];
-export type PaginationParams = components["parameters"]["pagination"];
-
 @Injectable({
   providedIn: 'root'
 })
@@ -20,15 +15,15 @@ export class ContentGenerationTemplateService {
     private errorHandler: ErrorHandlerService
   ) {}
 
-  getTemplates(params?: PaginationParams): Observable<ContentGenerationTemplateDocument[]> {
+  getTemplates(params?: components["parameters"]["pagination"]): Observable<components["schemas"]["ContentGenerationTemplateDocument"][]> {
     let httpParams = new HttpParams();
     if (params) {
       if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
       if (params.offset) httpParams = httpParams.set('offset', params.offset.toString());
-      if (params.sort_by) httpParams = httpParams.set('sortBy', params.sort_by);
-      if (params.sort_order) httpParams = httpParams.set('sortOrder', params.sort_order);
+      if (params.sortBy) httpParams = httpParams.set('sortBy', params.sortBy);
+      if (params.sortOrder) httpParams = httpParams.set('sortOrder', params.sortOrder);
     }
-    return this.http.get<ContentGenerationTemplateDocument[]>(this.apiUrl, { params: httpParams })
+    return this.http.get<components["schemas"]["ContentGenerationTemplateDocument"][]>(this.apiUrl, { params: httpParams })
       .pipe(
         catchError(error => {
           this.errorHandler.handleError(error);
@@ -37,8 +32,8 @@ export class ContentGenerationTemplateService {
       );
   }
 
-  getTemplate(id: string): Observable<ContentGenerationTemplateDocument> {
-    return this.http.get<ContentGenerationTemplateDocument>(`${this.apiUrl}/${id}`)
+  getTemplate(id: string): Observable<components["schemas"]["ContentGenerationTemplateDocument"]> {
+    return this.http.get<components["schemas"]["ContentGenerationTemplateDocument"]>(`${this.apiUrl}/${id}`)
       .pipe(
         catchError(error => {
           this.errorHandler.handleError(error);
@@ -47,8 +42,8 @@ export class ContentGenerationTemplateService {
       );
   }
 
-  createTemplate(template: ContentGenerationTemplateCreate): Observable<ContentGenerationTemplateDocument> {
-    return this.http.post<ContentGenerationTemplateDocument>(this.apiUrl, template)
+  createTemplate(template: components["schemas"]["ContentGenerationTemplateCreate"]): Observable<components["schemas"]["ContentGenerationTemplateDocument"]> {
+    return this.http.post<components["schemas"]["ContentGenerationTemplateDocument"]>(this.apiUrl, template)
       .pipe(
         catchError(error => {
           this.errorHandler.handleError(error);
@@ -57,8 +52,8 @@ export class ContentGenerationTemplateService {
       );
   }
 
-  updateTemplate(id: string, template: ContentGenerationTemplateUpdate): Observable<ContentGenerationTemplateDocument> {
-    return this.http.put<ContentGenerationTemplateDocument>(`${this.apiUrl}/${id}`, template)
+  updateTemplate(id: string, template: components["schemas"]["ContentGenerationTemplateUpdate"]): Observable<components["schemas"]["ContentGenerationTemplateDocument"]> {
+    return this.http.put<components["schemas"]["ContentGenerationTemplateDocument"]>(`${this.apiUrl}/${id}`, template)
       .pipe(
         catchError(error => {
           this.errorHandler.handleError(error);
