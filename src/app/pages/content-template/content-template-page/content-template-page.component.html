@@ -59,7 +59,6 @@
               <section class="form-section">
                 <h3 mat-subheader>Content Editor</h3>
                 <ng-container [ngSwitch]="templateData.templateInfo.contentType">
-                  <app-content-text-editor *ngSwitchCase="'text'" [(text)]="templateData.settings.contentItem.text"></app-content-text-editor>
                   <app-content-image-editor *ngSwitchCase="'image'" [(image)]="templateData.settings.contentItem"></app-content-image-editor>
                   <app-content-multi-image-editor *ngSwitchCase="'multi-image'" [(multiImage)]="templateData.settings.contentItem"></app-content-multi-image-editor>
                   <app-content-video-editor *ngSwitchCase="'video'" [(video)]="templateData.settings.contentItem"></app-content-video-editor>

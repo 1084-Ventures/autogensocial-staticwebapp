@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../../material.module';
 import { FormsModule } from '@angular/forms';
 import { ContentImageEditorComponent } from '../content-template-page-components/content-image-editor/content-image-editor.component';
-import { ContentTextEditorComponent } from '../content-template-page-components/content-text-editor/content-text-editor.component';
 import { ContentMultiImageEditorComponent } from '../content-template-page-components/content-multi-image-editor/content-multi-image-editor.component';
 import { ContentVideoEditorComponent } from '../content-template-page-components/content-video-editor/content-video-editor.component';
 import { HttpClient } from '@angular/common/http';
@@ -53,7 +52,7 @@ function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplate
 @Component({
   selector: 'app-content-template-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, MaterialModule, ContentImageEditorComponent, ContentTextEditorComponent, ContentMultiImageEditorComponent, ContentVideoEditorComponent],
+  imports: [CommonModule, FormsModule, MaterialModule, ContentImageEditorComponent, ContentMultiImageEditorComponent, ContentVideoEditorComponent],
   templateUrl: './content-template-page.component.html',
   styleUrls: ['./content-template-page.component.scss']
 })
