@@ -1,1 +1,31 @@
-/* Content Template Page Styles */
+
+.content-template-page-container {
+  min-height: 100vh;
+}
+
+.sidebar-header {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.main-content {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.template-sidenav {
+  width: 320px;
+  box-shadow: var(--mat-elevation-3, 0 4px 8px rgba(0,0,0,0.12));
+}
+
+.sidebar-empty {
+  padding: 1rem;
+  color: #888;
+}
+
+.empty-state {
+  color: #888;
+  text-align: center;
+  margin-top: 2rem;
+}

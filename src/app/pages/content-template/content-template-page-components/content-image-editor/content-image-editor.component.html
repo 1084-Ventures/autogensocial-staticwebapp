@@ -1,46 +1,44 @@
-<p>content-image-editor works!</p>
-<section class="form-section" *ngIf="image">
-  <h3 mat-subheader>Image Settings</h3>
-  <mat-form-field appearance="outline" class="form-field">
-    <mat-label>Set URL</mat-label>
-    <input matInput [(ngModel)]="image.setUrl" (ngModelChange)="onImageChange()" name="imageSetUrl" placeholder="https://...">
-  </mat-form-field>
-  <mat-form-field appearance="outline" class="form-field">
-    <mat-label>Media Type</mat-label>
-    <mat-select [(ngModel)]="image.mediaType" (selectionChange)="onImageChange()" name="imageMediaType">
-      <mat-option *ngFor="let type of mediaTypes" [value]="type">{{ type }}</mat-option>
-    </mat-select>
-  </mat-form-field>
-  <mat-grid-list cols="3" rowHeight="fit" gutterSize="16px">
-    <mat-grid-tile *ngIf="image.dimensions">
-      <mat-form-field appearance="outline" class="form-field">
+<mat-card *ngIf="image" style="box-shadow: var(--mat-elevation-2, 0 2px 4px rgba(0,0,0,0.10)); border-radius: 12px; margin-bottom: 1.5rem;">
+  <mat-card-header>
+    <mat-card-title style="font-size: 1.1rem; font-weight: 500;">Image Settings</mat-card-title>
+  </mat-card-header>
+  <mat-divider></mat-divider>
+  <mat-card-content style="display: flex; flex-direction: column; gap: 1rem;">
+    <mat-form-field appearance="outline">
+      <mat-label>Set URL</mat-label>
+      <input matInput [(ngModel)]="image.setUrl" (ngModelChange)="onImageChange()" name="imageSetUrl" placeholder="https://...">
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Media Type</mat-label>
+      <mat-select [(ngModel)]="image.mediaType" (selectionChange)="onImageChange()" name="imageMediaType">
+        <mat-option *ngFor="let type of mediaTypes" [value]="type">{{ type }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <mat-form-field appearance="outline" *ngIf="image.dimensions" style="flex: 1 1 120px; min-width: 120px;">
         <mat-label>Width (px)</mat-label>
         <input matInput type="number" [(ngModel)]="image.dimensions.width" (ngModelChange)="onImageChange()" name="imageWidth" min="1">
       </mat-form-field>
-    </mat-grid-tile>
-    <mat-grid-tile *ngIf="image.dimensions">
-      <mat-form-field appearance="outline" class="form-field">
+      <mat-form-field appearance="outline" *ngIf="image.dimensions" style="flex: 1 1 120px; min-width: 120px;">
         <mat-label>Height (px)</mat-label>
         <input matInput type="number" [(ngModel)]="image.dimensions.height" (ngModelChange)="onImageChange()" name="imageHeight" min="1">
       </mat-form-field>
-    </mat-grid-tile>
-    <mat-grid-tile *ngIf="image.dimensions">
-      <mat-form-field appearance="outline" class="form-field">
+      <mat-form-field appearance="outline" *ngIf="image.dimensions" style="flex: 1 1 120px; min-width: 120px;">
         <mat-label>Aspect Ratio</mat-label>
         <mat-select [(ngModel)]="image.dimensions.aspectRatio" (selectionChange)="onImageChange()" name="imageAspectRatio">
           <mat-option *ngFor="let ratio of aspectRatios" [value]="ratio.value">{{ ratio.label }}</mat-option>
         </mat-select>
       </mat-form-field>
-    </mat-grid-tile>
-  </mat-grid-list>
-  <mat-form-field appearance="outline" class="form-field">
-    <mat-label>Resolution</mat-label>
-    <input matInput [(ngModel)]="image.resolution" (ngModelChange)="onImageChange()" name="imageResolution" placeholder="e.g. 300dpi">
-  </mat-form-field>
-  <mat-form-field appearance="outline" class="form-field">
-    <mat-label>Format</mat-label>
-    <mat-select [(ngModel)]="image.format" (selectionChange)="onImageChange()" name="imageFormat">
-      <mat-option *ngFor="let fmt of imageFormats" [value]="fmt.value">{{ fmt.label }}</mat-option>
-    </mat-select>
-  </mat-form-field>
-</section>
+    </div>
+    <mat-form-field appearance="outline">
+      <mat-label>Resolution</mat-label>
+      <input matInput [(ngModel)]="image.resolution" (ngModelChange)="onImageChange()" name="imageResolution" placeholder="e.g. 300dpi">
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Format</mat-label>
+      <mat-select [(ngModel)]="image.format" (selectionChange)="onImageChange()" name="imageFormat">
+        <mat-option *ngFor="let fmt of imageFormats" [value]="fmt.value">{{ fmt.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </mat-card-content>
+</mat-card>

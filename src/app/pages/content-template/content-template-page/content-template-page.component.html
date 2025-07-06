@@ -1,75 +1,81 @@
-<mat-sidenav-container class="content-template-page-container mat-app-background" autosize>
+<mat-sidenav-container class="content-template-page-container mat-app-background" autosize style="min-height: 100vh;">
   <!-- Brand Sidebar (if any) -->
   <!-- You can add a brand sidenav here if needed -->
 
   <!-- Content Templates Sidenav -->
-  <mat-sidenav #templateSidenav mode="side" opened class="template-sidenav">
-    <div class="sidebar-header">
-      <span class="sidebar-title">Content Templates</span>
-      <button mat-icon-button color="primary" (click)="createNewTemplate()" matTooltip="Create New Template">
+  <mat-sidenav #templateSidenav mode="side" opened class="template-sidenav" style="width: 320px; box-shadow: var(--mat-elevation-3, 0 4px 8px rgba(0,0,0,0.12));">
+    <mat-toolbar color="primary" class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <span class="sidebar-title" style="font-weight: 600;">Content Templates</span>
+      <button mat-mini-fab color="accent" (click)="createNewTemplate()" matTooltip="Create New Template">
         <mat-icon>add</mat-icon>
       </button>
-    </div>
+    </mat-toolbar>
     <mat-nav-list>
-      <a mat-list-item *ngFor="let t of templates" (click)="selectTemplate(t)" [class.selected]="t.id === templateId">
-        <mat-icon matListItemIcon>description</mat-icon>
+      <a mat-list-item *ngFor="let t of templates" (click)="selectTemplate(t)" [class.selected]="t.id === templateId" style="border-radius: 8px; margin-bottom: 4px;">
+        <mat-icon matListItemIcon color="primary">description</mat-icon>
         <span matLine>{{ t.templateInfo?.name || 'Untitled' }}</span>
       </a>
-      <div *ngIf="!templates.length" class="sidebar-empty">No templates found for this brand.</div>
+      <div *ngIf="!templates.length" class="sidebar-empty" style="padding: 1rem; color: #888;">No templates found for this brand.</div>
     </mat-nav-list>
   </mat-sidenav>
 
   <!-- Main Content -->
   <mat-sidenav-content>
-    <main class="main-content">
+    <main class="main-content" style="padding: 2rem; max-width: 900px; margin: 0 auto;">
       <ng-container *ngIf="brandId && templateData && templateData.templateInfo && templateData.settings && templateData.settings.promptTemplate; else emptyState">
-        <mat-card>
+        <mat-card style="box-shadow: var(--mat-elevation-4, 0 6px 16px rgba(0,0,0,0.13)); border-radius: 16px;">
           <mat-card-header>
-            <mat-card-title>{{ templateId ? 'Edit Content Template' : 'Create Content Template' }}</mat-card-title>
+            <mat-card-title style="font-size: 1.5rem; font-weight: 600;">{{ templateId ? 'Edit Content Template' : 'Create Content Template' }}</mat-card-title>
           </mat-card-header>
           <mat-divider></mat-divider>
           <mat-card-content>
-            <form class="template-info-form">
-              <!-- Template Info Section -->
-              <section class="form-section">
-                <h3 mat-subheader>Template Info</h3>
-                <div class="form-row">
-                  <mat-form-field appearance="outline" class="form-field">
-                    <mat-label>Template Name</mat-label>
-                    <input matInput [(ngModel)]="templateData.templateInfo.name" name="templateName" maxlength="100" required>
-                  </mat-form-field>
-                  <mat-form-field appearance="outline" class="form-field">
-                    <mat-label>Content Type</mat-label>
-                    <mat-select [(ngModel)]="templateData.templateInfo.contentType" name="contentType" required>
-                      <mat-option *ngFor="let type of supportedContentTypes" [value]="type">
-                        {{ type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ') }}
-                      </mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                </div>
-                <div class="description-row">
-                  <mat-form-field appearance="outline" class="form-field full-width">
-                    <mat-label>Description</mat-label>
-                    <textarea matInput [(ngModel)]="templateData.templateInfo.description" name="templateDescription" maxlength="500"></textarea>
-                  </mat-form-field>
-                </div>
-              </section>
-
-              <!-- Content Editor Section -->
-              <section class="form-section">
-                <h3 mat-subheader>Content Editor</h3>
-                <ng-container [ngSwitch]="templateData.templateInfo.contentType">
-                  <app-content-image-editor *ngSwitchCase="'image'" [(image)]="templateData.settings.contentItem"></app-content-image-editor>
-                  <app-content-multi-image-editor *ngSwitchCase="'multi-image'" [(multiImage)]="templateData.settings.contentItem"></app-content-multi-image-editor>
-                  <app-content-video-editor *ngSwitchCase="'video'" [(video)]="templateData.settings.contentItem"></app-content-video-editor>
-                </ng-container>
-              </section>
+            <form class="template-info-form" style="display: flex; flex-direction: column; gap: 2rem;">
+              <!-- Atomic Editor Components -->
+              <app-template-info-editor
+                [templateInfo]="templateData.templateInfo"
+                (templateInfoChange)="onTemplateInfoChange($event)">
+              </app-template-info-editor>
+              <mat-divider></mat-divider>
+              <ng-container *ngIf="templateData.schedule">
+                <app-schedule-editor
+                  [schedule]="templateData.schedule"
+                  (scheduleChange)="onScheduleChange($event)">
+                </app-schedule-editor>
+                <mat-divider></mat-divider>
+              </ng-container>
+              <ng-container *ngIf="templateData.settings && templateData.settings.promptTemplate">
+                <app-prompt-template-editor
+                  [promptTemplate]="templateData.settings.promptTemplate"
+                  (promptTemplateChange)="onPromptTemplateChange($event)">
+                </app-prompt-template-editor>
+                <mat-divider></mat-divider>
+              </ng-container>
+              <ng-container *ngIf="templateData.settings && templateData.settings.visualStyle">
+                <app-visual-style-editor
+                  [visualStyle]="templateData.settings.visualStyle"
+                  (visualStyleChange)="onVisualStyleChange($event)">
+                </app-visual-style-editor>
+                <mat-divider></mat-divider>
+              </ng-container>
+              <ng-container *ngIf="templateData.settings && templateData.settings.contentItem">
+                <app-content-item-editor
+                  [contentItem]="templateData.settings.contentItem"
+                  (contentItemChange)="onContentItemChange($event)">
+                </app-content-item-editor>
+              </ng-container>
             </form>
           </mat-card-content>
+          <mat-card-actions align="end" style="padding: 1rem 2rem;">
+            <button mat-raised-button color="primary" style="margin-right: 1rem;">Save</button>
+            <button mat-stroked-button color="warn">Delete</button>
+          </mat-card-actions>
         </mat-card>
       </ng-container>
       <ng-template #emptyState>
-        <div class="empty-state">No content template selected.</div>
+        <mat-card style="margin-top: 2rem; text-align: center; padding: 2rem; color: #888;">
+          <mat-icon style="font-size: 3rem; margin-bottom: 1rem;">info</mat-icon>
+          <div class="empty-state">No content template selected.</div>
+        </mat-card>
       </ng-template>
     </main>
   </mat-sidenav-content>

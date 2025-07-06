@@ -1,0 +1,10 @@
+<form class="prompt-template-form">
+  <mat-form-field appearance="fill">
+    <mat-label>User Prompt</mat-label>
+    <textarea matInput [(ngModel)]="promptTemplate.userPrompt" name="userPrompt"></textarea>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Variables</mat-label>
+    <input matInput [(ngModel)]="promptTemplate.variables" name="variables" placeholder="Comma-separated" />
+  </mat-form-field>
+</form>

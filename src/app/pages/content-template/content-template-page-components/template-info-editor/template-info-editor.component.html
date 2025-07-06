@@ -1,0 +1,20 @@
+<form class="template-info-form">
+  <mat-form-field appearance="fill">
+    <mat-label>Template Name</mat-label>
+    <input matInput [(ngModel)]="templateInfo.name" name="name" required />
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Description</mat-label>
+    <textarea matInput [(ngModel)]="templateInfo.description" name="description"></textarea>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Content Type</mat-label>
+    <mat-select [(ngModel)]="templateInfo.contentType" name="contentType">
+      <mat-option *ngFor="let type of supportedContentTypes" [value]="type">{{ type }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Social Accounts</mat-label>
+    <input matInput [(ngModel)]="templateInfo.socialAccounts" name="socialAccounts" placeholder="Comma-separated" />
+  </mat-form-field>
+</form>

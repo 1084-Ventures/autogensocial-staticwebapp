@@ -5,18 +5,28 @@ import { FormsModule } from '@angular/forms';
 import { ContentImageEditorComponent } from '../content-template-page-components/content-image-editor/content-image-editor.component';
 import { ContentMultiImageEditorComponent } from '../content-template-page-components/content-multi-image-editor/content-multi-image-editor.component';
 import { ContentVideoEditorComponent } from '../content-template-page-components/content-video-editor/content-video-editor.component';
+import { TemplateInfoEditorComponent } from '../content-template-page-components/template-info-editor/template-info-editor.component';
+import { ScheduleEditorComponent } from '../content-template-page-components/schedule-editor/schedule-editor.component';
+import { PromptTemplateEditorComponent } from '../content-template-page-components/prompt-template-editor/prompt-template-editor.component';
+import { VisualStyleEditorComponent } from '../content-template-page-components/visual-style-editor/visual-style-editor.component';
+import { ContentItemEditorComponent } from '../content-template-page-components/content-item-editor/content-item-editor.component';
 import { HttpClient } from '@angular/common/http';
+import type { components } from '../../../generated/models';
 
-// TODO: Restore strong typing when generated models are available
-export type ContentGenerationTemplateDocument = any;
-export type TemplateInfo = any;
-export type Platform = string;
-export type ContentType = string;
-type DayOfWeek = string;
+export type ContentGenerationTemplateDocument = components["schemas"]["ContentGenerationTemplateDocument"];
+export type TemplateInfo = components["schemas"]["TemplateInfo"];
+export type Platform = components["schemas"]["Platform"];
+export type ContentType = components["schemas"]["ContentType"];
+type DayOfWeek = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
 const SUPPORTED_PLATFORMS: Platform[] = ["instagram", "facebook", "twitter", "tiktok"];
 const SUPPORTED_CONTENT_TYPES: ContentType[] = ["text", "image", "multi-image", "video"];
-export type ContentItem = any;
-export type ContentItemUnion = any;
+export type ContentItem = components["schemas"]["ContentItem"];
+export type ContentItemUnion =
+  | ({ type: 'text' } & components["schemas"]["Text"])
+  | ({ type: 'image' } & components["schemas"]["Image"])
+  | ({ type: 'video' } & components["schemas"]["Video"])
+  | ({ type: 'multiImage' } & components["schemas"]["MultiImage"]);
+
 function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplateDocument {
   return {
     id: '',
@@ -44,7 +54,7 @@ function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplate
       visualStyle: {
         themes: []
       },
-      contentItem: { type: 'text', text: { value: '' } }
+      contentItem: { type: 'text', text: { type: 'text', value: '' } } as ContentItem
     }
   };
 }
@@ -52,20 +62,23 @@ function getDefaultTemplateData(brandId: string = ''): ContentGenerationTemplate
 @Component({
   selector: 'app-content-template-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, MaterialModule, ContentImageEditorComponent, ContentMultiImageEditorComponent, ContentVideoEditorComponent],
+  imports: [
+    CommonModule, FormsModule, MaterialModule,
+    TemplateInfoEditorComponent, ScheduleEditorComponent, PromptTemplateEditorComponent, VisualStyleEditorComponent, ContentItemEditorComponent
+  ],
   templateUrl: './content-template-page.component.html',
   styleUrls: ['./content-template-page.component.scss']
 })
 export class ContentTemplatePageComponent implements OnDestroy, OnInit {
   brandId: string | null = null;
   templateId: string | null = null;
-  templates: ContentGenerationTemplateDocument[] = [];
+  templates: Array<ContentGenerationTemplateDocument> = [];
   templateData: ContentGenerationTemplateDocument = getDefaultTemplateData();
-  loading = false;
+  loading: boolean = false;
   private subscription: any;
   readonly supportedPlatforms = SUPPORTED_PLATFORMS;
   readonly supportedContentTypes = SUPPORTED_CONTENT_TYPES;
-  fontOptions = [
+  fontOptions: Array<{ label: string; value: string }> = [
     { label: 'Arial', value: 'Arial' },
     { label: 'Arial Narrow', value: 'Arial Narrow' },
     { label: 'Comic Sans MS', value: 'Comic Sans MS' },
@@ -76,7 +89,7 @@ export class ContentTemplatePageComponent implements OnDestroy, OnInit {
     { label: 'Trebuchet MS', value: 'Trebuchet MS' },
     { label: 'Verdana', value: 'Verdana' }
   ];
-  daysOfWeekOptions: { label: string; value: DayOfWeek }[] = [
+  daysOfWeekOptions: Array<{ label: string; value: DayOfWeek }> = [
     { label: 'Monday', value: 'monday' },
     { label: 'Tuesday', value: 'tuesday' },
     { label: 'Wednesday', value: 'wednesday' },
@@ -85,7 +98,7 @@ export class ContentTemplatePageComponent implements OnDestroy, OnInit {
     { label: 'Saturday', value: 'saturday' },
     { label: 'Sunday', value: 'sunday' }
   ];
-  timeSlotOptions: Array<{ value: string, label: string }> = Array.from({ length: 48 }, (_, i) => {
+  timeSlotOptions: Array<{ value: string; label: string }> = Array.from({ length: 48 }, (_, i) => {
     const hour = Math.floor(i / 2);
     const minute = i % 2 === 0 ? 0 : 30;
     const value = `${hour.toString().padStart(2, '0')}:${minute === 0 ? '00' : '30'}`;
@@ -99,7 +112,7 @@ export class ContentTemplatePageComponent implements OnDestroy, OnInit {
     'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Asia/Tokyo', 'Asia/Shanghai',
     'Asia/Kolkata', 'Australia/Sydney', 'America/Sao_Paulo', 'Africa/Johannesburg', 'Asia/Dubai'
   ];
-  materialColors = [
+  materialColors: Array<{ name: string; value: string } | { label: string; value: string }> = [
     { name: 'Red', value: '#F44336' },
     { name: 'Pink', value: '#E91E63' },
     { name: 'Purple', value: '#9C27B0' },
@@ -120,42 +133,28 @@ export class ContentTemplatePageComponent implements OnDestroy, OnInit {
     { name: 'Grey', value: '#9E9E9E' },
     { name: 'Blue Grey', value: '#607D8B' },
     { name: 'White', value: '#FFFFFF' },
-    { name: 'Black', value: '#000000' }
+    { name: 'Black', value: '#000000' },
+    { label: 'GIF', value: 'gif' }
   ];
-  imageAspectRatios = [
+  imageAspectRatios: Array<{ label: string; value: string }> = [
     { label: '1:1 (Square)', value: '1:1' },
     { label: '4:5 (Portrait)', value: '4:5' },
     { label: '16:9 (Landscape)', value: '16:9' },
     { label: '9:16 (Story)', value: '9:16' }
   ];
-  imageFormats = [
+  imageFormats: Array<{ label: string; value: string }> = [
     { label: 'JPEG', value: 'jpeg' },
     { label: 'PNG', value: 'png' },
     { label: 'WEBP', value: 'webp' },
     { label: 'GIF', value: 'gif' }
   ];
-  constructor(
-    // private navigationService: NavigationService,
-    // private http: HttpClient,
-    // private snackBar: MatSnackBar,
-    // private errorHandler: ErrorHandlerService
-  ) {}
 
-  ngOnInit(): void {
-    // Stubbed: navigationService and brand logic removed
-    // TODO: Restore brand logic when NavigationService is available
-  }
+  constructor() {}
 
-  ngOnDestroy(): void {
-    // Stubbed: subscription logic removed
-  }
+  ngOnInit(): void {}
+  ngOnDestroy(): void {}
 
-  // Stubbed: fetchTemplatesForBrand and other service/model-dependent methods removed
-  // TODO: Restore these methods when services/models are available
-
-  // Minimal stub for template creation
   createNewTemplate(): void {
-    // Add a new blank template to the list and select it
     const newTemplate = getDefaultTemplateData(this.brandId || '');
     newTemplate.id = 'new-' + (Date.now());
     this.templates = [...this.templates, newTemplate];
@@ -163,9 +162,28 @@ export class ContentTemplatePageComponent implements OnDestroy, OnInit {
     this.templateData = newTemplate;
   }
 
-  // Minimal stub for template selection
-  selectTemplate(t: any): void {
+  selectTemplate(t: ContentGenerationTemplateDocument): void {
     this.templateId = t.id;
     this.templateData = t;
+  }
+
+  // Handlers for atomic editors
+  onTemplateInfoChange(info: TemplateInfo) {
+    this.templateData.templateInfo = { ...info };
+  }
+  onScheduleChange(schedule: components["schemas"]["Schedule"]) {
+    this.templateData.schedule = { ...schedule };
+  }
+  onPromptTemplateChange(prompt: components["schemas"]["PromptTemplate"]) {
+    if (!this.templateData.settings) this.templateData.settings = {} as any;
+    this.templateData.settings!.promptTemplate = { ...prompt };
+  }
+  onVisualStyleChange(style: components["schemas"]["VisualStyleObj"]) {
+    if (!this.templateData.settings) this.templateData.settings = {} as any;
+    this.templateData.settings!.visualStyle = { ...style };
+  }
+  onContentItemChange(item: ContentItem) {
+    if (!this.templateData.settings) this.templateData.settings = {} as any;
+    this.templateData.settings!.contentItem = { ...item };
   }
 }

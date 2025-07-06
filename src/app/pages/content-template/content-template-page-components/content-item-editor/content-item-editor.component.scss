@@ -1,0 +1,20 @@
+.content-item-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 600px;
+}
+
+mat-card {
+  box-shadow: var(--mat-elevation-2, 0 2px 4px rgba(0,0,0,0.10));
+  border-radius: 12px;
+}
+
+mat-card-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+mat-form-field {
+  width: 100%;
+}
