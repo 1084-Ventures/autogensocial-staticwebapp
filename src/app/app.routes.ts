@@ -11,9 +11,9 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'brand-details', pathMatch: 'full' },
       // Empty state routes (no brand selected)
-      { path: 'brand-details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule) },
-      { path: 'upload', loadChildren: () => import('./pages/upload-page/upload-page.module').then(m => m.UploadPageModule) },
-      { path: 'content-template', loadChildren: () => import('./pages/content-template/content-template.module').then(m => m.ContentTemplateModule) },
+      { path: 'brand-details', loadComponent: () => import('./pages/brand-page/brand-page.component').then(m => m.BrandPageComponent) },
+      { path: 'upload', loadComponent: () => import('./pages/upload-page/upload-page.component').then(m => m.UploadPageComponent) },
+      { path: 'content-template', loadComponent: () => import('./pages/content-template-page/content-template-page.component').then(m => m.ContentTemplatePageComponent) },
       { path: 'brands', component: SidenavComponent },
       
       // Brand-specific routes
@@ -21,9 +21,9 @@ export const routes: Routes = [
         path: 'brand/:id',
         canActivate: [BrandGuard],
         children: [
-          { path: 'brand-details', loadChildren: () => import('./pages/brand-page/brand-page.module').then(m => m.BrandPageModule), data: { type: 'brand-details' } },
-          { path: 'upload', loadChildren: () => import('./pages/upload-page/upload-page.module').then(m => m.UploadPageModule), data: { type: 'upload' } },
-          { path: 'content-template', loadChildren: () => import('./pages/content-template/content-template.module').then(m => m.ContentTemplateModule), data: { type: 'content-template' } }
+          { path: 'brand-details', loadComponent: () => import('./pages/brand-page/brand-page.component').then(m => m.BrandPageComponent), data: { type: 'brand-details' } },
+          { path: 'upload', loadComponent: () => import('./pages/upload-page/upload-page.component').then(m => m.UploadPageComponent), data: { type: 'upload' } },
+          { path: 'content-template', loadComponent: () => import('./pages/content-template-page/content-template-page.component').then(m => m.ContentTemplatePageComponent), data: { type: 'content-template' } }
         ]
       }
     ]
@@ -34,7 +34,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        loadChildren: () => import('./pages/settings-page/settings-page.module').then(m => m.SettingsPageModule)
+        loadChildren: () => import('./pages/settings-page/settings-page.component').then(m => m.SettingsPageComponent)
       }
     ]
   }

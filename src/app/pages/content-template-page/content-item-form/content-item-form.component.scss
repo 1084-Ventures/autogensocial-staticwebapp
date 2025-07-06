@@ -1,0 +1,39 @@
+
+.content-item-form {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafbfc;
+  margin: 1.5rem 0 2rem 0;
+  padding: 2rem 2rem 1.5rem 2rem;
+  box-shadow: 0 2px 8px 0 rgba(60,60,60,0.04);
+}
+
+.content-item-form .form-section {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2rem;
+}
+
+.content-item-form.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.content-item-form .form-field {
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 320px;
+}
+
+.multi-image-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.info {
+  color: #888;
+  font-style: italic;
+}

@@ -1,0 +1,40 @@
+<div class="prompt-form-outer">
+  <h2 class="form-main-title">Prompt Template</h2>
+  <div class="prompt-form" [formGroup]="formGroup">
+    <div class="form-section">
+      <div class="form-section-title">User Prompt</div>
+      <mat-form-field appearance="fill" class="form-field">
+        <mat-label>User Prompt</mat-label>
+        <textarea matInput formControlName="userPrompt" required></textarea>
+        <mat-error *ngIf="formGroup.get('userPrompt')?.hasError('required')">User prompt is required</mat-error>
+      </mat-form-field>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Prompt Variables</div>
+      <div formArrayName="variables">
+        <div *ngFor="let variable of variables.controls; let i = index" [formGroupName]="i" class="variable-row">
+          <mat-form-field appearance="fill" class="form-field">
+            <mat-label>Variable Name</mat-label>
+            <input matInput formControlName="name" required />
+            <mat-error *ngIf="variable.get('name')?.hasError('required')">Name is required</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="fill" class="form-field">
+            <mat-label>Values (comma separated)</mat-label>
+            <input matInput formControlName="values" [value]="variable.value.values?.join(', ')" (input)="onVariableValuesInput($event, i)" />
+          </mat-form-field>
+          <mat-form-field appearance="fill" class="form-field">
+            <mat-label>Description</mat-label>
+            <input matInput formControlName="description" />
+          </mat-form-field>
+          <button mat-icon-button color="warn" type="button" (click)="removeVariable(i)" title="Remove Variable">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </div>
+      <button mat-stroked-button color="primary" type="button" (click)="addVariable()" style="margin-top: 1rem;">
+        <mat-icon>add</mat-icon> Add Variable
+      </button>
+    </div>
+    <!-- No form actions here; handled by parent -->
+  </div>
+</div>

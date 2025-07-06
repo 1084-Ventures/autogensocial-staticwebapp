@@ -1,0 +1,31 @@
+.sidenav-container {
+  width: 260px;
+  background: #f7f7fa;
+  border-right: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.sidenav-inner {
+  padding: 1.5rem 1rem 1rem 1rem;
+}
+
+.sidenav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.sidenav-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.no-templates {
+  color: #888;
+  font-size: 0.98em;
+  margin-top: 1rem;
+}
+.selected {
+  background: #e3f2fd !important;
+}
