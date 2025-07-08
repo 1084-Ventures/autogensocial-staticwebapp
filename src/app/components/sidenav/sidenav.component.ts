@@ -4,9 +4,9 @@ import { MaterialModule } from '../../material.module';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { NavigationService, BrandRoute } from '../../services/navigation.service';
-import { BrandService } from '../../services/brand.service';
-import { ErrorHandlerService } from '../../services/error-handler.service';
+import { NavigationService, BrandRoute } from '../../core/services/navigation.service';
+import { BrandService } from '../../core/services/brand.service';
+import { ErrorHandlerService } from '../../core/services/error-handler.service';
 import { Subscription } from 'rxjs';
 import type { components } from '../../generated/models';
 

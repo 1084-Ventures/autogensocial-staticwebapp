@@ -1,5 +1,5 @@
 import { Component, Output, EventEmitter, Input, OnInit, OnDestroy } from '@angular/core';
-import { NavigationService, BrandRoute } from '../../services/navigation.service';
+import { NavigationService, BrandRoute } from '../../core/services/navigation.service';
 import { MaterialModule } from '../../material.module';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';

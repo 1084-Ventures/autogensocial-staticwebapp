@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import type { components } from '../generated/models';
+import type { components } from '../../generated/models';
 
 export type MediaDocument = components["schemas"]["MediaDocument"];
 export type MediaUpdate = Partial<components["schemas"]["MediaDocument"]>;

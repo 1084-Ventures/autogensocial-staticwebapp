@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { SidenavComponent } from './sidenav.component';
-import { NavigationService } from '../../services/navigation.service';
-import { BrandService } from '../../services/brand.service';
-import { ErrorHandlerService } from '../../services/error-handler.service';
+import { NavigationService } from '../../core/services/navigation.service';
+import { BrandService } from '../../core/services/brand.service';
+import { ErrorHandlerService } from '../../core/services/error-handler.service';
 import { MaterialModule } from '../../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -20,8 +20,8 @@ describe('SidenavComponent', () => {
   const currentBrand$ = new BehaviorSubject<string | null>(null);
 
   const mockBrands: BrandDocument[] = [
-    { id: '1', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 1' } },
-    { id: '2', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 2' } }
+    { id: '1', metadata: { createdDate: '', updatedDate: '', isActive: true }, brandInfo: { name: 'Brand 1' } },
+    { id: '2', metadata: { createdDate: '', updatedDate: '', isActive: true }, brandInfo: { name: 'Brand 2' } }
   ];
 
   beforeEach(async () => {
@@ -72,8 +72,8 @@ describe('SidenavComponent', () => {
 
     it('should handle pagination correctly', fakeAsync(async () => {
       const moreBrands: BrandDocument[] = [
-        { id: '3', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 3' } },
-        { id: '4', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'Brand 4' } }
+        { id: '3', metadata: { createdDate: '', updatedDate: '', isActive: true }, brandInfo: { name: 'Brand 3' } },
+        { id: '4', metadata: { createdDate: '', updatedDate: '', isActive: true }, brandInfo: { name: 'Brand 4' } }
       ];
 
       // Clear previous calls and set up the test state
@@ -137,7 +137,7 @@ describe('SidenavComponent', () => {
     });
 
     it('should create new brand successfully', fakeAsync(() => {
-      const newBrand: BrandDocument = { id: '5', metadata: { createdDate: '', updated_date: '', is_active: true }, brandInfo: { name: 'New Brand' } };
+      const newBrand: BrandDocument = { id: '5', metadata: { createdDate: '', updatedDate: '', isActive: true }, brandInfo: { name: 'New Brand' } };
       brandService.createBrand.and.returnValue(of(newBrand));
       
       component.newBrandName = 'New Brand';

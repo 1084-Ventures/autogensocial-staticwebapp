@@ -20,11 +20,10 @@
           </mat-form-field>
           <mat-form-field appearance="fill" class="form-field">
             <mat-label>Values (comma separated)</mat-label>
-            <input matInput formControlName="values" [value]="variable.value.values?.join(', ')" (input)="onVariableValuesInput($event, i)" />
+            <input matInput [formControl]="getValuesStringControl(i)" placeholder="e.g. value1, value2, value3" />
           </mat-form-field>
           <mat-form-field appearance="fill" class="form-field">
-            <mat-label>Description</mat-label>
-            <input matInput formControlName="description" />
+            <!-- Description field removed to match updated PromptVariable model -->
           </mat-form-field>
           <button mat-icon-button color="warn" type="button" (click)="removeVariable(i)" title="Remove Variable">
             <mat-icon>delete</mat-icon>

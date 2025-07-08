@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError } from 'rxjs';
-import type { components } from '../generated/models';
+import type { components } from '../../generated/models';
 import { ErrorHandlerService } from './error-handler.service';
 
 export type BrandDocument = components["schemas"]["BrandDocument"];

@@ -5,9 +5,9 @@ import { BehaviorSubject, of } from 'rxjs';
 import { MainlayoutComponent } from './mainlayout.component';
 import { ToolbarComponent } from '../../components/toolbar/toolbar.component';
 import { SidenavComponent } from '../../components/sidenav/sidenav.component';
-import { NavigationService } from '../../services/navigation.service';
-import { BrandService } from '../../services/brand.service';
-import { ErrorHandlerService } from '../../services/error-handler.service';
+import { NavigationService } from '../../core/services/navigation.service';
+import { BrandService } from '../../core/services/brand.service';
+import { ErrorHandlerService } from '../../core/services/error-handler.service';
 import { MaterialModule } from '../../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 

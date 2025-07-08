@@ -1,14 +1,15 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { BrandPageComponent } from './brand-page.component';
-import { NavigationService } from '../../services/navigation.service';
-import { BrandService } from '../../services/brand.service';
-import { ErrorHandlerService } from '../../services/error-handler.service';
+import { NavigationService } from '../../core/services/navigation.service';
+import { BrandService } from '../../core/services/brand.service';
+import { ErrorHandlerService } from '../../core/services/error-handler.service';
 import { MaterialModule } from '../../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { BrandDocument, validateBrandName, validateBrandDescription } from '../../../../api/src/models/brand.model';
+import type { components } from '../../generated/models';
+type BrandDocument = components['schemas']['BrandDocument'];
 import { HttpErrorResponse } from '@angular/common/http';
 
 describe('BrandPageComponent', () => {

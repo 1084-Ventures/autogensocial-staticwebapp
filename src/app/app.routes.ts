@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { MainlayoutComponent } from './layouts/mainlayout/mainlayout.component';
 import { SimplelayoutComponent } from './layouts/simplelayout/simplelayout.component';
 import { SidenavComponent } from './components/sidenav/sidenav.component';
-import { BrandGuard } from './guards/brand.guard';
+import { BrandGuard } from './core/guards/brand.guard';
 
 export const routes: Routes = [
   {
