@@ -161,7 +161,7 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
         },
         templateInfo: body.templateInfo,
         schedule: body.schedule ?? { daysOfWeek: [], timeSlots: [] },
-        settings: body.settings ?? { promptTemplate: {}, visualStyle: {} }
+        settings: body.settings ?? { promptTemplate: {} }
     };
     context.log('[handleCreate] Document to be created:', JSON.stringify(newTemplate));
     let createdTemplate;
@@ -178,12 +178,13 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
         return createErrorResponse(500, 'Failed to create template');
     }
     context.log(`[handleCreate] End: ${Date.now() - start}ms, about to return 201 response`);
-    const resp = createResponse(201, {
+    // Use the generated response type
+    const resp: ContentGenerationTemplateResponse = {
         id: createdTemplate.id,
         brandId: createdTemplate.brandId
-    });
+    };
     context.log('[handleCreate] Returning response:', JSON.stringify(resp));
-    return resp;
+    return createResponse(201, resp);
 }
 
 async function verifyBrandOwnership(brandId: string, userId: string, context?: InvocationContext): Promise<boolean> {
