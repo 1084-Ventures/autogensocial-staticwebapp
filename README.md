@@ -17,7 +17,7 @@ TypeScript models for both frontend and backend are auto-generated from the Open
 ### How to Regenerate Models
 
 1. Make sure your OpenAPI spec is up to date at `../specs/openapi.yaml`.
-2. From the `autogensocial-swa` project root, run:
+2. From the `static-web-app` project root, run:
 
 ```bash
 npm run generate:models:all
