@@ -46,8 +46,8 @@ function stripObsoleteFields(settings: any) {
     return settings;
 }
 
-export const contentGenerationTemplateManagement = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    context.log('Request received in content_generation_template_management');
+export const contentGenerationTemplatesApiHandler = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+    context.log('Request received in content-generation-templates');
     try {
         const userId = await extractUserId(request);
         if (!userId || userId === 'anonymous') {
@@ -415,11 +415,11 @@ async function extractUserId(request: HttpRequest): Promise<string> {
     }
 }
 
-app.http('content_generation_template_management', {
+app.http('content-generation-templates', {
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     authLevel: 'anonymous',
-    route: 'content_generation_template_management/{id?}',
-    handler: contentGenerationTemplateManagement
+    route: 'content-generation-templates/{id?}',
+    handler: contentGenerationTemplatesApiHandler
 });
 
 // All property names and structures now match the OpenAPI-generated types. All custom validation and legacy property access has been removed.

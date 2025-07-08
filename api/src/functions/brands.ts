@@ -18,7 +18,7 @@ const container = database.container(process.env.COSMOS_DB_CONTAINER_BRAND || ''
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
-export const brandManagement = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+export const brandsApiHandler = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
   try {
     const userId = await extractUserId(request);
     if (!userId || userId === 'anonymous') {
@@ -251,9 +251,9 @@ async function extractUserId(request: HttpRequest): Promise<string> {
   }
 }
 
-app.http('brand_management', {
+app.http('brands', {
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   authLevel: 'anonymous',
-  route: 'brand_management/{id?}',
-  handler: brandManagement
+  route: 'brands/{id?}',
+  handler: brandsApiHandler
 });
