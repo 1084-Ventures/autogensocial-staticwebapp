@@ -1,5 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
-import { NavigationService } from '../../services/navigation.service';
+import { NavigationService } from '../../core/services/navigation.service';
 
 @Component({
   selector: 'app-settings-page',

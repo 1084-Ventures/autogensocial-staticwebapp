@@ -1,13 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NavigationService } from '../../services/navigation.service';
+import { NavigationService } from '../../core/services/navigation.service';
 import { MaterialModule } from '../../material.module';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule, FormControl } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { BrandService } from '../../services/brand.service';
-import { ErrorHandlerService } from '../../services/error-handler.service';
+import { BrandService } from '../../core/services/brand.service';
+import { ErrorHandlerService } from '../../core/services/error-handler.service';
 import type { components } from '../../generated/models';
 import { Subscription } from 'rxjs';
 
@@ -193,7 +193,7 @@ export class BrandPageComponent implements OnInit, OnDestroy {
         horizontalPosition: 'center',
         verticalPosition: 'top'
       });
-      this.navigationService.navigateToBrand('', 'brand_details');
+      this.navigationService.navigateToBrand('', 'brand-details');
     } catch (error) {
       this.errorHandler.handleError(error as any);
     } finally {

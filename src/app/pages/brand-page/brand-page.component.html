@@ -1,4 +1,4 @@
-<div *ngIf="brandId; else emptyState">
+@if (brandId) {
   <mat-card>
     <mat-card-header>
       <mat-card-title>Edit Brand</mat-card-title>
@@ -89,12 +89,10 @@
       </form>
     </mat-card-content>
   </mat-card>
-</div>
-
-<ng-template #emptyState>
+} @else {
   <div class="empty-state">
     <mat-icon>business</mat-icon>
     <h2>No Brand Selected</h2>
     <p>Please select a brand from the sidebar to view its details</p>
   </div>
-</ng-template>
+}

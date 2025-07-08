@@ -1,8 +1,8 @@
 import { Component, OnDestroy } from '@angular/core';
-import { NavigationService } from '../../services/navigation.service';
+import { NavigationService } from '../../core/services/navigation.service';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../material.module';
-import { MediaService } from '../../services/media.service';
+import { MediaService } from '../../core/services/media.service';
 import type { components } from '../../../../api/generated/models';
 import { MediaUploadFormComponent } from '../../components/media-upload-form/media-upload-form.component';
 import { FormsModule } from '@angular/forms';

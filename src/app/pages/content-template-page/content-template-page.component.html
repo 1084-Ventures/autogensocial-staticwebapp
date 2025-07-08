@@ -1,0 +1,51 @@
+<div class="content-template-page-root">
+  <!-- Brand Sidenav Placeholder (should be included by parent layout) -->
+  <app-content-template-sidenav
+    [contentTemplates]="contentTemplates"
+    [selectedTemplate]="selectedTemplate"
+    (selectTemplate)="selectedTemplate = $event"
+    (addTemplate)="onAddTemplate()">
+  </app-content-template-sidenav>
+  <!-- Main content placeholder -->
+  <div class="main-content">
+    <ng-container *ngIf="addingTemplate">
+      <form [formGroup]="form" (ngSubmit)="onSaveTemplate()" class="growing-template-form">
+        <app-content-template-info-form
+          [formGroup]="templateInfoGroup"
+        ></app-content-template-info-form>
+
+        <div *ngIf="templateInfoGroup.valid" class="growing-section">
+          <app-content-template-prompt-form
+            [formGroup]="promptTemplateGroup"
+          ></app-content-template-prompt-form>
+
+          <app-content-item-form
+            *ngIf="contentType && contentType !== 'text'"
+            [formGroup]="contentItemGroup"
+            [contentType]="contentType"
+          ></app-content-item-form>
+        </div>
+        <div class="form-actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="!form.valid">Save</button>
+          <button mat-button type="button" (click)="onCancel()">Cancel</button>
+        </div>
+      </form>
+    </ng-container>
+    <ng-container *ngIf="!addingTemplate">
+      <ng-container *ngIf="selectedTemplate">
+        <!-- Template details will go here -->
+        <div class="template-details-card">
+          <h2>{{ selectedTemplate.name || 'Untitled Template' }}</h2>
+          <!-- More details to be added step by step -->
+        </div>
+      </ng-container>
+      <ng-container *ngIf="!selectedTemplate">
+        <div class="empty-details">
+          <mat-icon class="empty-icon">description</mat-icon>
+          <h2 class="empty-title">No Content Template Selected</h2>
+          <p class="empty-desc">Select a content template from the list or create a new one to get started.</p>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+</div>

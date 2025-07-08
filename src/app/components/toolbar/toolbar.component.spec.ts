@@ -9,7 +9,7 @@ describe('ToolbarComponent', () => {
   let component: ToolbarComponent;
   let fixture: ComponentFixture<ToolbarComponent>;
   let navigationService: jasmine.SpyObj<NavigationService>;
-  const currentRoute$ = new BehaviorSubject<NavItem>('brand_details');
+  const currentRoute$ = new BehaviorSubject<NavItem>('brand-details');
   const currentBrand$ = new BehaviorSubject<string | null>(null);
 
   beforeEach(async () => {
@@ -55,8 +55,8 @@ describe('ToolbarComponent', () => {
   });
 
   it('should update currentRoute when navigation service emits new route', () => {
-    currentRoute$.next('generate');
-    expect(component.currentRoute).toBe('generate');
+    currentRoute$.next('content-template');
+    expect(component.currentRoute).toBe('content-template');
   });
 
   it('should update currentBrandId when navigation service emits new brand', () => {
@@ -66,16 +66,16 @@ describe('ToolbarComponent', () => {
   });
 
   it('should correctly check if route is selected', () => {
-    component.currentRoute = 'generate';
-    expect(component.isSelected('generate')).toBeTrue();
+    component.currentRoute = 'content-template';
+    expect(component.isSelected('content-template')).toBeTrue();
     expect(component.isSelected('settings')).toBeFalse();
   });
 
   it('should navigate to brand route with current brand ID', () => {
     const testBrandId = 'test-brand-123';
     currentBrand$.next(testBrandId);
-    component.onNavSelect('generate');
-    expect(navigationService.navigateToBrand).toHaveBeenCalledWith(testBrandId, 'generate');
+    component.onNavSelect('content-template');
+    expect(navigationService.navigateToBrand).toHaveBeenCalledWith(testBrandId, 'content-template');
   });
 
   it('should navigate to settings', () => {

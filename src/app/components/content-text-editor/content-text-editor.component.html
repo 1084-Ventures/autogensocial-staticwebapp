@@ -1,8 +1,0 @@
-<p>content-text-editor works!</p>
-<section class="form-section" *ngIf="text">
-  <h3 mat-subheader>Text Content</h3>
-  <mat-form-field appearance="outline" class="form-field full-width">
-    <mat-label>Text Value</mat-label>
-    <textarea matInput [(ngModel)]="text.value" (ngModelChange)="onTextChange()" name="textValue" rows="3" maxlength="1000"></textarea>
-  </mat-form-field>
-</section>

@@ -4,9 +4,9 @@ import { MaterialModule } from '../../material.module';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { NavigationService, BrandRoute } from '../../services/navigation.service';
-import { BrandService } from '../../services/brand.service';
-import { ErrorHandlerService } from '../../services/error-handler.service';
+import { NavigationService, BrandRoute } from '../../core/services/navigation.service';
+import { BrandService } from '../../core/services/brand.service';
+import { ErrorHandlerService } from '../../core/services/error-handler.service';
 import { Subscription } from 'rxjs';
 import type { components } from '../../generated/models';
 
@@ -126,7 +126,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
     let navRoute: BrandRoute = route as BrandRoute;
     if (!navRoute) {
       const current = (this.navigationService as any).currentRoute?.getValue?.();
-      navRoute = (current === 'generate' || current === 'upload' || current === 'brand_details') ? current : 'brand_details';
+      navRoute = (current === 'content-template' || current === 'upload' || current === 'brand-details') ? current : 'brand-details';
     }
     this.navigationService.navigateToBrand(brand.id, navRoute);
   }

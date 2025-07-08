@@ -185,7 +185,6 @@ export interface components {
         PromptVariable: {
             name?: string;
             values?: string[];
-            description?: string;
         };
         PromptTemplate: {
             systemPrompt?: string;
@@ -312,7 +311,7 @@ export interface components {
             type: "video";
         };
         MultiImage: {
-            images?: components["schemas"]["Image"][];
+            image?: components["schemas"]["Image"];
             minImages?: number;
             maxImages?: number;
             /**

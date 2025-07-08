@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MediaService } from '../../services/media.service';
+import { MediaService } from '../../core/services/media.service';
 import { components } from '../../generated/models';
 import { MaterialModule } from '../../material.module';
 import { CommonModule } from '@angular/common';
