@@ -37,13 +37,13 @@ console.log('[Startup] COSMOS_DB_CONNECTION_STRING present:', !!process.env.COSM
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
-// Utility to remove obsolete fields from settings
-function stripObsoleteFields(settings: any) {
-    if (settings) {
-        if ('boxText' in settings) delete settings.boxText;
-        if ('textBox' in settings) delete settings.textBox;
+// Utility to remove obsolete fields from templateSettings
+function stripObsoleteFields(templateSettings: any) {
+    if (templateSettings) {
+        if ('boxText' in templateSettings) delete templateSettings.boxText;
+        if ('textBox' in templateSettings) delete templateSettings.textBox;
     }
-    return settings;
+    return templateSettings;
 }
 
 export const contentGenerationTemplatesApiHandler = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
@@ -150,7 +150,7 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
         context.log(`[handleCreate] Elapsed: ${Date.now() - start}ms (authorization failed)`);
         return createErrorResponse(403, 'Not authorized to create templates for this brand', 'UNAUTHORIZED_BRAND_ACCESS');
     }
-    if (body.settings) stripObsoleteFields(body.settings);
+    if (body.templateSettings) stripObsoleteFields(body.templateSettings);
     const newTemplate: ContentGenerationTemplateDocument = {
         id: randomUUID(),
         brandId: body.brandId,
@@ -161,7 +161,7 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
         },
         templateInfo: body.templateInfo,
         schedule: body.schedule ?? { daysOfWeek: [], timeSlots: [] },
-        settings: body.settings ?? { promptTemplate: {} }
+        templateSettings: body.templateSettings ?? { promptTemplate: {} }
     };
     context.log('[handleCreate] Document to be created:', JSON.stringify(newTemplate));
     let createdTemplate;
@@ -216,7 +216,7 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
         }
         const pagination = extractPaginationParams(request);
         const templates = await getTemplatesByBrandId(brandId, userId, pagination);
-        templates.forEach(t => { if (t.settings) stripObsoleteFields(t.settings); });
+        templates.forEach(t => { if (t.templateSettings) stripObsoleteFields(t.templateSettings); });
         return createResponse(200, templates);
     }
     const template = await getTemplateById(templateId, userId);
@@ -227,7 +227,7 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
     if (!hasBrandAccess) {
         return createErrorResponse(403, 'Not authorized to view this template', 'UNAUTHORIZED_BRAND_ACCESS');
     }
-    if (template.settings) stripObsoleteFields(template.settings);
+    if (template.templateSettings) stripObsoleteFields(template.templateSettings);
     return createResponse(200, template);
 }
 
@@ -271,7 +271,7 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
             return createErrorResponse(403, 'Not authorized to move template to specified brand', 'UNAUTHORIZED_BRAND_ACCESS');
         }
     }
-    if (updateData.settings) stripObsoleteFields(updateData.settings);
+    if (updateData.templateSettings) stripObsoleteFields(updateData.templateSettings);
     const updatedTemplate: ContentGenerationTemplateDocument = {
         ...existingTemplate,
         ...updateData,
@@ -287,12 +287,12 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
             ...existingTemplate.schedule,
             ...updateData.schedule
         } : (existingTemplate.schedule ?? { daysOfWeek: [], timeSlots: [] }),
-        settings: updateData.settings ? {
-            ...existingTemplate.settings,
-            ...updateData.settings
-        } : (existingTemplate.settings ?? {})
+        templateSettings: updateData.templateSettings ? {
+            ...existingTemplate.templateSettings,
+            ...updateData.templateSettings
+        } : (existingTemplate.templateSettings ?? {})
     };
-    if (updatedTemplate.settings) stripObsoleteFields(updatedTemplate.settings);
+    if (updatedTemplate.templateSettings) stripObsoleteFields(updatedTemplate.templateSettings);
     let savedTemplate;
     try {
         const brandId = updatedTemplate.brandId;
@@ -364,12 +364,12 @@ async function updateTemplate(templateId: string, userId: string, updateData: Co
             ...existingTemplate.schedule,
             ...updateData.schedule
         } : (existingTemplate.schedule ?? { daysOfWeek: [], timeSlots: [] }),
-        settings: updateData.settings ? {
-            ...existingTemplate.settings,
-            ...updateData.settings
-        } : (existingTemplate.settings ?? {})
+        templateSettings: updateData.templateSettings ? {
+            ...existingTemplate.templateSettings,
+            ...updateData.templateSettings
+        } : (existingTemplate.templateSettings ?? {})
     };
-    if (updatedTemplate.settings) stripObsoleteFields(updatedTemplate.settings);
+    if (updatedTemplate.templateSettings) stripObsoleteFields(updatedTemplate.templateSettings);
     const brandId = updatedTemplate.brandId;
     const { resource: savedTemplate } = await container.item(templateId, brandId).replace(updatedTemplate);
     return savedTemplate;

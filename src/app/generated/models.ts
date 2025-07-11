@@ -164,7 +164,7 @@ export interface components {
             brandId?: string;
             templateInfo?: components["schemas"]["TemplateInfo"];
             schedule?: components["schemas"]["Schedule"];
-            settings?: components["schemas"]["TemplateSettings"];
+            templateSettings?: components["schemas"]["TemplateSettings"];
         };
         BrandDocument: components["schemas"]["BaseModel"] & {
             userId?: string;
@@ -452,7 +452,7 @@ export interface components {
             brandId?: string;
             templateInfo?: components["schemas"]["TemplateInfo"];
             schedule?: components["schemas"]["Schedule"];
-            settings?: components["schemas"]["TemplateSettings"];
+            templateSettings?: components["schemas"]["TemplateSettings"];
         };
         /** @description Minimal response schema for ContentGenerationTemplateDocument creation or deletion.
          *      */
@@ -469,7 +469,7 @@ export interface components {
             brandId: string;
             templateInfo: components["schemas"]["TemplateInfo"];
             schedule?: components["schemas"]["Schedule"];
-            settings?: components["schemas"]["TemplateSettings"];
+            templateSettings?: components["schemas"]["TemplateSettings"];
         };
         /** @description Payload for updating a Brand. All fields are optional and may be provided for partial update.
          *      */
@@ -490,6 +490,12 @@ export interface components {
          *      */
         BrandCreate: {
             brandInfo: components["schemas"]["BrandInfo"] & unknown;
+        };
+        ContentOrchestratorRequest: {
+            /** @description The brand partition key in CosmosDB. */
+            brandId: string;
+            /** @description The template id in CosmosDB. */
+            templateId: string;
         };
     };
     responses: {
