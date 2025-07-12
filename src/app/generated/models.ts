@@ -164,7 +164,7 @@ export interface components {
             brandId?: string;
             templateInfo?: components["schemas"]["TemplateInfo"];
             schedule?: components["schemas"]["Schedule"];
-            settings?: components["schemas"]["TemplateSettings"];
+            templateSettings?: components["schemas"]["TemplateSettings"];
         };
         BrandDocument: components["schemas"]["BaseModel"] & {
             userId?: string;
@@ -173,13 +173,11 @@ export interface components {
         };
         TemplateSettings: {
             promptTemplate?: components["schemas"]["PromptTemplate"];
-            visualStyle?: components["schemas"]["VisualStyleObj"];
             contentItem?: components["schemas"]["ContentItem"];
         };
         TemplateInfo: {
             name?: string;
             description?: string;
-            contentType?: components["schemas"]["ContentType"];
             socialAccounts?: components["schemas"]["Platform"][];
         };
         PromptVariable: {
@@ -200,13 +198,29 @@ export interface components {
         VisualStyle: {
             textStyle?: components["schemas"]["TextStyle"];
             overlayBox?: components["schemas"]["OverlayBox"];
-            /** @description Background color */
+            /** @description Background color. Only relevant when the parent object's mediaType is "color".
+             *     This property is required if mediaType is "color" in the parent Image or Video object, otherwise it can be omitted.
+             *      */
             backgroundColor?: string;
         };
         TextStyle: {
-            font?: components["schemas"]["Font"];
-            outline?: components["schemas"]["Outline"];
-            alignment?: components["schemas"]["Alignment"];
+            font?: {
+                family?: string;
+                size?: string;
+                /** @enum {string} */
+                weight?: "normal" | "bold";
+                /** @enum {string} */
+                style?: "normal" | "italic";
+                color?: string;
+            };
+            outline?: {
+                color?: string;
+                width?: number;
+            };
+            /** @enum {string} */
+            alignment?: "left" | "center" | "right";
+            /** @default 1 */
+            transparency: number;
         };
         OverlayBox: {
             color?: string;
@@ -215,10 +229,6 @@ export interface components {
             verticalLocation?: "top" | "middle" | "bottom";
             /** @enum {string} */
             horizontalLocation?: "left" | "middle" | "right";
-        };
-        Outline: {
-            color?: string;
-            width?: string;
         };
         /** @description Font definitions for use by both backend and frontend */
         Fonts: {
@@ -231,16 +241,6 @@ export interface components {
                 boldItalic?: string;
             };
         }[];
-        Font: {
-            family?: string;
-            size?: string;
-            /** @enum {string} */
-            weight?: "normal" | "bold";
-            /** @enum {string} */
-            style?: "normal" | "italic";
-        };
-        /** @enum {string} */
-        Alignment: "left" | "center" | "right";
         SocialAccountEntry: {
             platform?: components["schemas"]["Platform"];
             account?: components["schemas"]["SocialAccount"];
@@ -261,7 +261,7 @@ export interface components {
             expiryDate: string;
         };
         /** @enum {string} */
-        Platform: "instagram" | "facebook" | "twitter" | "youtube" | "tiktok";
+        Platform: "instagram" | "facebook" | "x" | "youtube" | "tiktok";
         TimeSlot: {
             /** @description Hour in 24-hour format */
             hour: number;
@@ -274,51 +274,30 @@ export interface components {
             daysOfWeek: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday")[];
             timeSlots: components["schemas"]["TimeSlot"][];
         };
-        Video: {
+        VideoTemplate: {
             mediaType?: components["schemas"]["MediaType"];
-            setUrl?: string;
-            visualStyle?: components["schemas"]["VisualStyle"];
-            dimensions?: {
-                /** @description Video width in pixels */
-                width?: number;
-                /** @description Video height in pixels */
-                height?: number;
-                /** @description Aspect ratio (e.g., "16:9", "1:1") */
-                aspectRatio?: string;
-            };
-            videoInfo?: {
-                /** @description Duration in seconds */
-                duration?: number;
-                /** @description Frames per second */
-                frameRate?: number;
-                /** @description Video codec (e.g., "h264", "vp9") */
-                codec?: string;
-            };
-            audioInfo?: {
-                /** @description Audio codec (e.g., "aac", "opus") */
-                audioCodec?: string;
-                /** @description Number of audio channels (e.g., 2 for stereo) */
-                channels?: number;
-            };
-            /** @description Video resolution (e.g., "1080p", "4K") */
-            resolution?: string;
+            setUrl?: string | null;
+            visualStyleObj?: components["schemas"]["VisualStyleObj"];
+            aspectRatio?: components["schemas"]["AspectRatio"];
             /** @description Video file format (e.g., "mp4", "webm") */
             format?: string;
+        } & (unknown & {
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "video";
-        };
-        MultiImage: {
-            image?: components["schemas"]["Image"];
-            minImages?: number;
-            maxImages?: number;
+            contentType: "video";
+        });
+        MultiImageTemplate: {
+            /** @description Array of image objects */
+            imageTemplates?: components["schemas"]["ImageTemplate"][];
+            /** @description The exact number of images required */
+            numImages?: number;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "multiImage";
+            contentType: "multi-image";
         };
         /** @enum {string} */
         MediaType: "color" | "set" | "uploaded" | "online";
@@ -329,28 +308,24 @@ export interface components {
             suggestedName?: string;
             cognitiveData: components["schemas"]["CognitiveData"];
         };
-        Image: {
+        ImageTemplate: {
             mediaType?: components["schemas"]["MediaType"];
             setUrl?: string;
-            visualStyle?: components["schemas"]["VisualStyle"];
-            dimensions?: {
-                /** @description Image width in pixels */
-                width?: number;
-                /** @description Image height in pixels */
-                height?: number;
-                /** @description Aspect ratio (e.g., "16:9", "1:1") */
-                aspectRatio?: string;
-            };
-            /** @description Image resolution (e.g., "300dpi") */
-            resolution?: string;
+            visualStyleObj?: components["schemas"]["VisualStyleObj"];
+            aspectRatio?: components["schemas"]["AspectRatio"];
             /** @description Image file format (e.g., "jpeg", "png") */
             format?: string;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "image";
+            contentType: "image";
         };
+        /**
+         * @description Aspect ratio (e.g., "square", "portrait", "landscape", "story")
+         * @enum {string}
+         */
+        AspectRatio: "square" | "portrait" | "landscape" | "story";
         Rectangle: {
             x?: number;
             y?: number;
@@ -398,7 +373,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "text";
+            contentType: "text";
         };
         Metadata: {
             /**
@@ -423,16 +398,14 @@ export interface components {
             /** @description Optional additional error details */
             details?: string | null;
         };
-        /** @enum {string} */
-        ContentType: "text" | "video" | "multi-image" | "image";
         ContentItem: {
             /** @enum {string} */
-            type?: "text" | "image" | "video" | "multiImage";
+            contentType?: "text" | "image" | "multi-image" | "video";
             text?: components["schemas"]["Text"];
-            image?: components["schemas"]["Image"];
-            video?: components["schemas"]["Video"];
-            multiImage?: components["schemas"]["MultiImage"];
-        } & (components["schemas"]["Text"] | components["schemas"]["Image"] | components["schemas"]["Video"] | components["schemas"]["MultiImage"]);
+            imageTemplate?: components["schemas"]["ImageTemplate"];
+            videoTemplate?: components["schemas"]["VideoTemplate"];
+            multiImageTemplate?: components["schemas"]["MultiImageTemplate"];
+        } & (components["schemas"]["Text"] | components["schemas"]["ImageTemplate"] | components["schemas"]["VideoTemplate"] | components["schemas"]["MultiImageTemplate"]);
         BrandInfo: {
             name?: string;
             description?: string;
@@ -478,8 +451,7 @@ export interface components {
             brandId?: string;
             templateInfo?: components["schemas"]["TemplateInfo"];
             schedule?: components["schemas"]["Schedule"];
-            settings?: components["schemas"]["TemplateSettings"];
-            deleted?: boolean;
+            templateSettings?: components["schemas"]["TemplateSettings"];
         };
         /** @description Minimal response schema for ContentGenerationTemplateDocument creation or deletion.
          *      */
@@ -496,7 +468,7 @@ export interface components {
             brandId: string;
             templateInfo: components["schemas"]["TemplateInfo"];
             schedule?: components["schemas"]["Schedule"];
-            settings?: components["schemas"]["TemplateSettings"];
+            templateSettings?: components["schemas"]["TemplateSettings"];
         };
         /** @description Payload for updating a Brand. All fields are optional and may be provided for partial update.
          *      */
@@ -517,6 +489,12 @@ export interface components {
          *      */
         BrandCreate: {
             brandInfo: components["schemas"]["BrandInfo"] & unknown;
+        };
+        ContentOrchestratorRequest: {
+            /** @description The brand partition key in CosmosDB. */
+            brandId: string;
+            /** @description The template id in CosmosDB. */
+            templateId: string;
         };
     };
     responses: {

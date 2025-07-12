@@ -9,5 +9,5 @@ import { LoadingSpinnerComponent } from './shared/components/loading-spinner/loa
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'autogensocial-swa';
+  title = 'static-web-app';
 }

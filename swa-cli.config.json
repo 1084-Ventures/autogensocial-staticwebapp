@@ -1,9 +1,9 @@
 {
   "$schema": "https://aka.ms/azure/static-web-apps-cli/schema",
   "configurations": {
-    "autogensocial-swa": {
+    "static-web-app": {
       "appLocation": ".",
-      "outputLocation": "dist/autogensocial-swa",
+      "outputLocation": "dist/static-web-app",
       "appBuildCommand": "npm run build",
       "apiBuildCommand": "npm run build",
       "run": "npm start",

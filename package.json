@@ -1,5 +1,5 @@
 {
-  "name": "autogensocial-swa",
+  "name": "static-web-app",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:autogensocial-swa": "node dist/autogensocial-swa/server/server.mjs",
+    "serve:ssr:static-web-app": "node dist/static-web-app/server/server.mjs",
     "generate:models": "openapi-typescript '../specs/openapi-bundled.json' --output api/generated/models.ts && openapi-typescript '../specs/openapi-bundled.json' --output src/app/generated/models.ts"
   },
   "private": true,

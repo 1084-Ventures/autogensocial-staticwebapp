@@ -15,10 +15,10 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'autogensocial-swa' title`, () => {
+  it(`should have the 'static-web-app' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('autogensocial-swa');
+    expect(app.title).toEqual('static-web-app');
   });
 
   it('should render router outlet', () => {
