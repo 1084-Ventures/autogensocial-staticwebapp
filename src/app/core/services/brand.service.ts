@@ -13,7 +13,7 @@ export type PaginationParams = components["parameters"]["pagination"];
   providedIn: 'root'
 })
 export class BrandService {
-  private apiUrl = '/api/brand_management';
+  private apiUrl = '/api/brands';
 
   constructor(
     private http: HttpClient,

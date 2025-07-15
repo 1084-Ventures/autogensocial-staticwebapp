@@ -6,7 +6,6 @@
   margin: 1.5rem 0 2rem 0;
   padding: 2rem 2rem 1.5rem 2rem;
   box-shadow: 0 2px 8px 0 rgba(60,60,60,0.04);
-}
 
 .content-item-form .form-section {
   margin-bottom: 1.5rem;
@@ -21,16 +20,33 @@
 }
 
 .content-item-form .form-field {
-  flex: 1 1 220px;
+  flex: 1 1 260px;
   min-width: 180px;
-  max-width: 320px;
+  max-width: 100%;
 }
 
 .multi-image-row {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 1.5rem 1rem;
   align-items: flex-end;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 700px) {
+  .multi-image-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  .content-item-form .form-section {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .content-item-form {
+    padding: 1rem 0.5rem;
+  }
+}
 }
 
 .info {

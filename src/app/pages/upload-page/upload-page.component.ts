@@ -48,6 +48,7 @@ export class UploadPageComponent implements OnDestroy {
   selectMedia(media: MediaDocument) {
     this.selectedMedia = media;
     this.showUploadForm = false;
+    // tagsString is comma-separated for UI, but tags is string[] in model
     this.tagsString = (media.mediaMetadata?.tags || []).join(', ');
   }
 
@@ -59,7 +60,8 @@ export class UploadPageComponent implements OnDestroy {
 
   submitMediaEditForm(form: any) {
     if (!this.selectedMedia) return;
-    const tags = this.tagsString.split(',').map(t => t.trim()).filter(t => t);
+    // Convert tagsString (comma-separated) to string[]
+    const tags = (this.tagsString || '').split(',').map((t: string) => t.trim()).filter((t: string) => !!t);
     const update: MediaUpdate = {
       id: this.selectedMedia.id,
       metadata: this.selectedMedia.metadata,

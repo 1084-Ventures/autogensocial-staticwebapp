@@ -1,22 +1,39 @@
 // Make fields more horizontal in the info form
-.template-info-form .form-section {
+// Responsive row-fields
+.row-fields {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem 2rem;
+  gap: 2rem;
 }
-
-.template-info-form .form-field {
-  flex: 1 1 220px;
-  min-width: 180px;
-  max-width: 320px;
-}
-
-// Responsive: stack vertically on small screens
 @media (max-width: 700px) {
-  .template-info-form .form-section {
+  .row-fields {
     flex-direction: column;
     gap: 1rem;
   }
+  .template-info-form-outer {
+    padding: 1.2rem 0.5rem;
+    max-width: 100%;
+  }
+  .template-info-form {
+    max-width: 100%;
+  }
+}
+.form-row {
+  display: flex;
+  align-items: center;
+  margin-top: 1.2rem;
+  gap: 1.5rem;
+}
+.form-label {
+  font-weight: 500;
+  min-width: 120px;
+}
+.content-type-radio-group {
+  display: flex;
+  gap: 1.5rem;
+}
+.social-checkbox-group {
+  display: flex;
+  gap: 1.2rem;
 }
 .template-info-form-outer {
   border: 1.5px solid #d1d5db;

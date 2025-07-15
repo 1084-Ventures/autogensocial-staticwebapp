@@ -9,6 +9,7 @@
   <!-- Main content placeholder -->
   <div class="main-content">
     <ng-container *ngIf="addingTemplate">
+      <h1 class="page-title">Create Content Generation Template</h1>
       <form [formGroup]="form" (ngSubmit)="onSaveTemplate()" class="growing-template-form">
         <app-content-template-info-form
           [formGroup]="templateInfoGroup"
@@ -35,7 +36,7 @@
       <ng-container *ngIf="selectedTemplate">
         <!-- Template details will go here -->
         <div class="template-details-card">
-          <h2>{{ selectedTemplate.name || 'Untitled Template' }}</h2>
+          <h2>{{ selectedTemplate.templateInfo?.name || 'Untitled Template' }}</h2>
           <!-- More details to be added step by step -->
         </div>
       </ng-container>

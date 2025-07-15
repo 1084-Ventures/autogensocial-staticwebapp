@@ -1,7 +1,8 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, FormArray, FormControl, ReactiveFormsModule } from '@angular/forms';
-import { components } from '../../../generated/models';
+// ContentType is not exported as a type from OpenAPI, so define it here to match the enum in ContentItem.yaml
+export type ContentType = 'text' | 'images' | 'video';
 import { MaterialModule } from '../../../material.module';
 
 @Component({
@@ -13,11 +14,14 @@ import { MaterialModule } from '../../../material.module';
 })
 export class ContentItemFormComponent {
   @Input() formGroup!: FormGroup;
-  @Input() contentType!: components["schemas"]["ContentType"];
+  @Input() contentType!: ContentType;
   @Input() disabled = false;
 
-  get images(): FormArray | null {
-    return this.formGroup.get('images') as FormArray;
+
+  // Getter for the FormArray of imageTemplates inside imagesTemplate
+  get imageTemplates(): FormArray | null {
+    const imagesTemplateGroup = this.formGroup.get('imagesTemplate') as FormGroup;
+    return imagesTemplateGroup?.get('imageTemplates') as FormArray;
   }
 
   get dimensionsGroup(): FormGroup | null {
@@ -30,24 +34,23 @@ export class ContentItemFormComponent {
     return ctrl instanceof FormGroup ? ctrl : null;
   }
 
-  addImage() {
-    if (this.images) {
-      this.images.push(new FormGroup({
+
+  // Add a new image template to the FormArray
+  addImageTemplate() {
+    if (this.imageTemplates) {
+      this.imageTemplates.push(new FormGroup({
+        mediaType: new FormControl('color', { nonNullable: true }),
         setUrl: new FormControl('', { nonNullable: true }),
-        resolution: new FormControl('', { nonNullable: true }),
-        format: new FormControl('', { nonNullable: true }),
-        dimensions: new FormGroup({
-          width: new FormControl(null),
-          height: new FormControl(null),
-          aspectRatio: new FormControl('')
-        })
+        aspectRatio: new FormControl('', { nonNullable: true }),
+        format: new FormControl('', { nonNullable: true })
       }));
     }
   }
 
-  removeImage(index: number) {
-    if (this.images) {
-      this.images.removeAt(index);
+  // Remove an image template at the given index
+  removeImageTemplate(index: number) {
+    if (this.imageTemplates) {
+      this.imageTemplates.removeAt(index);
     }
   }
 }

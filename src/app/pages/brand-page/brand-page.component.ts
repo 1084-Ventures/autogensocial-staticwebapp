@@ -62,18 +62,33 @@ export class BrandPageComponent implements OnInit, OnDestroy {
       socialAccounts: this.fb.group({
         instagram: this.fb.group({
           enabled: [false],
+          platformAccountId: [''],
+          handle: [''],
           username: [''],
-          accessToken: ['']
+          profileUrl: [''],
+          accessToken: [''],
+          expiryDate: [''],
+          extra: this.fb.group({})
         }),
         facebook: this.fb.group({
           enabled: [false],
+          platformAccountId: [''],
+          handle: [''],
           username: [''],
-          accessToken: ['']
+          profileUrl: [''],
+          accessToken: [''],
+          expiryDate: [''],
+          extra: this.fb.group({})
         }),
         tiktok: this.fb.group({
           enabled: [false],
+          platformAccountId: [''],
+          handle: [''],
           username: [''],
-          accessToken: ['']
+          profileUrl: [''],
+          accessToken: [''],
+          expiryDate: [''],
+          extra: this.fb.group({})
         })
       })
     });
@@ -128,8 +143,13 @@ export class BrandPageComponent implements OnInit, OnDestroy {
     const entry = accounts?.find(a => a.platform === platform);
     return {
       enabled: !!entry,
+      platformAccountId: entry?.account?.platformAccountId || '',
+      handle: entry?.account?.handle || '',
       username: entry?.account?.username || '',
-      accessToken: entry?.account?.accessToken || ''
+      profileUrl: entry?.account?.profileUrl || '',
+      accessToken: entry?.account?.accessToken || '',
+      expiryDate: entry?.account?.expiryDate || '',
+      extra: entry?.account?.extra || {}
     };
   }
 
@@ -145,11 +165,13 @@ export class BrandPageComponent implements OnInit, OnDestroy {
         .map(platform => ({
           platform,
           account: {
-            id: '', // id is required, but not present in form; backend should handle
-            username: formValue.socialAccounts[platform].username,
-            accessToken: formValue.socialAccounts[platform].accessToken,
-            profileUrl: '',
-            expiryDate: ''
+            platformAccountId: formValue.socialAccounts[platform].platformAccountId || '',
+            handle: formValue.socialAccounts[platform].handle || '',
+            username: formValue.socialAccounts[platform].username || '',
+            profileUrl: formValue.socialAccounts[platform].profileUrl || '',
+            accessToken: formValue.socialAccounts[platform].accessToken || '',
+            expiryDate: formValue.socialAccounts[platform].expiryDate || '',
+            extra: formValue.socialAccounts[platform].extra || {}
           }
         }));
       const updateData: BrandUpdate = {

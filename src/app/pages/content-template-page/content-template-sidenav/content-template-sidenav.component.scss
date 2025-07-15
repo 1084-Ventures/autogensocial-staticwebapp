@@ -3,6 +3,9 @@
   background: #f7f7fa;
   border-right: 1px solid #e0e0e0;
   flex-shrink: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidenav-inner {

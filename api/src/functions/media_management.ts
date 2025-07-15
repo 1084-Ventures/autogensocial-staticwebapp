@@ -7,9 +7,10 @@ import type { components } from '../../generated/models';
 
 // Use generated types
 export type MediaDocument = components["schemas"]["MediaDocument"];
-export type MediaCreate = components["schemas"]["MediaDocument"];
-export type MediaUpdate = Partial<components["schemas"]["MediaDocument"]>;
+export type MediaCreate = components["schemas"]["MediaCreate"];
+export type MediaUpdate = components["schemas"]["MediaUpdate"];
 export type MediaMetadata = components["schemas"]["MediaMetadata"];
+export type CognitiveData = components["schemas"]["CognitiveData"];
 
 const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
 const database = client.database(process.env.COSMOS_DB_NAME || '');
@@ -177,7 +178,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         let fileName = '';
         let brandId = '';
         let fileMimeType = '';
-        let tags: { name: string; confidence: number }[] = [];
+        let tags: string[] = [];
         let description = '';
         let metaFileName = '';
         let categories: any[] = [];
@@ -187,7 +188,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         let brands: any[] = [];
         let people: any[] = [];
         let ocrText: string | undefined = undefined;
-        let cognitiveData: any = undefined;
+        let cognitiveData: CognitiveData = {};
         const filePromise = new Promise<void>((resolve, reject) => {
             bb.on('file', (nameField: string, file: any, info: any) => {
                 fileName = info.filename;
@@ -201,7 +202,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
             bb.on('field', (fieldName: string, val: string) => {
                 fields[fieldName] = val;
                 if (fieldName === 'brandId') brandId = val;
-                if (fieldName === 'tags') tags = val.split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => ({ name: t, confidence: 1 }));
+                if (fieldName === 'tags') tags = val.split(',').map((t: string) => t.trim()).filter(Boolean);
                 if (fieldName === 'description') description = val;
                 if (fieldName === 'name') metaFileName = val;
             });
@@ -258,16 +259,14 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         // Compose mediaMetadata using correct structure
         // Ensure tags is a string[]
         if (fields.tags && typeof fields.tags === 'string') {
-          tags = String(fields.tags).split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => ({ name: t, confidence: 1 }));
-        } else if (Array.isArray(tags)) {
-          tags = tags.map((t: any) => typeof t === 'string' ? t : (t && t.name ? t.name : '')).filter((t: string) => !!t);
-        } else {
+          tags = String(fields.tags).split(',').map((t: string) => t.trim()).filter(Boolean);
+        } else if (!Array.isArray(tags)) {
           tags = [];
         }
         // cognitiveData is required in MediaMetadata
         const mediaMetadata: MediaMetadata = {
           fileName: metaFileName,
-          tags: Array.isArray(tags) ? tags.map((t: any) => typeof t === 'string' ? t : t.name).filter((t: string) => typeof t === 'string') : [],
+          tags,
           description,
           cognitiveData: cognitiveData || {}
         };
@@ -283,7 +282,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         if (fileMimeType.startsWith('video/')) {
             mediaType = 'video';
         }
-        const mediaDoc: MediaDocument = {
+        const mediaDoc: MediaCreate = {
             id,
             metadata,
             brandId,
