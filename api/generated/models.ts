@@ -50,7 +50,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Analyze a media file (image or video) */
+        /** Analyze a media item (image) using AI/Cognitive Services */
         post: operations["analyzeMedia"];
         delete?: never;
         options?: never;
@@ -729,23 +729,34 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @description Base64-encoded image data */
-                    imageBase64?: string;
+                    /** @description Base64-encoded image data (optionally with data URL prefix) */
+                    imageBase64: string;
                 };
             };
         };
         responses: {
-            /** @description Analysis results for the media file */
+            /** @description Analysis result */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MediaAnalyze"];
+                    "application/json": components["schemas"]["CognitiveData"];
                 };
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: string;
+                    };
+                };
+            };
             429: components["responses"]["RateLimitExceeded"];
         };
     };

@@ -9,7 +9,7 @@ export type MediaAnalyze = components["schemas"]["MediaAnalyze"];
 
 @Injectable({ providedIn: 'root' })
 export class MediaService {
-  private apiUrl = '/api/media_management';
+  private apiUrl = '/api/media';
 
   constructor(private http: HttpClient) {}
 

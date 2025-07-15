@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import fetch from "node-fetch";
+import { callCognitiveServices } from "../shared/cognitiveServicesClient";
 import type { components } from '../../generated/models';
 
 // Use generated types
@@ -13,35 +13,21 @@ export type CognitivePerson = components["schemas"]["CognitivePerson"];
 export type CognitiveData = components["schemas"]["CognitiveData"];
 export type MediaAnalyze = components["schemas"]["MediaAnalyze"];
 
-// Environment variables for Azure Cognitive Services
-const COGSVCS_ENDPOINT = process.env.AZURE_COGSVCS_ENDPOINT;
-const COGSVCS_KEY = process.env.AZURE_COGSVCS_KEY;
+
 
 async function analyzeImageWithCognitiveServices(imageBase64: string, context: InvocationContext) {
-    if (!COGSVCS_ENDPOINT || !COGSVCS_KEY) {
-        throw new Error("Azure Cognitive Services endpoint or key not configured.");
-    }
     // Remove data URL prefix if present
     const base64Data = imageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
-
     // Use Azure Computer Vision v4.0 GA for improved analysis
     // Add 'denseCaptions' to the features list for region-based captions
-    const url = `${COGSVCS_ENDPOINT}/computervision/imageanalysis:analyze?api-version=2023-10-01&features=caption,tags,denseCaptions`;
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Ocp-Apim-Subscription-Key": COGSVCS_KEY,
-            "Content-Type": "application/octet-stream"
-        },
-        body: buffer
-    });
-    if (!response.ok) {
-        const errorText = await response.text();
-        context.log("Cognitive Services error:", errorText);
-        throw new Error(`Cognitive Services error: ${response.status}`);
+    const path = "/computervision/imageanalysis:analyze?api-version=2023-10-01&features=caption,tags,denseCaptions";
+    try {
+        return await callCognitiveServices(path, buffer, "application/octet-stream");
+    } catch (err: any) {
+        context.log("Cognitive Services error:", err.message);
+        throw err;
     }
-    return response.json();
 }
 
 export async function analyzeMedia(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {

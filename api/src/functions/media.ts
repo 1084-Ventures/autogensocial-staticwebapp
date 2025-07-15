@@ -15,7 +15,7 @@ export type CognitiveData = components["schemas"]["CognitiveData"];
 
 
 export const mediaManagement = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    context.log('Request received in media_management');
+    context.log('Request received in media');
     context.log('Method:', request.method);
     context.log('URL:', request.url);
     context.log('Headers:', JSON.stringify(Object.fromEntries(request.headers.entries())));
@@ -44,7 +44,7 @@ export const mediaManagement = async (request: HttpRequest, context: InvocationC
                 return createErrorResponse(405, 'Method Not Allowed', 'METHOD_NOT_ALLOWED');
         }
     } catch (err) {
-        context.log('Unhandled error in media_management:', err);
+        context.log('Unhandled error in media:', err);
         return createErrorResponse(500, 'Internal Server Error', 'INTERNAL_ERROR');
     }
 }
@@ -56,7 +56,9 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
         const url = new URL(request.url);
         const id = url.pathname.split('/').pop();
         context.log('handleGet: Parsed id:', id);
-        if (id && id !== 'media_management') {
+        // Check for brandId in query params
+        const brandId = url.searchParams.get('brandId');
+        if (id && id !== 'media') {
             // Fetch single media by id using cross-partition query
             context.log('handleGet: Fetching single media by id');
             const { resources } = await mediaContainer.items.query<MediaDocument>({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: id }] }).fetchAll();
@@ -85,12 +87,12 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
             const sasUrl = `${urlObj.origin}/${containerName}/${blobName}?${sasToken}`;
             resource.blobUrl = sasUrl;
             return createResponse(200, resource);
-        } else {
-            // List all media for brandId (userId is not in OpenAPI model)
-            context.log('handleGet: Listing all media for brandId:', userId);
+        } else if (brandId) {
+            // List all media for the provided brandId
+            context.log('handleGet: Listing all media for brandId:', brandId);
             const query = {
                 query: 'SELECT * FROM c WHERE c.brandId = @brandId',
-                parameters: [{ name: '@brandId', value: userId }]
+                parameters: [{ name: '@brandId', value: brandId }]
             };
             const { resources } = await mediaContainer.items.query<MediaDocument>(query).fetchAll();
             // Add SAS URL to each resource using shared client
@@ -112,6 +114,10 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
                 resource.blobUrl = sasUrl;
             }
             return createResponse(200, resources);
+        } else {
+            // Optionally, fallback to listing all media for the user (if needed)
+            context.log('handleGet: No brandId provided, returning empty list or all user media if desired.');
+            return createResponse(200, []);
         }
     } catch (error: any) {
         context.log('Error in handleGet:', error);
@@ -252,7 +258,7 @@ async function handleDelete(request: HttpRequest, userId: string, context: Invoc
         const url = new URL(request.url);
         let id = url.pathname.split('/').pop();
         context.log('handleDelete: Parsed id:', id);
-        if (!id || id === 'media_management') {
+        if (!id || id === 'media') {
             // Try to get from body
             const body = request.body ? JSON.parse(Buffer.from(await request.arrayBuffer()).toString()) : {};
             id = body.id;
@@ -311,7 +317,7 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
         let id = url.pathname.split('/').pop();
         context.log('handleUpdate: Parsed id:', id);
         let update: Partial<MediaUpdate> = {};
-        if (!id || id === 'media_management') {
+        if (!id || id === 'media') {
             // Try to get from body
             const body = request.body ? JSON.parse(Buffer.from(await request.arrayBuffer()).toString()) : {};
             id = body.id;
@@ -379,9 +385,9 @@ async function extractUserId(request: HttpRequest): Promise<string> {
     }
 }
 
-app.http('media_management', {
+app.http('media', {
     methods: ['GET', 'POST', 'DELETE', 'PUT'],
     authLevel: 'anonymous',
-    route: 'media_management/{id?}',
+    route: 'media/{id?}',
     handler: mediaManagement
 });

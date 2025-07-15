@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { CosmosClient } from "@azure/cosmos";
+import { templateContainer, brandContainer } from "../shared/cosmosClient";
 import type { components } from '../../generated/models';
 
 // Use generated types
@@ -17,22 +17,8 @@ export type BrandDocument = components["schemas"]["BrandDocument"];
 
 import { randomUUID } from 'crypto';
 
-const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
-const database = client.database(process.env.COSMOS_DB_NAME || '');
-const container = database.container(process.env.COSMOS_DB_CONTAINER_TEMPLATE || '');
-const brandContainer = database.container(process.env.COSMOS_DB_CONTAINER_BRAND || '');
 
-// Startup diagnostics
-try {
-    const cosmosPkg = require('@azure/cosmos/package.json');
-    // eslint-disable-next-line no-console
-    console.log('[Startup] Cosmos DB SDK version:', cosmosPkg.version);
-} catch (e) {
-    // eslint-disable-next-line no-console
-    console.log('[Startup] Could not determine Cosmos DB SDK version:', e);
-}
-// eslint-disable-next-line no-console
-console.log('[Startup] COSMOS_DB_CONNECTION_STRING present:', !!process.env.COSMOS_DB_CONNECTION_STRING);
+// Cosmos DB clients are now imported from shared/cosmosClient for consistency and best practice.
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -89,7 +75,7 @@ export const contentGenerationTemplatesApiHandler = async (request: HttpRequest,
                 }
                 context.log(`[DELETE] Attempting to delete template. id: ${idToDelete}, partitionKey: ${idToDelete}`);
                 try {
-                    const response = await container.item(idToDelete, idToDelete).delete();
+                    const response = await templateContainer.item(idToDelete, idToDelete).delete();
                     context.log(`[DELETE] Cosmos DB delete response:`, JSON.stringify(response));
                     if (!response.resource) {
                         context.log(`[DELETE] No resource returned after delete. Returning 404.`);
@@ -126,7 +112,7 @@ async function getTemplateByIdWithPartition(templateId: string): Promise<{ resou
         query: 'SELECT * FROM c WHERE c.id = @id',
         parameters: [{ name: '@id', value: templateId }]
     };
-    const { resources } = await container.items.query<ContentGenerationTemplateDocument>(querySpec).fetchAll();
+    const { resources } = await templateContainer.items.query<ContentGenerationTemplateDocument>(querySpec).fetchAll();
     return { resource: resources[0] };
 }
 
@@ -167,7 +153,7 @@ async function handleCreate(request: HttpRequest, userId: string, context: Invoc
     let createdTemplate;
     try {
         // Pass the partition key as part of the options object (type assertion to bypass type error)
-        const result = await container.items.create(newTemplate, { partitionKey: newTemplate.brandId } as any);
+        const result = await templateContainer.items.create(newTemplate, { partitionKey: newTemplate.brandId } as any);
         createdTemplate = result.resource;
     } catch (err) {
         context.log(`[handleCreate] DB error after ${Date.now() - start}ms`, err);
@@ -296,7 +282,7 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
     let savedTemplate;
     try {
         const brandId = updatedTemplate.brandId;
-        const result = await container.item(templateId, brandId).replace(updatedTemplate);
+        const result = await templateContainer.item(templateId, brandId).replace(updatedTemplate);
         savedTemplate = result.resource;
     } catch (err) {
         context.log(`[handleUpdate] DB write error after ${Date.now() - start}ms`, err);
@@ -335,7 +321,7 @@ async function getTemplatesByBrandId(brandId: string | null, userId: string, pag
             { name: '@limit', value: limit || DEFAULT_PAGE_SIZE }
         ]
     };
-    const { resources: templates } = await container.items.query<ContentGenerationTemplateDocument>(querySpec).fetchAll();
+    const { resources: templates } = await templateContainer.items.query<ContentGenerationTemplateDocument>(querySpec).fetchAll();
     return templates;
 }
 
@@ -371,7 +357,7 @@ async function updateTemplate(templateId: string, userId: string, updateData: Co
     };
     if (updatedTemplate.templateSettings) stripObsoleteFields(updatedTemplate.templateSettings);
     const brandId = updatedTemplate.brandId;
-    const { resource: savedTemplate } = await container.item(templateId, brandId).replace(updatedTemplate);
+    const { resource: savedTemplate } = await templateContainer.item(templateId, brandId).replace(updatedTemplate);
     return savedTemplate;
 }
 
