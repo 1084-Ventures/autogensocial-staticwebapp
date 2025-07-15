@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { CosmosClient } from "@azure/cosmos";
-// import { BlobServiceClient } from "@azure/storage-blob"; // Uncomment when implementing blob upload
+import { mediaContainer } from "../shared/cosmosClient";
+import { blobServiceClient, sharedKeyCredential, BlobSASPermissions, SASProtocol, generateBlobSASQueryParameters } from "../shared/blobClient";
 // import { analyzeMediaWithCognitiveServices } from "../services/cognitive"; // Placeholder for cognitive analysis
 import { randomUUID } from "crypto";
 import type { components } from '../../generated/models';
@@ -12,10 +12,7 @@ export type MediaUpdate = components["schemas"]["MediaUpdate"];
 export type MediaMetadata = components["schemas"]["MediaMetadata"];
 export type CognitiveData = components["schemas"]["CognitiveData"];
 
-const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
-const database = client.database(process.env.COSMOS_DB_NAME || '');
-const mediaContainer = database.container(process.env.COSMOS_DB_CONTAINER_MEDIA || '');
-// const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
+
 
 export const mediaManagement = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     context.log('Request received in media_management');
@@ -72,24 +69,7 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
                 context.log('handleGet: blobUrl is undefined');
                 return createErrorResponse(500, 'Media blobUrl missing', 'INTERNAL_ERROR');
             }
-            // Generate SAS URL for blob
-            const azureBlob = require('@azure/storage-blob');
-            const BlobServiceClient = azureBlob.BlobServiceClient;
-            const generateBlobSASQueryParameters = azureBlob.generateBlobSASQueryParameters;
-            const BlobSASPermissions = azureBlob.BlobSASPermissions;
-            const SASProtocol = azureBlob.SASProtocol;
-            const StorageSharedKeyCredential = azureBlob.StorageSharedKeyCredential;
-            const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
-            const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-            const accountName = blobServiceClient.accountName;
-            const keyMatch = connectionString.match(/AccountKey=([^;]+)/);
-            if (!accountName || !keyMatch) {
-                context.log('Missing accountName or AccountKey in connection string');
-                return createErrorResponse(500, 'Storage account credentials not configured', 'INTERNAL_ERROR');
-            }
-            const accountKey = keyMatch[1];
-            const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
-            // Extract blob path from blobUrl
+            // Generate SAS URL for blob using shared client
             const urlObj = new URL(resource.blobUrl);
             const blobPath = urlObj.pathname.replace(/^\//, '');
             const containerName = 'media';
@@ -113,23 +93,7 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
                 parameters: [{ name: '@brandId', value: userId }]
             };
             const { resources } = await mediaContainer.items.query<MediaDocument>(query).fetchAll();
-            // Add SAS URL to each resource
-            const azureBlob = require('@azure/storage-blob');
-            const BlobServiceClient = azureBlob.BlobServiceClient;
-            const generateBlobSASQueryParameters = azureBlob.generateBlobSASQueryParameters;
-            const BlobSASPermissions = azureBlob.BlobSASPermissions;
-            const SASProtocol = azureBlob.SASProtocol;
-            const StorageSharedKeyCredential = azureBlob.StorageSharedKeyCredential;
-            const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
-            const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-            const accountName = blobServiceClient.accountName;
-            const keyMatch = connectionString.match(/AccountKey=([^;]+)/);
-            if (!accountName || !keyMatch) {
-                context.log('Missing accountName or AccountKey in connection string');
-                return createErrorResponse(500, 'Storage account credentials not configured', 'INTERNAL_ERROR');
-            }
-            const accountKey = keyMatch[1];
-            const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+            // Add SAS URL to each resource using shared client
             const containerName = 'media';
             for (const resource of resources) {
                 if (!resource.blobUrl) continue;
@@ -216,14 +180,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
             context.log('handleUpload: Missing file or brandId');
             return createErrorResponse(400, 'Missing file or brandId', 'MISSING_DATA');
         }
-        // Upload to blob storage
-        const azureBlob = require('@azure/storage-blob');
-        const BlobServiceClient = azureBlob.BlobServiceClient;
-        const generateBlobSASQueryParameters = azureBlob.generateBlobSASQueryParameters;
-        const BlobSASPermissions = azureBlob.BlobSASPermissions;
-        const SASProtocol = azureBlob.SASProtocol;
-        const StorageSharedKeyCredential = azureBlob.StorageSharedKeyCredential;
-        const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
+        // Upload to blob storage using shared client
         const containerClient = blobServiceClient.getContainerClient('media');
         // Generate a new id for the media
         const id = randomUUID();
@@ -233,18 +190,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         const blobPath = `${userId}/${brandId}/${id}${ext}`;
         const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
         await blockBlobClient.uploadData(fileBuffer, { blobHTTPHeaders: { blobContentType: fileMimeType } });
-        // Generate a SAS token for the blob (read access, 1 hour expiry) using the connection string
-        const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
-        const blobServiceClientForSAS = BlobServiceClient.fromConnectionString(connectionString);
-        const accountName = blobServiceClientForSAS.accountName;
-        // Extract account key from connection string
-        const keyMatch = connectionString.match(/AccountKey=([^;]+)/);
-        if (!accountName || !keyMatch) {
-            context.log('Missing accountName or AccountKey in connection string');
-            return createErrorResponse(500, 'Storage account credentials not configured', 'INTERNAL_ERROR');
-        }
-        const accountKey = keyMatch[1];
-        const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+        // Generate a SAS token for the blob (read access, 1 hour expiry) using shared client
         const sasToken = generateBlobSASQueryParameters({
             containerName: 'media',
             blobName: `${userId}/${brandId}/${id}${ext}`,
@@ -333,9 +279,7 @@ async function handleDelete(request: HttpRequest, userId: string, context: Invoc
             context.log('handleDelete: Forbidden, not owner');
             return createErrorResponse(403, 'Forbidden: not owner', 'FORBIDDEN');
         }
-        // Delete blob from storage
-        const { BlobServiceClient } = require('@azure/storage-blob');
-        const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
+        // Delete blob from storage using shared client
         const containerClient = blobServiceClient.getContainerClient('media');
         // Extract blob path from blobUrl
         const blobUrl = mediaDoc.blobUrl;
