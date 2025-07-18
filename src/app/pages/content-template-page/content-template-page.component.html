@@ -15,15 +15,15 @@
           [formGroup]="templateInfoGroup"
         ></app-content-template-info-form>
 
-        <div *ngIf="templateInfoGroup.valid" class="growing-section">
+        <div *ngIf="form.valid" class="growing-section">
           <app-content-template-prompt-form
             [formGroup]="promptTemplateGroup"
           ></app-content-template-prompt-form>
 
           <app-content-item-form
             *ngIf="contentType && contentType !== 'text'"
-            [formGroup]="contentItemGroup"
-            [contentType]="contentType"
+            [formGroup]="contentItemFormGroup"
+            [contentType]="contentType as unknown as ContentType"
           ></app-content-item-form>
         </div>
         <div class="form-actions">

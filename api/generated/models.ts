@@ -186,17 +186,12 @@ export interface components {
             description?: string;
             socialAccounts?: components["schemas"]["Platform"][];
         };
-        PromptVariable: {
-            name?: string;
-            values?: string[];
-        };
         PromptTemplate: {
-            systemPrompt?: string;
             userPrompt?: string;
-            temperature?: number;
-            maxTokens?: number;
-            model?: string;
-            variables?: components["schemas"]["PromptVariable"][];
+            variables?: {
+                name?: string;
+                values?: string[];
+            }[];
         };
         VisualStyleObj: {
             themes?: components["schemas"]["VisualStyle"][];

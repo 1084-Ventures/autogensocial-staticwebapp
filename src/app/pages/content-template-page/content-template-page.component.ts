@@ -2,27 +2,36 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormBuilder, FormGroup, Validators, FormArray, ReactiveFormsModule } from '@angular/forms';
+import type { components } from '../../generated/models';
 import { ContentTemplateSidenavComponent } from './content-template-sidenav/content-template-sidenav.component';
 import { ContentTemplateInfoFormComponent } from './content-template-info-form/content-template-info-form.component';
 import { ContentTemplatePromptFormComponent } from './content-template-prompt-form/content-template-prompt-form.component';
 import { ContentItemFormComponent } from './content-item-form';
-import type { components } from '../../generated/models';
-type ContentGenerationTemplateDocument = components['schemas']['ContentGenerationTemplateDocument'];
-type TemplateInfo = components['schemas']['TemplateInfo'];
-type TemplateSettings = components['schemas']['TemplateSettings'];
-type ContentItem = components['schemas']['ContentItem'];
-type SocialAccountEntry = components['schemas']['SocialAccountEntry'];
-type Platform = components['schemas']['Platform'];
-type PromptTemplate = components['schemas']['PromptTemplate'];
-type ImagesTemplate = components['schemas']['ImagesTemplate'];
-type VideoTemplate = components['schemas']['VideoTemplate'];
-type Text = components['schemas']['Text'];
-type ContentType = 'text' | 'images' | 'video';
-// ...existing code removed...
+
+// Type aliases for OpenAPI-generated models
+// (These are for type safety and IDE support)
+type ContentGenerationTemplateDocument = components["schemas"]["ContentGenerationTemplateDocument"];
+type TemplateInfo = components["schemas"]["TemplateInfo"];
+type TemplateSettings = components["schemas"]["TemplateSettings"];
+type PromptTemplate = components["schemas"]["PromptTemplate"];
+type PromptVariable = components["schemas"]["PromptVariable"];
+type ImagesTemplate = components["schemas"]["ImagesTemplate"];
+type ImageTemplate = components["schemas"]["ImageTemplate"];
+type VideoTemplate = components["schemas"]["VideoTemplate"];
+type ContentItem = components["schemas"]["ContentItem"];
+
 @Component({
   selector: 'app-content-template-page',
   standalone: true,
-  imports: [CommonModule, MatIconModule, ReactiveFormsModule, ContentTemplateSidenavComponent, ContentTemplateInfoFormComponent, ContentTemplatePromptFormComponent, ContentItemFormComponent],
+  imports: [
+    CommonModule,
+    MatIconModule,
+    ReactiveFormsModule,
+    ContentTemplateSidenavComponent,
+    ContentTemplateInfoFormComponent,
+    ContentTemplatePromptFormComponent,
+    ContentItemFormComponent
+  ],
   templateUrl: './content-template-page.component.html',
   styleUrls: ['./content-template-page.component.scss']
 })
@@ -33,56 +42,14 @@ export class ContentTemplatePageComponent {
   form: FormGroup;
   addingTemplate = false;
 
-  // --- CRUD for Social Accounts (FormArray) ---
-  get socialAccounts(): FormArray {
-    return this.templateInfoGroup.get('socialAccounts') as FormArray;
-  }
-  addSocialAccount() {
-    this.socialAccounts.push(this.fb.group({ platform: [''] }));
-  }
-  removeSocialAccount(i: number) {
-    this.socialAccounts.removeAt(i);
-  }
-
-  // --- CRUD for Prompt Variables (FormArray) ---
-  get variables(): FormArray {
-    return this.promptTemplateGroup.get('variables') as FormArray;
-  }
-  addVariable() {
-    this.variables.push(this.fb.group({ name: [''], values: [[]] }));
-  }
-  removeVariable(i: number) {
-    this.variables.removeAt(i);
-  }
-
-  // --- CRUD for Image Templates (FormArray) ---
-  get imageTemplates(): FormArray {
-    return this.contentItemGroup.get('imagesTemplate.imageTemplates') as FormArray;
-  }
-  addImageTemplate() {
-    this.imageTemplates.push(this.fb.group({ setUrl: [''], format: [''], aspectRatio: ['square'], mediaType: ['uploaded'] }));
-  }
-  removeImageTemplate(i: number) {
-    this.imageTemplates.removeAt(i);
-  }
-
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       templateInfo: this.fb.group({
         name: ['', Validators.required],
         description: [''],
-        socialAccounts: this.fb.array([])
+        socialAccounts: [[]]
       }),
       templateSettings: this.fb.group({
-        contentItem: this.fb.group({
-          contentType: ['images', Validators.required],
-          imagesTemplate: this.fb.group({
-            imageTemplates: this.fb.array([]),
-            numImages: [1]
-          }),
-          videoTemplate: this.fb.group({}),
-          text: this.fb.group({ value: [''] })
-        }),
         promptTemplate: this.fb.group({
           systemPrompt: [''],
           userPrompt: ['', Validators.required],
@@ -90,12 +57,18 @@ export class ContentTemplatePageComponent {
           maxTokens: [256],
           model: [''],
           variables: this.fb.array([])
+        }),
+        contentItem: this.fb.group({
+          contentType: ['images'],
+          text: this.fb.group({ value: [''] }),
+          videoTemplate: this.fb.group({ setUrl: [''], format: [''], aspectRatio: ['square'], mediaType: ['uploaded'] }),
+          imagesTemplate: this.fb.group({ imageTemplates: this.fb.array([]), numImages: [1] })
         })
       })
     });
 
     // React to contentType changes
-    this.contentItemGroup.get('contentType')?.valueChanges.subscribe((type: ContentType) => {
+    this.form.get('templateSettings.contentItem.contentType')?.valueChanges.subscribe((type: string) => {
       this.configureContentItemForm(type);
     });
   }
@@ -103,47 +76,47 @@ export class ContentTemplatePageComponent {
   get templateInfoGroup(): FormGroup {
     return this.form.get('templateInfo') as FormGroup;
   }
-  get templateSettingsGroup(): FormGroup {
-    return this.form.get('templateSettings') as FormGroup;
-  }
-  get contentItemGroup(): FormGroup {
-    return this.templateSettingsGroup.get('contentItem') as FormGroup;
-  }
+
   get promptTemplateGroup(): FormGroup {
-    return this.templateSettingsGroup.get('promptTemplate') as FormGroup;
-  }
-  get socialAccountsArray(): FormArray {
-    return this.templateInfoGroup.get('socialAccounts') as FormArray;
-  }
-  get imageTemplatesArray(): FormArray {
-    return this.contentItemGroup.get('imagesTemplate.imageTemplates') as FormArray;
+    return this.form.get('templateSettings.promptTemplate') as FormGroup;
   }
 
-  configureContentItemForm(type: ContentType) {
-    // Remove all existing controls except contentType
-    const group = this.contentItemGroup;
-    Object.keys(group.controls).forEach(key => {
-      if (key !== 'contentType') group.removeControl(key);
-    });
-    if (type === 'images') {
-      group.addControl('imagesTemplate', this.fb.group({
-        imageTemplates: this.fb.array([]),
-        numImages: [1]
-      }));
-    } else if (type === 'video') {
-      group.addControl('videoTemplate', this.fb.group({
-        setUrl: [''],
-        format: [''],
-        aspectRatio: ['square'],
-        mediaType: ['uploaded']
-      }));
-    } else if (type === 'text') {
-      group.addControl('text', this.fb.group({ value: [''] }));
+  get imageTemplates(): FormArray {
+    return this.form.get('templateSettings.contentItem.imagesTemplate.imageTemplates') as FormArray;
+  }
+
+  get contentType(): string | undefined {
+    return this.form.get('templateSettings.contentItem.contentType')?.value;
+  }
+
+  get contentItemFormGroup(): FormGroup {
+    if (this.contentType === 'images') {
+      return this.form.get('templateSettings.contentItem.imagesTemplate') as FormGroup;
+    } else if (this.contentType === 'video') {
+      return this.form.get('templateSettings.contentItem.videoTemplate') as FormGroup;
+    } else {
+      return this.form.get('templateSettings.contentItem.text') as FormGroup;
     }
   }
 
-  get contentType(): ContentType | undefined {
-    return this.contentItemGroup.get('contentType')?.value;
+  configureContentItemForm(type: string) {
+    // Hide/show relevant controls based on contentType
+    const imagesTemplate = this.form.get('templateSettings.contentItem.imagesTemplate');
+    const videoTemplate = this.form.get('templateSettings.contentItem.videoTemplate');
+    const text = this.form.get('templateSettings.contentItem.text');
+    if (type === 'images') {
+      imagesTemplate?.enable();
+      videoTemplate?.disable();
+      text?.disable();
+    } else if (type === 'video') {
+      imagesTemplate?.disable();
+      videoTemplate?.enable();
+      text?.disable();
+    } else if (type === 'text') {
+      imagesTemplate?.disable();
+      videoTemplate?.disable();
+      text?.enable();
+    }
   }
 
   onAddTemplate() {
@@ -151,15 +124,19 @@ export class ContentTemplatePageComponent {
     this.form.reset({
       templateInfo: { name: '', description: '', socialAccounts: [] },
       templateSettings: {
-        contentItem: { contentType: 'images', imagesTemplate: { imageTemplates: [], numImages: 1 } },
-        promptTemplate: { userPrompt: '', variables: [] }
+        promptTemplate: { systemPrompt: '', userPrompt: '', temperature: 1, maxTokens: 256, model: '', variables: [] },
+        contentItem: {
+          contentType: 'images',
+          text: { value: '' },
+          videoTemplate: { setUrl: '', format: '', aspectRatio: 'square', mediaType: 'uploaded' },
+          imagesTemplate: { imageTemplates: [], numImages: 1 }
+        }
       }
     });
     this.configureContentItemForm('images');
-    // Add one social account, one variable, and one image template by default for UX
-    this.addSocialAccount();
-    this.addVariable();
-    this.addImageTemplate();
+    // Add one variable and one image template by default for UX
+    (this.form.get('templateSettings.promptTemplate.variables') as FormArray).push(this.fb.group({ name: [''], values: [[]] }));
+    (this.form.get('templateSettings.contentItem.imagesTemplate.imageTemplates') as FormArray).push(this.fb.group({ setUrl: [''], format: [''], aspectRatio: ['square'], mediaType: ['uploaded'] }));
   }
 
   onSaveTemplate() {
@@ -181,5 +158,7 @@ export class ContentTemplatePageComponent {
 
   onCancel() {
     this.addingTemplate = false;
+    this.form.reset();
+    this.selectedTemplate = null;
   }
 }
