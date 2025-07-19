@@ -20,6 +20,8 @@
   <!-- Main content -->
   <div style="flex: 1; padding: 2rem; max-width: 1000px; margin: 0 auto; box-sizing: border-box; background: #fff;">
     <ng-container *ngIf="brandId; else emptyState">
+      <div *ngIf="feedbackMessage" class="feedback-message" style="margin-bottom: 1rem; color: #1976d2; font-weight: 500;">{{ feedbackMessage }}</div>
+      <div *ngIf="isUploading" style="margin-bottom: 1rem; text-align: center;"><mat-spinner diameter="32"></mat-spinner></div>
       <ng-container *ngIf="showUploadForm">
         <app-media-upload-form [brandId]="brandId" (uploadSuccess)="onUploadSuccess($event)"></app-media-upload-form>
       </ng-container>

@@ -1,164 +1,189 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
-import { FormBuilder, FormGroup, Validators, FormArray, ReactiveFormsModule } from '@angular/forms';
+import { MaterialModule } from '../../material.module';
+import { FormsModule } from '@angular/forms';
+import { ContentGenerationTemplateService } from '../../core/services/content-generation-template.service';
+import { NavigationService } from '../../core/services/navigation.service';
 import type { components } from '../../generated/models';
-import { ContentTemplateSidenavComponent } from './content-template-sidenav/content-template-sidenav.component';
-import { ContentTemplateInfoFormComponent } from './content-template-info-form/content-template-info-form.component';
-import { ContentTemplatePromptFormComponent } from './content-template-prompt-form/content-template-prompt-form.component';
-import { ContentItemFormComponent } from './content-item-form';
 
-// Type aliases for OpenAPI-generated models
-// (These are for type safety and IDE support)
 type ContentGenerationTemplateDocument = components["schemas"]["ContentGenerationTemplateDocument"];
-type TemplateInfo = components["schemas"]["TemplateInfo"];
-type TemplateSettings = components["schemas"]["TemplateSettings"];
-type PromptTemplate = components["schemas"]["PromptTemplate"];
-type PromptVariable = components["schemas"]["PromptVariable"];
-type ImagesTemplate = components["schemas"]["ImagesTemplate"];
-type ImageTemplate = components["schemas"]["ImageTemplate"];
-type VideoTemplate = components["schemas"]["VideoTemplate"];
-type ContentItem = components["schemas"]["ContentItem"];
+type ContentGenerationTemplateCreate = components["schemas"]["ContentGenerationTemplateCreate"];
+type ContentGenerationTemplateUpdate = components["schemas"]["ContentGenerationTemplateUpdate"];
 
 @Component({
   selector: 'app-content-template-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatIconModule,
-    ReactiveFormsModule,
-    ContentTemplateSidenavComponent,
-    ContentTemplateInfoFormComponent,
-    ContentTemplatePromptFormComponent,
-    ContentItemFormComponent
-  ],
+  imports: [CommonModule, MaterialModule, FormsModule],
   templateUrl: './content-template-page.component.html',
-  styleUrls: ['./content-template-page.component.scss']
+  styleUrl: './content-template-page.component.scss'
 })
-export class ContentTemplatePageComponent {
+export class ContentTemplatePageComponent implements OnDestroy {
   brandId: string | null = null;
-  contentTemplates: ContentGenerationTemplateDocument[] = [];
+  templateList: ContentGenerationTemplateDocument[] = [];
   selectedTemplate: ContentGenerationTemplateDocument | null = null;
-  form: FormGroup;
-  addingTemplate = false;
-
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      templateInfo: this.fb.group({
-        name: ['', Validators.required],
-        description: [''],
-        socialAccounts: [[]]
-      }),
-      templateSettings: this.fb.group({
-        promptTemplate: this.fb.group({
-          systemPrompt: [''],
-          userPrompt: ['', Validators.required],
-          temperature: [1],
-          maxTokens: [256],
-          model: [''],
-          variables: this.fb.array([])
-        }),
-        contentItem: this.fb.group({
-          contentType: ['images'],
-          text: this.fb.group({ value: [''] }),
-          videoTemplate: this.fb.group({ setUrl: [''], format: [''], aspectRatio: ['square'], mediaType: ['uploaded'] }),
-          imagesTemplate: this.fb.group({ imageTemplates: this.fb.array([]), numImages: [1] })
-        })
-      })
-    });
-
-    // React to contentType changes
-    this.form.get('templateSettings.contentItem.contentType')?.valueChanges.subscribe((type: string) => {
-      this.configureContentItemForm(type);
-    });
-  }
-
-  get templateInfoGroup(): FormGroup {
-    return this.form.get('templateInfo') as FormGroup;
-  }
-
-  get promptTemplateGroup(): FormGroup {
-    return this.form.get('templateSettings.promptTemplate') as FormGroup;
-  }
-
-  get imageTemplates(): FormArray {
-    return this.form.get('templateSettings.contentItem.imagesTemplate.imageTemplates') as FormArray;
-  }
-
-  get contentType(): string | undefined {
-    return this.form.get('templateSettings.contentItem.contentType')?.value;
-  }
-
-  get contentItemFormGroup(): FormGroup {
-    if (this.contentType === 'images') {
-      return this.form.get('templateSettings.contentItem.imagesTemplate') as FormGroup;
-    } else if (this.contentType === 'video') {
-      return this.form.get('templateSettings.contentItem.videoTemplate') as FormGroup;
-    } else {
-      return this.form.get('templateSettings.contentItem.text') as FormGroup;
+  showForm = false;
+  isProcessing = false;
+  feedbackMessage: string | null = null;
+  private subscription: any;
+  newTemplateModel: ContentGenerationTemplateCreate = {
+    brandId: '',
+    templateInfo: {
+      name: '',
+      description: '',
+      socialAccounts: []
+    },
+    schedule: {
+      daysOfWeek: [],
+      timeSlots: []
+    },
+    templateSettings: {
+      promptTemplate: {
+        userPrompt: '',
+        variables: []
+      },
+      contentItem: {
+        contentType: 'text',
+        text: { value: '', contentType: 'text' }
+      }
     }
+  };
+
+  // Helper for variable values as comma separated string
+  getVariableValuesString(variable: any): string {
+    return Array.isArray(variable.values) ? variable.values.join(', ') : '';
+  }
+  setVariableValuesString(variable: any, value: string) {
+    variable.values = value.split(',').map(v => v.trim()).filter(v => v);
   }
 
-  configureContentItemForm(type: string) {
-    // Hide/show relevant controls based on contentType
-    const imagesTemplate = this.form.get('templateSettings.contentItem.imagesTemplate');
-    const videoTemplate = this.form.get('templateSettings.contentItem.videoTemplate');
-    const text = this.form.get('templateSettings.contentItem.text');
-    if (type === 'images') {
-      imagesTemplate?.enable();
-      videoTemplate?.disable();
-      text?.disable();
-    } else if (type === 'video') {
-      imagesTemplate?.disable();
-      videoTemplate?.enable();
-      text?.disable();
-    } else if (type === 'text') {
-      imagesTemplate?.disable();
-      videoTemplate?.disable();
-      text?.enable();
-    }
-  }
-
-  onAddTemplate() {
-    this.addingTemplate = true;
-    this.form.reset({
-      templateInfo: { name: '', description: '', socialAccounts: [] },
+  // Ensure all arrays/objects are initialized before form usage
+  openForm() {
+    this.selectedTemplate = null;
+    this.showForm = true;
+    this.feedbackMessage = null;
+    this.newTemplateModel = {
+      brandId: this.brandId || '',
+      templateInfo: {
+        name: '',
+        description: '',
+        socialAccounts: []
+      },
+      schedule: {
+        daysOfWeek: [],
+        timeSlots: []
+      },
       templateSettings: {
-        promptTemplate: { systemPrompt: '', userPrompt: '', temperature: 1, maxTokens: 256, model: '', variables: [] },
+        promptTemplate: {
+          userPrompt: '',
+          variables: []
+        },
         contentItem: {
-          contentType: 'images',
-          text: { value: '' },
-          videoTemplate: { setUrl: '', format: '', aspectRatio: 'square', mediaType: 'uploaded' },
-          imagesTemplate: { imageTemplates: [], numImages: 1 }
+          contentType: 'text',
+          text: { value: '', contentType: 'text' }
         }
       }
+    };
+  }
+
+  constructor(
+    private navigationService: NavigationService,
+    private templateService: ContentGenerationTemplateService
+  ) {
+    this.subscription = this.navigationService.currentBrand$.subscribe(
+      id => {
+        this.brandId = id;
+        if (id) this.loadTemplates();
+      }
+    );
+  }
+
+  loadTemplates() {
+    if (!this.brandId) return;
+    this.templateService.getTemplates({}).subscribe({
+      next: (templates) => {
+        this.templateList = templates.filter(t => t.brandId === this.brandId);
+        this.selectedTemplate = null;
+        this.feedbackMessage = null;
+      },
+      error: () => {
+        this.feedbackMessage = 'Error loading templates.';
+      }
     });
-    this.configureContentItemForm('images');
-    // Add one variable and one image template by default for UX
-    (this.form.get('templateSettings.promptTemplate.variables') as FormArray).push(this.fb.group({ name: [''], values: [[]] }));
-    (this.form.get('templateSettings.contentItem.imagesTemplate.imageTemplates') as FormArray).push(this.fb.group({ setUrl: [''], format: [''], aspectRatio: ['square'], mediaType: ['uploaded'] }));
   }
 
-  onSaveTemplate() {
-    if (this.form.valid) {
-      // TODO: Submit to backend using correct model structure
-      this.addingTemplate = false;
-    } else {
-      this.form.markAllAsTouched();
+  selectTemplate(template: ContentGenerationTemplateDocument) {
+    // Ensure templateInfo is always defined
+    if (!template.templateInfo) {
+      template.templateInfo = { name: '', description: '', socialAccounts: [] };
     }
+    this.selectedTemplate = template;
+    this.showForm = false;
+    this.feedbackMessage = null;
   }
 
-  onDeleteTemplate(template: ContentGenerationTemplateDocument) {
-    // TODO: Call backend to delete, then update local list
-    this.contentTemplates = this.contentTemplates.filter(t => t !== template);
-    if (this.selectedTemplate === template) {
-      this.selectedTemplate = null;
-    }
+  // ...existing code...
+
+  submitForm(form: any) {
+    if (!this.brandId) return;
+    this.isProcessing = true;
+    const payload: ContentGenerationTemplateCreate = {
+      ...this.newTemplateModel,
+      brandId: this.brandId
+    };
+    this.templateService.createTemplate(payload).subscribe({
+      next: (created) => {
+        this.feedbackMessage = 'Template created successfully!';
+        this.loadTemplates();
+        this.selectedTemplate = created;
+        this.showForm = false;
+        this.isProcessing = false;
+      },
+      error: () => {
+        this.feedbackMessage = 'Error creating template.';
+        this.isProcessing = false;
+      }
+    });
   }
 
-  onCancel() {
-    this.addingTemplate = false;
-    this.form.reset();
-    this.selectedTemplate = null;
+  submitEditForm(form: any) {
+    if (!this.selectedTemplate) return;
+    this.isProcessing = true;
+    const payload: ContentGenerationTemplateUpdate = {
+      ...form.value,
+      brandId: this.selectedTemplate.brandId
+    };
+    this.templateService.updateTemplate(this.selectedTemplate.id!, payload).subscribe({
+      next: (updated) => {
+        this.feedbackMessage = 'Template updated successfully!';
+        this.loadTemplates();
+        this.selectedTemplate = updated;
+        this.isProcessing = false;
+      },
+      error: () => {
+        this.feedbackMessage = 'Error updating template.';
+        this.isProcessing = false;
+      }
+    });
+  }
+
+  deleteTemplate() {
+    if (!this.selectedTemplate) return;
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    this.isProcessing = true;
+    this.templateService.deleteTemplate(this.selectedTemplate.id!).subscribe({
+      next: () => {
+        this.feedbackMessage = 'Template deleted successfully!';
+        this.loadTemplates();
+        this.selectedTemplate = null;
+        this.isProcessing = false;
+      },
+      error: () => {
+        this.feedbackMessage = 'Error deleting template.';
+        this.isProcessing = false;
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 }

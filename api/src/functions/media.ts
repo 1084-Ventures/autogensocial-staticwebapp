@@ -26,6 +26,8 @@ export const mediaManagement = async (request: HttpRequest, context: InvocationC
         return createErrorResponse(401, 'User not authenticated', 'UNAUTHENTICATED');
     }
     try {
+        // TODO: Replace with actual logic to get allowed brand IDs for the user
+        const allowedBrandIds: string[] = [];
         switch (request.method) {
             case 'GET':
                 context.log('Dispatching to handleGet');
@@ -35,10 +37,10 @@ export const mediaManagement = async (request: HttpRequest, context: InvocationC
                 return await handleUpload(request, userId, context);
             case 'DELETE':
                 context.log('Dispatching to handleDelete');
-                return await handleDelete(request, userId, context);
+                return await handleDelete(request, userId, context, allowedBrandIds);
             case 'PUT':
                 context.log('Dispatching to handleUpdate');
-                return await handleUpdate(request, userId, context);
+                return await handleUpdate(request, userId, context, allowedBrandIds);
             default:
                 context.log('Unsupported HTTP method:', request.method);
                 return createErrorResponse(405, 'Method Not Allowed', 'METHOD_NOT_ALLOWED');
@@ -251,7 +253,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
     }
 }
 
-async function handleDelete(request: HttpRequest, userId: string, context: InvocationContext): Promise<HttpResponseInit> {
+async function handleDelete(request: HttpRequest, userId: string, context: InvocationContext, allowedBrandIds: string[]): Promise<HttpResponseInit> {
     try {
         context.log('handleDelete: URL:', request.url);
         // Parse media id from route or body
@@ -280,10 +282,10 @@ async function handleDelete(request: HttpRequest, userId: string, context: Invoc
             context.log('handleDelete: Media not found for id:', id);
             return createErrorResponse(404, 'Media not found', 'NOT_FOUND');
         }
-        // Verify user/brand ownership
-        if (mediaDoc.brandId !== userId) {
-            context.log('handleDelete: Forbidden, not owner');
-            return createErrorResponse(403, 'Forbidden: not owner', 'FORBIDDEN');
+        // Check if user has access to this brand
+        if (!mediaDoc.brandId || !allowedBrandIds.includes(mediaDoc.brandId)) {
+            context.log('Forbidden: user does not have access to this brand');
+            return createErrorResponse(403, 'Forbidden: not allowed for this brand', 'FORBIDDEN');
         }
         // Delete blob from storage using shared client
         const containerClient = blobServiceClient.getContainerClient('media');
@@ -309,7 +311,7 @@ async function handleDelete(request: HttpRequest, userId: string, context: Invoc
     }
 }
 
-async function handleUpdate(request: HttpRequest, userId: string, context: InvocationContext): Promise<HttpResponseInit> {
+async function handleUpdate(request: HttpRequest, userId: string, context: InvocationContext, allowedBrandIds: string[]): Promise<HttpResponseInit> {
     try {
         context.log('handleUpdate: URL:', request.url);
         // Parse media id from route or body
@@ -339,10 +341,10 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
             context.log('handleUpdate: Media not found for id:', id);
             return createErrorResponse(404, 'Media not found', 'NOT_FOUND');
         }
-        // Verify user/brand ownership
-        if (mediaDoc.brandId !== userId) {
-            context.log('handleUpdate: Forbidden, not owner');
-            return createErrorResponse(403, 'Forbidden: not owner', 'FORBIDDEN');
+        // Check if user has access to this brand
+        if (!mediaDoc.brandId || !allowedBrandIds.includes(mediaDoc.brandId)) {
+            context.log('Forbidden: user does not have access to this brand');
+            return createErrorResponse(403, 'Forbidden: not allowed for this brand', 'FORBIDDEN');
         }
         // Update metadata or name
         const updatedDoc = {
