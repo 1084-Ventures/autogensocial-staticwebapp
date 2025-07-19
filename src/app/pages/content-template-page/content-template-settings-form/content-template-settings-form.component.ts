@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../../material.module';
 import { FormsModule } from '@angular/forms';
@@ -11,9 +11,18 @@ import { components } from '../../../generated/models';
   templateUrl: './content-template-settings-form.component.html',
   styleUrls: ['./content-template-settings-form.component.scss']
 })
-export class ContentTemplateSettingsFormComponent {
+export class ContentTemplateSettingsFormComponent implements OnChanges {
   @Input() settings: components["schemas"]["TemplateSettings"] | undefined;
   @Output() settingsChange = new EventEmitter<components["schemas"]["TemplateSettings"]>();
+
+  private _variables: { name?: string; values?: string[]; valuesString?: string }[] = [];
+
+  ngOnChanges() {
+    this._variables = (this.settings?.promptTemplate?.variables || []).map(v => ({
+      ...v,
+      valuesString: (v.values || []).join(', ')
+    }));
+  }
 
   get prompt(): string {
     return this.settings?.promptTemplate?.userPrompt || '';
@@ -32,13 +41,11 @@ export class ContentTemplateSettingsFormComponent {
   }
 
   get variables(): { name?: string; values?: string[]; valuesString?: string }[] {
-    return (this.settings?.promptTemplate?.variables || []).map(v => ({
-      ...v,
-      valuesString: (v.values || []).join(', ')
-    }));
+    return this._variables;
   }
   set variables(vars: { name?: string; values?: string[]; valuesString?: string }[]) {
     if (!this.settings) return;
+    this._variables = vars;
     const mapped = vars.map(v => ({
       name: v.name,
       values: v.valuesString ? v.valuesString.split(',').map(s => s.trim()).filter(Boolean) : []
@@ -55,7 +62,7 @@ export class ContentTemplateSettingsFormComponent {
   }
 
   updateVariable(index: number, field: 'name' | 'valuesString', value: string) {
-    const vars = [...this.variables];
+    const vars = [...this._variables];
     vars[index] = { ...vars[index], [field]: value };
     this.variables = vars;
   }

@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../material.module';
 import { FormsModule } from '@angular/forms';
@@ -27,15 +27,27 @@ type ContentGenerationTemplateUpdate = components["schemas"]["ContentGenerationT
   styleUrl: './content-template-page.component.scss'
 })
 export class ContentTemplatePageComponent implements OnDestroy {
-  brandId: string | null = null;
-  templateList: ContentGenerationTemplateDocument[] = [];
-  selectedTemplate: ContentGenerationTemplateDocument | null = null;
-  showForm = false;
-  isProcessing = false;
-  feedbackMessage: string | null = null;
+  public brandId: string | null = null;
+  public templateList: ContentGenerationTemplateDocument[] = [];
+  public selectedTemplate: ContentGenerationTemplateDocument | null = null;
+  public showForm = false;
+  public isProcessing = false;
+  public feedbackMessage: string | null = null;
   private subscription: any;
-  newTemplateModel: ContentGenerationTemplateCreate = {} as ContentGenerationTemplateCreate;
+  public newTemplateModel: ContentGenerationTemplateCreate = {} as ContentGenerationTemplateCreate;
 
+  constructor(
+    private navigationService: NavigationService,
+    private templateService: ContentGenerationTemplateService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.subscription = this.navigationService.currentBrand$.subscribe(
+      id => {
+        this.brandId = id;
+        if (id) this.loadTemplates();
+      }
+    );
+  }
 
   // Only initialize the model object and pass it down
   openForm() {
@@ -46,18 +58,8 @@ export class ContentTemplatePageComponent implements OnDestroy {
       brandId: this.brandId || ''
       // All other fields are handled by the form component and model type
     } as ContentGenerationTemplateCreate;
-  }
-
-  constructor(
-    private navigationService: NavigationService,
-    private templateService: ContentGenerationTemplateService
-  ) {
-    this.subscription = this.navigationService.currentBrand$.subscribe(
-      id => {
-        this.brandId = id;
-        if (id) this.loadTemplates();
-      }
-    );
+    console.log('[openForm] showForm:', this.showForm, 'brandId:', this.brandId, 'newTemplateModel:', this.newTemplateModel);
+    this.cdr.detectChanges();
   }
 
   loadTemplates() {
@@ -83,8 +85,6 @@ export class ContentTemplatePageComponent implements OnDestroy {
     this.showForm = false;
     this.feedbackMessage = null;
   }
-
-  // ...existing code...
 
   submitForm(form: any) {
     if (!this.brandId) return;
