@@ -12,6 +12,33 @@ import { components } from '../../../generated/models';
   styleUrls: ['./content-template-info-form.component.scss']
 })
 export class ContentTemplateInfoFormComponent {
+  ngOnInit() {
+    // Ensure info is always initialized with required structure
+    if (!this.info) {
+      this.info = {
+        name: '',
+        description: '',
+        socialAccounts: []
+      } as components["schemas"]["TemplateInfo"];
+      this.infoChange.emit(this.info);
+    } else {
+      // Ensure name exists
+      if (!('name' in this.info) || this.info.name === undefined) {
+        this.info.name = '';
+        this.infoChange.emit(this.info);
+      }
+      // Ensure description exists
+      if (!('description' in this.info) || this.info.description === undefined) {
+        this.info.description = '';
+        this.infoChange.emit(this.info);
+      }
+      // Ensure socialAccounts exists
+      if (!('socialAccounts' in this.info) || this.info.socialAccounts === undefined) {
+        this.info.socialAccounts = [];
+        this.infoChange.emit(this.info);
+      }
+    }
+  }
   // Manually define platform options to match the allowed values from the Platform type
   socialAccountOptions = ["instagram", "facebook", "x", "youtube", "tiktok"];
   @Input() info: components["schemas"]["TemplateInfo"] | undefined;

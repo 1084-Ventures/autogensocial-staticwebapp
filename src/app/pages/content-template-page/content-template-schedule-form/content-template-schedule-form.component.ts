@@ -12,6 +12,27 @@ import { components } from '../../../generated/models';
   styleUrls: ['./content-template-schedule-form.component.scss']
 })
 export class ContentTemplateScheduleFormComponent {
+  ngOnInit() {
+    // Ensure schedule is always initialized with required structure
+    if (!this.schedule) {
+      this.schedule = {
+        daysOfWeek: [],
+        timeSlots: []
+      } as components["schemas"]["Schedule"];
+      this.scheduleChange.emit(this.schedule);
+    } else {
+      // Ensure daysOfWeek exists
+      if (!this.schedule.daysOfWeek) {
+        this.schedule.daysOfWeek = [];
+        this.scheduleChange.emit(this.schedule);
+      }
+      // Ensure timeSlots exists
+      if (!this.schedule.timeSlots) {
+        this.schedule.timeSlots = [];
+        this.scheduleChange.emit(this.schedule);
+      }
+    }
+  }
   @Input() schedule: components["schemas"]["Schedule"] | undefined;
   @Output() scheduleChange = new EventEmitter<components["schemas"]["Schedule"]>();
 

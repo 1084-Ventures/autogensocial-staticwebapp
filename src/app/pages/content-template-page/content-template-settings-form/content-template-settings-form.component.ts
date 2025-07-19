@@ -12,6 +12,29 @@ import { components } from '../../../generated/models';
   styleUrls: ['./content-template-settings-form.component.scss']
 })
 export class ContentTemplateSettingsFormComponent implements OnChanges {
+  ngOnInit() {
+    // Ensure settings is always initialized with required structure
+    if (!this.settings) {
+      this.settings = {
+        promptTemplate: {
+          userPrompt: '',
+          variables: []
+        }
+      } as components["schemas"]["TemplateSettings"];
+      this.settingsChange.emit(this.settings);
+    } else {
+      // Ensure promptTemplate exists
+      if (!this.settings.promptTemplate) {
+        this.settings.promptTemplate = { userPrompt: '', variables: [] };
+        this.settingsChange.emit(this.settings);
+      }
+      // Ensure variables exists
+      if (!this.settings.promptTemplate.variables) {
+        this.settings.promptTemplate.variables = [];
+        this.settingsChange.emit(this.settings);
+      }
+    }
+  }
   @Input() settings: components["schemas"]["TemplateSettings"] | undefined;
   @Output() settingsChange = new EventEmitter<components["schemas"]["TemplateSettings"]>();
 
@@ -77,9 +100,4 @@ export class ContentTemplateSettingsFormComponent implements OnChanges {
     this.variables = vars;
   }
 
-  onContentItemChange(contentItem: components["schemas"]["ContentItem"]) {
-    if (!this.settings) return;
-    this.settings = { ...this.settings, contentItem };
-    this.settingsChange.emit(this.settings);
-  }
 }

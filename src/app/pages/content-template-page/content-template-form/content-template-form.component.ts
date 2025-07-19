@@ -22,73 +22,7 @@ import { ContentTemplateContentItemFormComponent } from '../content-template-con
   styleUrls: ['./content-template-form.component.scss']
 })
 export class ContentTemplateFormComponent {
-  // Shared defaults for image/video templates and visualStyleObj
-  private defaultTheme = {
-    textStyle: {
-      font: {
-        family: '',
-        size: '',
-        weight: 'normal',
-        style: 'normal',
-        color: ''
-      },
-      outline: {
-        color: '',
-        width: 0
-      },
-      alignment: 'left',
-      transparency: 1
-    },
-    overlayBox: {
-      color: '',
-      transparency: 0,
-      verticalLocation: 'top',
-      horizontalLocation: 'left'
-    },
-    backgroundColor: ''
-  };
-
-  private defaultVisualStyleObj = {
-    themes: [this.defaultTheme]
-  };
-
-  private defaultAspectRatio: 'square' | 'portrait' | 'landscape' | 'story' = 'square';
-
-  private defaultImageTemplate = {
-    mediaType: 'color',
-    setUrl: '',
-    visualStyleObj: this.defaultVisualStyleObj,
-    aspectRatio: this.defaultAspectRatio,
-    format: ''
-  };
-
-  private defaultVideoTemplate = {
-    mediaType: 'color',
-    setUrl: '',
-    visualStyleObj: this.defaultVisualStyleObj,
-    aspectRatio: this.defaultAspectRatio,
-    format: '',
-    contentType: 'video'
-  };
-  @Input() templateModel: any = {
-    templateInfo: { name: '', description: '', socialAccounts: [] },
-    schedule: { daysOfWeek: [], timeSlots: [] },
-    templateSettings: {
-      promptTemplate: {
-        userPrompt: '',
-        variables: [
-          { name: '', values: [] }
-        ]
-      },
-      contentItem: {
-        contentType: 'images',
-        imagesTemplate: {
-          imageTemplates: [this.defaultImageTemplate],
-          numImages: 1
-        }
-      }
-    },
-  };
+  @Input() templateModel: any = {};
   @Output() submitForm = new EventEmitter<void>();
   @Output() cancelForm = new EventEmitter<void>();
 
@@ -98,72 +32,7 @@ export class ContentTemplateFormComponent {
   onCancel() {
     this.cancelForm.emit();
   }
-  ngOnInit() {
-    // If templateModel is not provided, ensure it is initialized
-    if (!this.templateModel) {
-      this.templateModel = {
-        templateInfo: { name: '', description: '', socialAccounts: [] },
-        schedule: { daysOfWeek: [], timeSlots: [] },
-        templateSettings: {
-          promptTemplate: {
-            userPrompt: '',
-            variables: [
-              { name: '', values: [] }
-            ]
-          },
-          contentItem: {
-            contentType: 'images',
-            imagesTemplate: {
-              imageTemplates: [this.defaultImageTemplate],
-              numImages: 1
-            }
-          }
-        },
-      };
-    } else {
-      if (!this.templateModel.templateInfo) {
-        this.templateModel.templateInfo = { name: '', description: '', socialAccounts: [] };
-      }
-      if (!this.templateModel.schedule) {
-        this.templateModel.schedule = { daysOfWeek: [], timeSlots: [] };
-      }
-      if (!this.templateModel.templateSettings) {
-        this.templateModel.templateSettings = {
-          promptTemplate: {
-            userPrompt: '',
-            variables: [
-              { name: '', values: [] }
-            ]
-          },
-          contentItem: {
-            contentType: 'images',
-            imagesTemplate: {
-              imageTemplates: [this.defaultImageTemplate],
-              numImages: 1
-            }
-          }
-        };
-      } else {
-        if (!this.templateModel.templateSettings.promptTemplate) {
-          this.templateModel.templateSettings.promptTemplate = {
-            userPrompt: '',
-            variables: [
-              { name: '', values: [] }
-            ]
-          };
-        }
-        if (!this.templateModel.templateSettings.contentItem) {
-          this.templateModel.templateSettings.contentItem = {
-            contentType: 'images',
-            imagesTemplate: {
-              imageTemplates: [this.defaultImageTemplate],
-              numImages: 1
-            }
-          };
-        }
-      }
-    }
-  }
+  // Initialization logic for info, schedule, settings, and contentItem is now handled by child components
 
   onInfoChange(info: any) {
     if (this.templateModel) this.templateModel.templateInfo = info;
@@ -176,31 +45,7 @@ export class ContentTemplateFormComponent {
   }
   onContentItemChange(contentItem: any) {
     if (this.templateModel && this.templateModel.templateSettings) {
-      // Dynamically update contentItem structure based on contentType
-      if (contentItem.contentType === 'text') {
-        this.templateModel.templateSettings.contentItem = {
-          contentType: 'text',
-          text: { value: '' },
-          ...contentItem
-        };
-      } else if (contentItem.contentType === 'images') {
-        this.templateModel.templateSettings.contentItem = {
-          contentType: 'images',
-          imagesTemplate: {
-            imageTemplates: [this.defaultImageTemplate],
-            numImages: 1
-          },
-          ...contentItem
-        };
-      } else if (contentItem.contentType === 'video') {
-        this.templateModel.templateSettings.contentItem = {
-          contentType: 'video',
-          videoTemplate: this.defaultVideoTemplate,
-          ...contentItem
-        };
-      } else {
-        this.templateModel.templateSettings.contentItem = contentItem;
-      }
+      this.templateModel.templateSettings.contentItem = contentItem;
     }
   }
 }
