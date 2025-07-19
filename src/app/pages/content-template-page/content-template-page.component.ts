@@ -2,6 +2,9 @@ import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../material.module';
 import { FormsModule } from '@angular/forms';
+import { ContentTemplateSidenavComponent } from './content-template-sidenav/content-template-sidenav.component';
+import { ContentTemplateFormComponent } from './content-template-form/content-template-form.component';
+import { ContentTemplateEditComponent } from './content-template-edit/content-template-edit.component';
 import { ContentGenerationTemplateService } from '../../core/services/content-generation-template.service';
 import { NavigationService } from '../../core/services/navigation.service';
 import type { components } from '../../generated/models';
@@ -12,7 +15,14 @@ type ContentGenerationTemplateUpdate = components["schemas"]["ContentGenerationT
 
 @Component({
   selector: 'app-content-template-page',
-  imports: [CommonModule, MaterialModule, FormsModule],
+  imports: [
+    CommonModule,
+    MaterialModule,
+    FormsModule,
+    ContentTemplateSidenavComponent,
+    ContentTemplateFormComponent,
+    ContentTemplateEditComponent
+  ],
   templateUrl: './content-template-page.component.html',
   styleUrl: './content-template-page.component.scss'
 })
@@ -24,64 +34,18 @@ export class ContentTemplatePageComponent implements OnDestroy {
   isProcessing = false;
   feedbackMessage: string | null = null;
   private subscription: any;
-  newTemplateModel: ContentGenerationTemplateCreate = {
-    brandId: '',
-    templateInfo: {
-      name: '',
-      description: '',
-      socialAccounts: []
-    },
-    schedule: {
-      daysOfWeek: [],
-      timeSlots: []
-    },
-    templateSettings: {
-      promptTemplate: {
-        userPrompt: '',
-        variables: []
-      },
-      contentItem: {
-        contentType: 'text',
-        text: { value: '', contentType: 'text' }
-      }
-    }
-  };
+  newTemplateModel: ContentGenerationTemplateCreate = {} as ContentGenerationTemplateCreate;
 
-  // Helper for variable values as comma separated string
-  getVariableValuesString(variable: any): string {
-    return Array.isArray(variable.values) ? variable.values.join(', ') : '';
-  }
-  setVariableValuesString(variable: any, value: string) {
-    variable.values = value.split(',').map(v => v.trim()).filter(v => v);
-  }
 
-  // Ensure all arrays/objects are initialized before form usage
+  // Only initialize the model object and pass it down
   openForm() {
     this.selectedTemplate = null;
     this.showForm = true;
     this.feedbackMessage = null;
     this.newTemplateModel = {
-      brandId: this.brandId || '',
-      templateInfo: {
-        name: '',
-        description: '',
-        socialAccounts: []
-      },
-      schedule: {
-        daysOfWeek: [],
-        timeSlots: []
-      },
-      templateSettings: {
-        promptTemplate: {
-          userPrompt: '',
-          variables: []
-        },
-        contentItem: {
-          contentType: 'text',
-          text: { value: '', contentType: 'text' }
-        }
-      }
-    };
+      brandId: this.brandId || ''
+      // All other fields are handled by the form component and model type
+    } as ContentGenerationTemplateCreate;
   }
 
   constructor(
@@ -98,7 +62,7 @@ export class ContentTemplatePageComponent implements OnDestroy {
 
   loadTemplates() {
     if (!this.brandId) return;
-    this.templateService.getTemplates({}).subscribe({
+    this.templateService.getTemplates({ brandId: this.brandId }).subscribe({
       next: (templates) => {
         this.templateList = templates.filter(t => t.brandId === this.brandId);
         this.selectedTemplate = null;

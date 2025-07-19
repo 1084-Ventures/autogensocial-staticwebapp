@@ -1,0 +1,18 @@
+<div style="width: 260px; background: #f7f7fa; border-right: 1px solid #e0e0e0; flex-shrink: 0;">
+  <div style="padding: 1.5rem 1rem 1rem 1rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+      <div style="font-weight: 600; font-size: 1.1rem;">Content Templates</div>
+      <button mat-icon-button (click)="onAdd()" title="Add Template">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+    <mat-nav-list>
+      <a mat-list-item *ngFor="let template of templateList" (click)="onSelect(template)" [class.selected]="template === selectedTemplate">
+        <mat-icon matListItemIcon>description</mat-icon>
+        <span matLine>{{ template.templateInfo?.name || 'Untitled' }}</span>
+        <span matLine style="font-size: 0.9em; color: #888;">{{ template.lastExecutionTime | date:'short' }}</span>
+      </a>
+      <div *ngIf="!templateList.length" style="color: #888; font-size: 0.98em; margin-top: 1rem;">No templates found for this brand.</div>
+    </mat-nav-list>
+  </div>
+</div>

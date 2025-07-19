@@ -1,129 +1,29 @@
 <div style="display: flex; width: 100%; min-height: 100vh;">
-  <!-- Sidebar -->
-  <div style="width: 260px; background: #f7f7fa; border-right: 1px solid #e0e0e0; flex-shrink: 0;">
-    <div style="padding: 1.5rem 1rem 1rem 1rem;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-        <div style="font-weight: 600; font-size: 1.1rem;">Content Templates</div>
-        <button mat-icon-button (click)="openForm()" title="Add Template">
-          <mat-icon>add</mat-icon>
-        </button>
-      </div>
-      <mat-nav-list>
-        <a mat-list-item *ngFor="let template of templateList" (click)="selectTemplate(template)" [class.selected]="template === selectedTemplate">
-          <mat-icon matListItemIcon>description</mat-icon>
-          <span matLine>{{ template.templateInfo?.name || 'Untitled' }}</span>
-          <span matLine style="font-size: 0.9em; color: #888;">{{ template.lastExecutionTime | date:'short' }}</span>
-        </a>
-        <div *ngIf="!templateList.length" style="color: #888; font-size: 0.98em; margin-top: 1rem;">No templates found for this brand.</div>
-      </mat-nav-list>
-    </div>
-  </div>
+  <app-content-template-sidenav
+    [templateList]="templateList"
+    [selectedTemplate]="selectedTemplate"
+    (selectTemplate)="selectTemplate($event)"
+    (addTemplate)="openForm()"
+    style="flex-shrink: 0;"
+  ></app-content-template-sidenav>
   <!-- Main content -->
   <div style="flex: 1; padding: 2rem; max-width: 1000px; margin: 0 auto; box-sizing: border-box; background: #fff;">
     <ng-container *ngIf="brandId; else emptyState">
       <div *ngIf="feedbackMessage" class="feedback-message" style="margin-bottom: 1rem; color: #1976d2; font-weight: 500;">{{ feedbackMessage }}</div>
       <div *ngIf="isProcessing" style="margin-bottom: 1rem; text-align: center;"><mat-spinner diameter="32"></mat-spinner></div>
       <ng-container *ngIf="showForm">
-        <form *ngIf="newTemplateModel && newTemplateModel.templateInfo && newTemplateModel.schedule && newTemplateModel.templateSettings && newTemplateModel.templateSettings.promptTemplate && newTemplateModel.templateSettings.contentItem && newTemplateModel.templateSettings.contentItem.text" #templateForm="ngForm" (ngSubmit)="submitForm(templateForm)" class="template-edit-form">
-          <h3 style="margin-bottom: 1rem;">Template Info</h3>
-          <mat-form-field appearance="fill">
-            <mat-label>Template Name</mat-label>
-            <input matInput name="name" [(ngModel)]="newTemplateModel.templateInfo.name" required />
-          </mat-form-field>
-          <mat-form-field appearance="fill">
-            <mat-label>Description</mat-label>
-            <textarea matInput name="description" [(ngModel)]="newTemplateModel.templateInfo.description"></textarea>
-          </mat-form-field>
-          <mat-form-field appearance="fill">
-            <mat-label>Social Accounts</mat-label>
-            <mat-select name="socialAccounts" [(ngModel)]="newTemplateModel.templateInfo.socialAccounts" multiple>
-              <mat-option value="instagram">Instagram</mat-option>
-              <mat-option value="facebook">Facebook</mat-option>
-              <mat-option value="x">X (Twitter)</mat-option>
-              <mat-option value="youtube">YouTube</mat-option>
-              <mat-option value="tiktok">TikTok</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <h3 style="margin: 2rem 0 1rem 0;">Schedule</h3>
-          <mat-form-field appearance="fill">
-            <mat-label>Days of Week</mat-label>
-            <mat-select *ngIf="newTemplateModel.schedule" name="daysOfWeek" [(ngModel)]="newTemplateModel.schedule.daysOfWeek" multiple>
-              <mat-option *ngFor="let day of ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']" [value]="day">{{ day | titlecase }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <div *ngFor="let slot of newTemplateModel.schedule.timeSlots; let i = index" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 8px;">
-            <mat-form-field appearance="fill" style="flex:1;">
-              <mat-label>Hour</mat-label>
-              <input matInput type="number" min="0" max="23" [(ngModel)]="slot.hour" name="hour{{i}}" />
-            </mat-form-field>
-            <mat-form-field appearance="fill" style="flex:1;">
-              <mat-label>Minute</mat-label>
-              <input matInput type="number" min="0" max="59" [(ngModel)]="slot.minute" name="minute{{i}}" />
-            </mat-form-field>
-            <mat-form-field appearance="fill" style="flex:2;">
-              <mat-label>Timezone</mat-label>
-              <input matInput [(ngModel)]="slot.timezone" name="timezone{{i}}" placeholder="e.g. America/New_York" />
-            </mat-form-field>
-            <button mat-icon-button color="warn" (click)="newTemplateModel.schedule.timeSlots.splice(i,1)"><mat-icon>delete</mat-icon></button>
-          </div>
-          <button mat-button type="button" (click)="newTemplateModel.schedule.timeSlots.push({hour:0,minute:0,timezone:''})">Add Time Slot</button>
-
-          <h3 style="margin: 2rem 0 1rem 0;">Template Settings</h3>
-          <mat-form-field appearance="fill">
-            <mat-label>User Prompt</mat-label>
-            <textarea *ngIf="newTemplateModel.templateSettings && newTemplateModel.templateSettings.promptTemplate" matInput name="userPrompt" [(ngModel)]="newTemplateModel.templateSettings.promptTemplate.userPrompt"></textarea>
-          </mat-form-field>
-          <div *ngFor="let variable of newTemplateModel.templateSettings?.promptTemplate?.variables; let vi = index" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 8px;">
-            <mat-form-field appearance="fill" style="flex:1;">
-              <mat-label>Variable Name</mat-label>
-              <input matInput [(ngModel)]="variable.name" name="varname{{vi}}" />
-            </mat-form-field>
-            <mat-form-field appearance="fill" style="flex:2;">
-              <mat-label>Values (comma separated)</mat-label>
-              <input matInput [ngModel]="getVariableValuesString(variable)" (ngModelChange)="setVariableValuesString(variable, $event)" name="varvalues{{vi}}" placeholder="e.g. value1, value2" />
-            </mat-form-field>
-            <button *ngIf="newTemplateModel.templateSettings && newTemplateModel.templateSettings.promptTemplate && newTemplateModel.templateSettings.promptTemplate.variables" mat-icon-button color="warn" (click)="newTemplateModel.templateSettings.promptTemplate.variables.splice(vi,1)"><mat-icon>delete</mat-icon></button>
-          </div>
-          <button *ngIf="newTemplateModel.templateSettings && newTemplateModel.templateSettings.promptTemplate && newTemplateModel.templateSettings.promptTemplate.variables" mat-button type="button" (click)="newTemplateModel.templateSettings.promptTemplate.variables.push({name:'',values:[]})">Add Variable</button>
-
-          <h3 style="margin: 2rem 0 1rem 0;">Content Item</h3>
-          <mat-form-field appearance="fill">
-            <mat-label>Content Type</mat-label>
-            <mat-select *ngIf="newTemplateModel.templateSettings && newTemplateModel.templateSettings.contentItem" name="contentType" [(ngModel)]="newTemplateModel.templateSettings.contentItem.contentType">
-              <mat-option value="text">Text</mat-option>
-              <mat-option value="images">Images</mat-option>
-              <mat-option value="video">Video</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field *ngIf="newTemplateModel.templateSettings.contentItem && newTemplateModel.templateSettings.contentItem.contentType === 'text'" appearance="fill">
-            <mat-label>Text Value</mat-label>
-            <input *ngIf="newTemplateModel.templateSettings.contentItem.text" matInput name="textValue" [(ngModel)]="newTemplateModel.templateSettings.contentItem.text.value" />
-          </mat-form-field>
-          <!-- Add more fields for images/video as needed -->
-
-          <div class="template-edit-actions" style="margin-top:2rem;">
-            <button mat-raised-button color="primary" type="submit">Save</button>
-            <button mat-button color="warn" type="button" (click)="showForm = false">Cancel</button>
-          </div>
-        </form>
+        <app-content-template-form
+          [templateModel]="newTemplateModel"
+          (submitForm)="submitForm($event)"
+          (cancelForm)="showForm = false"
+        ></app-content-template-form>
       </ng-container>
       <ng-container *ngIf="selectedTemplate && selectedTemplate.templateInfo && !showForm">
-        <form #editForm="ngForm" (ngSubmit)="submitEditForm(editForm)" class="template-edit-form">
-          <mat-form-field appearance="fill">
-            <mat-label>Template Name</mat-label>
-            <input matInput name="name" [(ngModel)]="selectedTemplate.templateInfo.name" required />
-          </mat-form-field>
-          <mat-form-field appearance="fill">
-            <mat-label>Description</mat-label>
-            <textarea matInput name="description" [(ngModel)]="selectedTemplate.templateInfo.description"></textarea>
-          </mat-form-field>
-          <!-- Add more fields for socialAccounts, schedule, templateSettings, etc. as needed -->
-          <div class="template-edit-actions">
-            <button mat-raised-button color="primary" type="submit">Update</button>
-            <button mat-button color="warn" type="button" (click)="deleteTemplate()">Delete</button>
-          </div>
-        </form>
+        <app-content-template-edit
+          [templateModel]="selectedTemplate"
+          (submitEdit)="submitEditForm($event)"
+          (cancelEdit)="deleteTemplate()"
+        ></app-content-template-edit>
         <div class="meta-info">
           <div><strong>Template Name:</strong> {{ selectedTemplate.templateInfo.name }}</div>
           <div><strong>Last Executed:</strong> {{ selectedTemplate.lastExecutionTime | date:'short' }}</div>

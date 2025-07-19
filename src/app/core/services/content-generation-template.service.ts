@@ -8,20 +8,21 @@ import { ErrorHandlerService } from './error-handler.service';
   providedIn: 'root'
 })
 export class ContentGenerationTemplateService {
-  private apiUrl = '/api/content_generation_template_management';
+  private apiUrl = '/api/content-generation-templates';
 
   constructor(
     private http: HttpClient,
     private errorHandler: ErrorHandlerService
   ) {}
 
-  getTemplates(params?: components["parameters"]["pagination"]): Observable<components["schemas"]["ContentGenerationTemplateDocument"][]> {
+  getTemplates(params?: components["parameters"]["pagination"] & { brandId?: string }): Observable<components["schemas"]["ContentGenerationTemplateDocument"][]> {
     let httpParams = new HttpParams();
     if (params) {
       if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
       if (params.offset) httpParams = httpParams.set('offset', params.offset.toString());
       if (params.sortBy) httpParams = httpParams.set('sortBy', params.sortBy);
       if (params.sortOrder) httpParams = httpParams.set('sortOrder', params.sortOrder);
+      if (params.brandId) httpParams = httpParams.set('brandId', params.brandId);
     }
     return this.http.get<components["schemas"]["ContentGenerationTemplateDocument"][]>(this.apiUrl, { params: httpParams })
       .pipe(

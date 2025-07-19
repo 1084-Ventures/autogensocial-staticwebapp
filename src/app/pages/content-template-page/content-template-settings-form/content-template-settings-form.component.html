@@ -1,0 +1,31 @@
+<mat-card class="content-template-settings-form">
+  <h3>Template Settings</h3>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Prompt</mat-label>
+    <textarea matInput [(ngModel)]="prompt" name="userPrompt"></textarea>
+  </mat-form-field>
+
+  <div class="variables-section">
+    <h4>Variables</h4>
+    <div *ngFor="let variable of variables; let i = index" class="variable-row">
+      <mat-form-field appearance="outline" class="variable-field">
+        <mat-label>Variable Name</mat-label>
+        <input matInput [(ngModel)]="variable.name" name="variableName{{i}}" (ngModelChange)="updateVariable(i, 'name', $event)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="variable-field">
+        <mat-label>Values (comma separated)</mat-label>
+        <input matInput [(ngModel)]="variable.valuesString" name="variableValues{{i}}" (ngModelChange)="updateVariable(i, 'valuesString', $event)" />
+      </mat-form-field>
+      <button mat-icon-button color="warn" (click)="removeVariable(i)" aria-label="Remove Variable">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+    <button mat-raised-button color="primary" type="button" (click)="addVariable()">Add Variable</button>
+  </div>
+
+  <!-- Content Item Section (optional, can be expanded later) -->
+  <div class="content-item-section">
+    <h4>Content Item</h4>
+    <span *ngIf="settings?.contentItem">Content item editing UI goes here.</span>
+  </div>
+</mat-card>

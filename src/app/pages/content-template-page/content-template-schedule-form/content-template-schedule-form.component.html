@@ -1,0 +1,31 @@
+<mat-card class="content-template-schedule-form">
+  <h3>Schedule</h3>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Days of Week</mat-label>
+    <mat-select [ngModel]="schedule?.daysOfWeek" name="daysOfWeek" multiple (ngModelChange)="onDaysOfWeekChange($event)">
+      <mat-option *ngFor="let day of daysOfWeekOptions" [value]="day">{{ day | titlecase }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div class="time-slots-section">
+    <h4>Time Slots</h4>
+    <div *ngFor="let slot of schedule?.timeSlots; let i = index" class="time-slot-row">
+      <mat-form-field appearance="outline" class="time-field">
+        <mat-label>Hour</mat-label>
+        <input matInput type="number" min="0" max="23" [(ngModel)]="slot.hour" name="hour{{i}}" (ngModelChange)="onTimeSlotChange(i, slot)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="time-field">
+        <mat-label>Minute</mat-label>
+        <input matInput type="number" min="0" max="59" [(ngModel)]="slot.minute" name="minute{{i}}" (ngModelChange)="onTimeSlotChange(i, slot)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="timezone-field">
+        <mat-label>Timezone</mat-label>
+        <input matInput [(ngModel)]="slot.timezone" name="timezone{{i}}" (ngModelChange)="onTimeSlotChange(i, slot)" />
+      </mat-form-field>
+      <button mat-icon-button color="warn" (click)="removeTimeSlot(i)" aria-label="Remove Time Slot">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+    <button mat-raised-button color="primary" type="button" (click)="addTimeSlot()">Add Time Slot</button>
+  </div>
+</mat-card>
