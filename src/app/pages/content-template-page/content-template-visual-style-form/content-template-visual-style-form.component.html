@@ -1,0 +1,129 @@
+
+<div style="background: #fafafa; padding: 24px; border-radius: 12px;">
+  <mat-card>
+    <mat-card-title>Visual Style</mat-card-title>
+    <mat-card-content>
+      <ng-container *ngIf="visualStyle">
+        <mat-card>
+          <mat-card-title>Text Style</mat-card-title>
+          <mat-card-content>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;">
+              <mat-form-field appearance="outline" style="width: 120px;">
+                <mat-label>Font Color</mat-label>
+                <input matInput type="color" [ngModel]="visualStyle.textStyle?.font?.color" (ngModelChange)="onFontColorChange($event)" style="height: 40px; width: 100%; min-width: 100px;" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="width: 140px;">
+                <mat-label>Font Family</mat-label>
+                <mat-select [ngModel]="visualStyle.textStyle?.font?.family" (ngModelChange)="onFontFamilyChange($event)">
+                  <mat-option value="Arial">Arial</mat-option>
+                  <mat-option value="Helvetica">Helvetica</mat-option>
+                  <mat-option value="Times New Roman">Times New Roman</mat-option>
+                  <mat-option value="Georgia">Georgia</mat-option>
+                  <mat-option value="Courier New">Courier New</mat-option>
+                  <mat-option value="Verdana">Verdana</mat-option>
+                  <mat-option value="Tahoma">Tahoma</mat-option>
+                  <mat-option value="Trebuchet MS">Trebuchet MS</mat-option>
+                  <mat-option value="Impact">Impact</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="width: 100px;">
+                <mat-label>Font Size</mat-label>
+                <input matInput type="number" [ngModel]="visualStyle.textStyle?.font?.size" (ngModelChange)="onFontSizeChange($event)" />
+                <mat-hint>px</mat-hint>
+              </mat-form-field>
+            </div>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 16px; justify-content: space-between;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; width: 160px;">
+                <label style="font-size: 12px; margin-bottom: 4px;">Font Style</label>
+                <mat-radio-group [ngModel]="visualStyle.textStyle?.font?.style" (ngModelChange)="onFontStyleChange($event)" style="display: flex; flex-direction: row; gap: 8px;">
+                  <mat-radio-button value="normal">Normal</mat-radio-button>
+                  <mat-radio-button value="italic">Italic</mat-radio-button>
+                </mat-radio-group>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-start; width: 160px;">
+                <label style="font-size: 12px; margin-bottom: 4px;">Font Weight</label>
+                <mat-radio-group [ngModel]="visualStyle.textStyle?.font?.weight" (ngModelChange)="onFontWeightChange($event)" style="display: flex; flex-direction: row; gap: 8px;">
+                  <mat-radio-button value="normal">Normal</mat-radio-button>
+                  <mat-radio-button value="bold">Bold</mat-radio-button>
+                </mat-radio-group>
+              </div>
+            </div>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin-top: 16px; justify-content: space-between;">
+              <mat-form-field appearance="outline" style="width: 120px;">
+                <mat-label>Outline Color</mat-label>
+                <input matInput type="color" [ngModel]="visualStyle.textStyle?.outline?.color" (ngModelChange)="onOutlineColorChange($event)" style="height: 40px; width: 100%; min-width: 100px;" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="width: 100px;">
+                <mat-label>Outline Width</mat-label>
+                <input matInput type="number" [ngModel]="visualStyle.textStyle?.outline?.width" (ngModelChange)="onOutlineWidthChange($event)" />
+                <mat-hint>px</mat-hint>
+              </mat-form-field>
+              <div style="min-width: 180px; display: flex; flex-direction: column;">
+                <label style="font-size: 12px; margin-bottom: 4px;">Alignment</label>
+                <mat-radio-group [ngModel]="visualStyle.textStyle?.alignment" (ngModelChange)="onAlignmentChange($event)" style="display: flex; flex-direction: row; gap: 8px;">
+                  <mat-radio-button value="left">Left</mat-radio-button>
+                  <mat-radio-button value="center">Center</mat-radio-button>
+                  <mat-radio-button value="right">Right</mat-radio-button>
+                </mat-radio-group>
+              </div>
+              <mat-form-field appearance="outline" style="width: 100px;">
+                <mat-label>Transparency</mat-label>
+                <input matInput type="number" min="0" max="1" step="0.01" [ngModel]="visualStyle.textStyle?.transparency" (ngModelChange)="onTransparencyChange($event)" />
+                <mat-hint>0-1</mat-hint>
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+        </mat-card>
+        <mat-divider style="margin: 24px 0;"></mat-divider>
+        <mat-card>
+          <mat-card-title>Overlay Box</mat-card-title>
+          <mat-card-content>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;">
+              <mat-form-field appearance="outline" style="width: 120px;">
+                <mat-label>Overlay Color</mat-label>
+                <input matInput type="color" [ngModel]="visualStyle.overlayBox?.color" (ngModelChange)="onOverlayColorChange($event)" style="height: 40px; width: 100%; min-width: 100px;" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="width: 100px;">
+                <mat-label>Overlay Transparency</mat-label>
+                <input matInput type="number" min="0" max="1" step="0.01" [ngModel]="visualStyle.overlayBox?.transparency" (ngModelChange)="onOverlayTransparencyChange($event)" />
+                <mat-hint>0-1</mat-hint>
+              </mat-form-field>
+              <div style="min-width: 180px; display: flex; flex-direction: column;">
+                <label style="font-size: 12px; margin-bottom: 4px;">Vertical Alignment</label>
+                <mat-radio-group [ngModel]="visualStyle.overlayBox?.verticalLocation" (ngModelChange)="onOverlayVerticalChange($event)" style="display: flex; flex-direction: row; gap: 8px;">
+                  <mat-radio-button value="top">Top</mat-radio-button>
+                  <mat-radio-button value="middle">Middle</mat-radio-button>
+                  <mat-radio-button value="bottom">Bottom</mat-radio-button>
+                </mat-radio-group>
+              </div>
+              <div style="min-width: 180px; display: flex; flex-direction: column;">
+                <label style="font-size: 12px; margin-bottom: 4px;">Horizontal Alignment</label>
+                <mat-radio-group [ngModel]="visualStyle.overlayBox?.horizontalLocation" (ngModelChange)="onOverlayHorizontalChange($event)" style="display: flex; flex-direction: row; gap: 8px;">
+                  <mat-radio-button value="left">Left</mat-radio-button>
+                  <mat-radio-button value="middle">Middle</mat-radio-button>
+                  <mat-radio-button value="right">Right</mat-radio-button>
+                </mat-radio-group>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+        <mat-divider style="margin: 24px 0;"></mat-divider>
+        <mat-card>
+          <mat-card-title>Background Color</mat-card-title>
+          <mat-card-content>
+            <mat-form-field appearance="outline" style="width: 120px;">
+              <mat-label>Background Color</mat-label>
+              <input matInput type="color" [ngModel]="visualStyle.backgroundColor" (ngModelChange)="onBackgroundColorChange($event)" style="height: 40px; width: 100%; min-width: 100px;" />
+            </mat-form-field>
+          </mat-card-content>
+        </mat-card>
+        <mat-card-actions style="display: flex; justify-content: flex-end; margin-top: 24px;">
+          <button mat-raised-button color="primary" (click)="addTheme()">Add Another Theme</button>
+        </mat-card-actions>
+      </ng-container>
+      <ng-container *ngIf="!visualStyle">
+        <span>No visual style object found.</span>
+      </ng-container>
+    </mat-card-content>
+  </mat-card>
+</div>

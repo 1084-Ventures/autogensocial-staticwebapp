@@ -23,7 +23,7 @@ import { ContentTemplateContentItemFormComponent } from '../content-template-con
   styleUrls: ['./content-template-edit.component.scss']
 })
 export class ContentTemplateEditComponent {
-  @Input() templateModel: any;
+  @Input() templateModel: any = {};
   @Output() submitEdit = new EventEmitter<void>();
   @Output() cancelEdit = new EventEmitter<void>();
   @Output() deleteEdit = new EventEmitter<void>();
@@ -37,18 +37,22 @@ export class ContentTemplateEditComponent {
   onDelete() {
     this.deleteEdit.emit();
   }
+
+  // Child component change detection logic (mirroring form component)
   onInfoChange(info: any) {
     if (this.templateModel) this.templateModel.templateInfo = info;
   }
   onScheduleChange(schedule: any) {
-    if (this.templateModel) {
-      this.templateModel = { ...this.templateModel, schedule: { ...schedule } };
-    }
+    if (this.templateModel) this.templateModel.schedule = schedule;
   }
   onSettingsChange(settings: any) {
     if (this.templateModel) this.templateModel.templateSettings = settings;
   }
   onContentItemChange(contentItem: any) {
-    if (this.templateModel && this.templateModel.templateSettings) this.templateModel.templateSettings.contentItem = contentItem;
+    if (this.templateModel && this.templateModel.templateSettings) {
+      // Force new reference for change detection
+      this.templateModel.templateSettings.contentItem = { ...contentItem };
+      this.templateModel = { ...this.templateModel };
+    }
   }
 }

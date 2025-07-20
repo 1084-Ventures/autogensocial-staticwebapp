@@ -45,7 +45,9 @@ export class ContentTemplateFormComponent {
   }
   onContentItemChange(contentItem: any) {
     if (this.templateModel && this.templateModel.templateSettings) {
-      this.templateModel.templateSettings.contentItem = contentItem;
+      // Force new reference for change detection
+      this.templateModel.templateSettings.contentItem = { ...contentItem };
+      this.templateModel = { ...this.templateModel };
     }
   }
 }

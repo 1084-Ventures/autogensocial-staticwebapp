@@ -1,5 +1,7 @@
 <mat-card class="content-template-content-item-form">
+
   <h3>Content Item</h3>
+
   <mat-form-field appearance="outline" class="full-width">
     <mat-label>Content Type</mat-label>
     <mat-select [ngModel]="contentType" (ngModelChange)="onContentTypeChange($event)">
@@ -9,113 +11,25 @@
     </mat-select>
   </mat-form-field>
 
-  <ng-container [ngSwitch]="contentType">
+  <div [ngSwitch]="contentType">
     <div *ngSwitchCase="'text'">
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Text Content</mat-label>
-        <textarea matInput [(ngModel)]="textValue" name="textValue"></textarea>
+      <mat-form-field appearance="fill">
+        <mat-label>Text</mat-label>
+        <textarea matInput [(ngModel)]="textValue"></textarea>
       </mat-form-field>
     </div>
     <div *ngSwitchCase="'images'">
-      <div *ngIf="contentItem?.imagesTemplate as imagesTemplate">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Number of Images</mat-label>
-          <input matInput type="number" [(ngModel)]="imagesTemplate.numImages" (ngModelChange)="updateNumImages($event)" />
-        </mat-form-field>
-        <div *ngFor="let img of imagesTemplate.imageTemplates; let i = index">
-          <mat-card class="image-template-card">
-            <h4>Image Template {{i + 1}}</h4>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Set URL</mat-label>
-              <input matInput [(ngModel)]="img.setUrl" (ngModelChange)="updateImageTemplate(i, { setUrl: $event })" />
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Format</mat-label>
-              <input matInput [(ngModel)]="img.format" (ngModelChange)="updateImageTemplate(i, { format: $event })" />
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Aspect Ratio</mat-label>
-              <mat-select [(ngModel)]="img.aspectRatio" (ngModelChange)="updateImageTemplate(i, { aspectRatio: $event })">
-                <mat-option value="square">Square</mat-option>
-                <mat-option value="portrait">Portrait</mat-option>
-                <mat-option value="landscape">Landscape</mat-option>
-                <mat-option value="story">Story</mat-option>
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Media Type</mat-label>
-              <mat-select [(ngModel)]="img.mediaType" (ngModelChange)="updateImageTemplate(i, { mediaType: $event })">
-                <mat-option value="color">Color</mat-option>
-                <mat-option value="set">Set</mat-option>
-                <mat-option value="uploaded">Uploaded</mat-option>
-                <mat-option value="online">Online</mat-option>
-              </mat-select>
-            </mat-form-field>
-            <div *ngIf="img.visualStyleObj as visualStyleObj">
-              <h5>Themes</h5>
-              <div *ngFor="let theme of visualStyleObj.themes; let t = index">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Background Color</mat-label>
-                  <input matInput [(ngModel)]="theme.backgroundColor" (ngModelChange)="updateTheme(i, t, { backgroundColor: $event })" placeholder="Background Color" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Font Family</mat-label>
-                  <input matInput [ngModel]="theme.textStyle?.font?.family" (ngModelChange)="updateThemeFontFamily(i, t, $event)" placeholder="Font Family" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Font Size</mat-label>
-                  <input matInput [ngModel]="theme.textStyle?.font?.size" (ngModelChange)="updateThemeFontSize(i, t, $event)" placeholder="Font Size" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Font Color</mat-label>
-                  <input matInput [ngModel]="theme.textStyle?.font?.color" (ngModelChange)="updateThemeFontColor(i, t, $event)" placeholder="Font Color" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Overlay Color</mat-label>
-                  <input matInput [ngModel]="theme.overlayBox?.color" (ngModelChange)="updateThemeOverlayColor(i, t, $event)" placeholder="Overlay Color" />
-                </mat-form-field>
-                <!-- Add more theme fields as needed, e.g., outline, alignment, transparency, overlayBox transparency, etc. -->
-              </div>
-            </div>
-          </mat-card>
-        </div>
-      </div>
-      <span *ngIf="!contentItem?.imagesTemplate">No ImagesTemplate found.</span>
+      <app-content-template-images-form
+        [imagesTemplate]="contentItem?.imagesTemplate"
+        (imagesTemplateChange)="onImagesTemplateChange($event)">
+      </app-content-template-images-form>
     </div>
     <div *ngSwitchCase="'video'">
-      <div *ngIf="contentItem?.videoTemplate as videoTemplate">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Set URL</mat-label>
-          <input matInput [(ngModel)]="videoTemplate.setUrl" (ngModelChange)="updateVideoTemplate({ setUrl: $event })" />
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Format</mat-label>
-          <input matInput [(ngModel)]="videoTemplate.format" (ngModelChange)="updateVideoTemplate({ format: $event })" />
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Aspect Ratio</mat-label>
-          <mat-select [(ngModel)]="videoTemplate.aspectRatio" (ngModelChange)="updateVideoTemplate({ aspectRatio: $event })">
-            <mat-option value="square">Square</mat-option>
-            <mat-option value="portrait">Portrait</mat-option>
-            <mat-option value="landscape">Landscape</mat-option>
-            <mat-option value="story">Story</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <div *ngIf="videoTemplate.visualStyleObj as visualStyleObj">
-          <h5>Themes</h5>
-          <div *ngFor="let theme of visualStyleObj.themes; let t = index">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Theme {{t + 1}}</mat-label>
-              <input matInput [(ngModel)]="theme.backgroundColor" placeholder="Background Color" />
-            </mat-form-field>
-            <!-- Add more theme fields as needed -->
-          </div>
-        </div>
-      </div>
-      <span *ngIf="!contentItem?.videoTemplate">No VideoTemplate found.</span>
+      <app-content-template-video-form
+        [videoTemplate]="contentItem?.videoTemplate"
+        (videoTemplateChange)="onVideoTemplateChange($event)">
+      </app-content-template-video-form>
     </div>
-    <div *ngSwitchDefault>
-      <span>Select a content type to begin editing.</span>
-    </div>
-  </ng-container>
+    <div *ngSwitchDefault></div>
+  </div>
 </mat-card>
