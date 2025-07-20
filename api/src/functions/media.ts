@@ -1,23 +1,21 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { CosmosClient } from "@azure/cosmos";
-// import { BlobServiceClient } from "@azure/storage-blob"; // Uncomment when implementing blob upload
+import { mediaContainer } from "../shared/cosmosClient";
+import { blobServiceClient, sharedKeyCredential, BlobSASPermissions, SASProtocol, generateBlobSASQueryParameters } from "../shared/blobClient";
 // import { analyzeMediaWithCognitiveServices } from "../services/cognitive"; // Placeholder for cognitive analysis
 import { randomUUID } from "crypto";
 import type { components } from '../../generated/models';
 
 // Use generated types
 export type MediaDocument = components["schemas"]["MediaDocument"];
-export type MediaCreate = components["schemas"]["MediaDocument"];
-export type MediaUpdate = Partial<components["schemas"]["MediaDocument"]>;
+export type MediaCreate = components["schemas"]["MediaCreate"];
+export type MediaUpdate = components["schemas"]["MediaUpdate"];
 export type MediaMetadata = components["schemas"]["MediaMetadata"];
+export type CognitiveData = components["schemas"]["CognitiveData"];
 
-const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
-const database = client.database(process.env.COSMOS_DB_NAME || '');
-const mediaContainer = database.container(process.env.COSMOS_DB_CONTAINER_MEDIA || '');
-// const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
+
 
 export const mediaManagement = async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    context.log('Request received in media_management');
+    context.log('Request received in media');
     context.log('Method:', request.method);
     context.log('URL:', request.url);
     context.log('Headers:', JSON.stringify(Object.fromEntries(request.headers.entries())));
@@ -28,6 +26,8 @@ export const mediaManagement = async (request: HttpRequest, context: InvocationC
         return createErrorResponse(401, 'User not authenticated', 'UNAUTHENTICATED');
     }
     try {
+        // TODO: Replace with actual logic to get allowed brand IDs for the user
+        const allowedBrandIds: string[] = [];
         switch (request.method) {
             case 'GET':
                 context.log('Dispatching to handleGet');
@@ -37,16 +37,16 @@ export const mediaManagement = async (request: HttpRequest, context: InvocationC
                 return await handleUpload(request, userId, context);
             case 'DELETE':
                 context.log('Dispatching to handleDelete');
-                return await handleDelete(request, userId, context);
+                return await handleDelete(request, userId, context, allowedBrandIds);
             case 'PUT':
                 context.log('Dispatching to handleUpdate');
-                return await handleUpdate(request, userId, context);
+                return await handleUpdate(request, userId, context, allowedBrandIds);
             default:
                 context.log('Unsupported HTTP method:', request.method);
                 return createErrorResponse(405, 'Method Not Allowed', 'METHOD_NOT_ALLOWED');
         }
     } catch (err) {
-        context.log('Unhandled error in media_management:', err);
+        context.log('Unhandled error in media:', err);
         return createErrorResponse(500, 'Internal Server Error', 'INTERNAL_ERROR');
     }
 }
@@ -58,7 +58,9 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
         const url = new URL(request.url);
         const id = url.pathname.split('/').pop();
         context.log('handleGet: Parsed id:', id);
-        if (id && id !== 'media_management') {
+        // Check for brandId in query params
+        const brandId = url.searchParams.get('brandId');
+        if (id && id !== 'media') {
             // Fetch single media by id using cross-partition query
             context.log('handleGet: Fetching single media by id');
             const { resources } = await mediaContainer.items.query<MediaDocument>({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: id }] }).fetchAll();
@@ -71,24 +73,7 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
                 context.log('handleGet: blobUrl is undefined');
                 return createErrorResponse(500, 'Media blobUrl missing', 'INTERNAL_ERROR');
             }
-            // Generate SAS URL for blob
-            const azureBlob = require('@azure/storage-blob');
-            const BlobServiceClient = azureBlob.BlobServiceClient;
-            const generateBlobSASQueryParameters = azureBlob.generateBlobSASQueryParameters;
-            const BlobSASPermissions = azureBlob.BlobSASPermissions;
-            const SASProtocol = azureBlob.SASProtocol;
-            const StorageSharedKeyCredential = azureBlob.StorageSharedKeyCredential;
-            const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
-            const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-            const accountName = blobServiceClient.accountName;
-            const keyMatch = connectionString.match(/AccountKey=([^;]+)/);
-            if (!accountName || !keyMatch) {
-                context.log('Missing accountName or AccountKey in connection string');
-                return createErrorResponse(500, 'Storage account credentials not configured', 'INTERNAL_ERROR');
-            }
-            const accountKey = keyMatch[1];
-            const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
-            // Extract blob path from blobUrl
+            // Generate SAS URL for blob using shared client
             const urlObj = new URL(resource.blobUrl);
             const blobPath = urlObj.pathname.replace(/^\//, '');
             const containerName = 'media';
@@ -104,31 +89,15 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
             const sasUrl = `${urlObj.origin}/${containerName}/${blobName}?${sasToken}`;
             resource.blobUrl = sasUrl;
             return createResponse(200, resource);
-        } else {
-            // List all media for brandId (userId is not in OpenAPI model)
-            context.log('handleGet: Listing all media for brandId:', userId);
+        } else if (brandId) {
+            // List all media for the provided brandId
+            context.log('handleGet: Listing all media for brandId:', brandId);
             const query = {
                 query: 'SELECT * FROM c WHERE c.brandId = @brandId',
-                parameters: [{ name: '@brandId', value: userId }]
+                parameters: [{ name: '@brandId', value: brandId }]
             };
             const { resources } = await mediaContainer.items.query<MediaDocument>(query).fetchAll();
-            // Add SAS URL to each resource
-            const azureBlob = require('@azure/storage-blob');
-            const BlobServiceClient = azureBlob.BlobServiceClient;
-            const generateBlobSASQueryParameters = azureBlob.generateBlobSASQueryParameters;
-            const BlobSASPermissions = azureBlob.BlobSASPermissions;
-            const SASProtocol = azureBlob.SASProtocol;
-            const StorageSharedKeyCredential = azureBlob.StorageSharedKeyCredential;
-            const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
-            const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-            const accountName = blobServiceClient.accountName;
-            const keyMatch = connectionString.match(/AccountKey=([^;]+)/);
-            if (!accountName || !keyMatch) {
-                context.log('Missing accountName or AccountKey in connection string');
-                return createErrorResponse(500, 'Storage account credentials not configured', 'INTERNAL_ERROR');
-            }
-            const accountKey = keyMatch[1];
-            const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+            // Add SAS URL to each resource using shared client
             const containerName = 'media';
             for (const resource of resources) {
                 if (!resource.blobUrl) continue;
@@ -147,6 +116,10 @@ async function handleGet(request: HttpRequest, userId: string, context: Invocati
                 resource.blobUrl = sasUrl;
             }
             return createResponse(200, resources);
+        } else {
+            // Optionally, fallback to listing all media for the user (if needed)
+            context.log('handleGet: No brandId provided, returning empty list or all user media if desired.');
+            return createResponse(200, []);
         }
     } catch (error: any) {
         context.log('Error in handleGet:', error);
@@ -177,7 +150,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         let fileName = '';
         let brandId = '';
         let fileMimeType = '';
-        let tags: { name: string; confidence: number }[] = [];
+        let tags: string[] = [];
         let description = '';
         let metaFileName = '';
         let categories: any[] = [];
@@ -187,7 +160,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         let brands: any[] = [];
         let people: any[] = [];
         let ocrText: string | undefined = undefined;
-        let cognitiveData: any = undefined;
+        let cognitiveData: CognitiveData = {};
         const filePromise = new Promise<void>((resolve, reject) => {
             bb.on('file', (nameField: string, file: any, info: any) => {
                 fileName = info.filename;
@@ -201,7 +174,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
             bb.on('field', (fieldName: string, val: string) => {
                 fields[fieldName] = val;
                 if (fieldName === 'brandId') brandId = val;
-                if (fieldName === 'tags') tags = val.split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => ({ name: t, confidence: 1 }));
+                if (fieldName === 'tags') tags = val.split(',').map((t: string) => t.trim()).filter(Boolean);
                 if (fieldName === 'description') description = val;
                 if (fieldName === 'name') metaFileName = val;
             });
@@ -215,14 +188,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
             context.log('handleUpload: Missing file or brandId');
             return createErrorResponse(400, 'Missing file or brandId', 'MISSING_DATA');
         }
-        // Upload to blob storage
-        const azureBlob = require('@azure/storage-blob');
-        const BlobServiceClient = azureBlob.BlobServiceClient;
-        const generateBlobSASQueryParameters = azureBlob.generateBlobSASQueryParameters;
-        const BlobSASPermissions = azureBlob.BlobSASPermissions;
-        const SASProtocol = azureBlob.SASProtocol;
-        const StorageSharedKeyCredential = azureBlob.StorageSharedKeyCredential;
-        const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
+        // Upload to blob storage using shared client
         const containerClient = blobServiceClient.getContainerClient('media');
         // Generate a new id for the media
         const id = randomUUID();
@@ -232,18 +198,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         const blobPath = `${userId}/${brandId}/${id}${ext}`;
         const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
         await blockBlobClient.uploadData(fileBuffer, { blobHTTPHeaders: { blobContentType: fileMimeType } });
-        // Generate a SAS token for the blob (read access, 1 hour expiry) using the connection string
-        const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
-        const blobServiceClientForSAS = BlobServiceClient.fromConnectionString(connectionString);
-        const accountName = blobServiceClientForSAS.accountName;
-        // Extract account key from connection string
-        const keyMatch = connectionString.match(/AccountKey=([^;]+)/);
-        if (!accountName || !keyMatch) {
-            context.log('Missing accountName or AccountKey in connection string');
-            return createErrorResponse(500, 'Storage account credentials not configured', 'INTERNAL_ERROR');
-        }
-        const accountKey = keyMatch[1];
-        const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+        // Generate a SAS token for the blob (read access, 1 hour expiry) using shared client
         const sasToken = generateBlobSASQueryParameters({
             containerName: 'media',
             blobName: `${userId}/${brandId}/${id}${ext}`,
@@ -258,16 +213,14 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         // Compose mediaMetadata using correct structure
         // Ensure tags is a string[]
         if (fields.tags && typeof fields.tags === 'string') {
-          tags = String(fields.tags).split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => ({ name: t, confidence: 1 }));
-        } else if (Array.isArray(tags)) {
-          tags = tags.map((t: any) => typeof t === 'string' ? t : (t && t.name ? t.name : '')).filter((t: string) => !!t);
-        } else {
+          tags = String(fields.tags).split(',').map((t: string) => t.trim()).filter(Boolean);
+        } else if (!Array.isArray(tags)) {
           tags = [];
         }
         // cognitiveData is required in MediaMetadata
         const mediaMetadata: MediaMetadata = {
           fileName: metaFileName,
-          tags: Array.isArray(tags) ? tags.map((t: any) => typeof t === 'string' ? t : t.name).filter((t: string) => typeof t === 'string') : [],
+          tags,
           description,
           cognitiveData: cognitiveData || {}
         };
@@ -283,7 +236,7 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
         if (fileMimeType.startsWith('video/')) {
             mediaType = 'video';
         }
-        const mediaDoc: MediaDocument = {
+        const mediaDoc: MediaCreate = {
             id,
             metadata,
             brandId,
@@ -300,14 +253,14 @@ async function handleUpload(request: HttpRequest, userId: string, context: Invoc
     }
 }
 
-async function handleDelete(request: HttpRequest, userId: string, context: InvocationContext): Promise<HttpResponseInit> {
+async function handleDelete(request: HttpRequest, userId: string, context: InvocationContext, allowedBrandIds: string[]): Promise<HttpResponseInit> {
     try {
         context.log('handleDelete: URL:', request.url);
         // Parse media id from route or body
         const url = new URL(request.url);
         let id = url.pathname.split('/').pop();
         context.log('handleDelete: Parsed id:', id);
-        if (!id || id === 'media_management') {
+        if (!id || id === 'media') {
             // Try to get from body
             const body = request.body ? JSON.parse(Buffer.from(await request.arrayBuffer()).toString()) : {};
             id = body.id;
@@ -329,14 +282,12 @@ async function handleDelete(request: HttpRequest, userId: string, context: Invoc
             context.log('handleDelete: Media not found for id:', id);
             return createErrorResponse(404, 'Media not found', 'NOT_FOUND');
         }
-        // Verify user/brand ownership
-        if (mediaDoc.brandId !== userId) {
-            context.log('handleDelete: Forbidden, not owner');
-            return createErrorResponse(403, 'Forbidden: not owner', 'FORBIDDEN');
+        // Check if user has access to this brand
+        if (!mediaDoc.brandId || !allowedBrandIds.includes(mediaDoc.brandId)) {
+            context.log('Forbidden: user does not have access to this brand');
+            return createErrorResponse(403, 'Forbidden: not allowed for this brand', 'FORBIDDEN');
         }
-        // Delete blob from storage
-        const { BlobServiceClient } = require('@azure/storage-blob');
-        const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
+        // Delete blob from storage using shared client
         const containerClient = blobServiceClient.getContainerClient('media');
         // Extract blob path from blobUrl
         const blobUrl = mediaDoc.blobUrl;
@@ -360,7 +311,7 @@ async function handleDelete(request: HttpRequest, userId: string, context: Invoc
     }
 }
 
-async function handleUpdate(request: HttpRequest, userId: string, context: InvocationContext): Promise<HttpResponseInit> {
+async function handleUpdate(request: HttpRequest, userId: string, context: InvocationContext, allowedBrandIds: string[]): Promise<HttpResponseInit> {
     try {
         context.log('handleUpdate: URL:', request.url);
         // Parse media id from route or body
@@ -368,7 +319,7 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
         let id = url.pathname.split('/').pop();
         context.log('handleUpdate: Parsed id:', id);
         let update: Partial<MediaUpdate> = {};
-        if (!id || id === 'media_management') {
+        if (!id || id === 'media') {
             // Try to get from body
             const body = request.body ? JSON.parse(Buffer.from(await request.arrayBuffer()).toString()) : {};
             id = body.id;
@@ -390,10 +341,10 @@ async function handleUpdate(request: HttpRequest, userId: string, context: Invoc
             context.log('handleUpdate: Media not found for id:', id);
             return createErrorResponse(404, 'Media not found', 'NOT_FOUND');
         }
-        // Verify user/brand ownership
-        if (mediaDoc.brandId !== userId) {
-            context.log('handleUpdate: Forbidden, not owner');
-            return createErrorResponse(403, 'Forbidden: not owner', 'FORBIDDEN');
+        // Check if user has access to this brand
+        if (!mediaDoc.brandId || !allowedBrandIds.includes(mediaDoc.brandId)) {
+            context.log('Forbidden: user does not have access to this brand');
+            return createErrorResponse(403, 'Forbidden: not allowed for this brand', 'FORBIDDEN');
         }
         // Update metadata or name
         const updatedDoc = {
@@ -436,9 +387,9 @@ async function extractUserId(request: HttpRequest): Promise<string> {
     }
 }
 
-app.http('media_management', {
+app.http('media', {
     methods: ['GET', 'POST', 'DELETE', 'PUT'],
     authLevel: 'anonymous',
-    route: 'media_management/{id?}',
+    route: 'media/{id?}',
     handler: mediaManagement
 });

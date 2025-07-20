@@ -23,6 +23,7 @@ export class UploadPageComponent implements OnDestroy {
   isUploading = false;
   showUploadForm = false;
   tagsString: string = '';
+  feedbackMessage: string | null = null;
   private subscription: any;
 
   constructor(
@@ -39,15 +40,22 @@ export class UploadPageComponent implements OnDestroy {
 
   loadMedia() {
     if (!this.brandId) return;
-    this.mediaService.getMediaByBrand(this.brandId).subscribe(media => {
-      this.mediaList = media;
-      this.selectedMedia = null;
+    this.mediaService.getMediaByBrand(this.brandId).subscribe({
+      next: (media) => {
+        this.mediaList = media;
+        this.selectedMedia = null;
+        this.feedbackMessage = null;
+      },
+      error: () => {
+        this.feedbackMessage = 'Error loading media.';
+      }
     });
   }
 
   selectMedia(media: MediaDocument) {
     this.selectedMedia = media;
     this.showUploadForm = false;
+    // tagsString is comma-separated for UI, but tags is string[] in model
     this.tagsString = (media.mediaMetadata?.tags || []).join(', ');
   }
 
@@ -55,11 +63,13 @@ export class UploadPageComponent implements OnDestroy {
     this.selectedMedia = null;
     this.showUploadForm = true;
     this.tagsString = '';
+    this.feedbackMessage = null;
   }
 
   submitMediaEditForm(form: any) {
     if (!this.selectedMedia) return;
-    const tags = this.tagsString.split(',').map(t => t.trim()).filter(t => t);
+    // Convert tagsString (comma-separated) to string[]
+    const tags = (this.tagsString || '').split(',').map((t: string) => t.trim()).filter((t: string) => !!t);
     const update: MediaUpdate = {
       id: this.selectedMedia.id,
       metadata: this.selectedMedia.metadata,
@@ -76,6 +86,8 @@ export class UploadPageComponent implements OnDestroy {
 
   onUploadSuccess(media: MediaDocument) {
     this.showUploadForm = false;
+    this.isUploading = false;
+    this.feedbackMessage = 'Upload successful!';
     this.loadMedia();
     this.selectedMedia = media;
     this.tagsString = (media.mediaMetadata?.tags || []).join(', ');
@@ -83,19 +95,37 @@ export class UploadPageComponent implements OnDestroy {
 
   onUpdateMedia(update: MediaUpdate) {
     if (!this.selectedMedia) return;
-    this.mediaService.updateMedia(this.selectedMedia.id, update).subscribe(updated => {
-      this.selectedMedia = updated;
-      this.loadMedia();
-      this.tagsString = (updated.mediaMetadata?.tags || []).join(', ');
+    this.isUploading = true;
+    this.mediaService.updateMedia(this.selectedMedia.id, update).subscribe({
+      next: (updated) => {
+        this.selectedMedia = updated;
+        this.feedbackMessage = 'Media updated successfully!';
+        this.loadMedia();
+        this.tagsString = (updated.mediaMetadata?.tags || []).join(', ');
+        this.isUploading = false;
+      },
+      error: () => {
+        this.feedbackMessage = 'Error updating media.';
+        this.isUploading = false;
+      }
     });
   }
 
   onDeleteMedia() {
     if (!this.selectedMedia) return;
-    this.mediaService.deleteMedia(this.selectedMedia.id).subscribe(() => {
-      this.selectedMedia = null;
-      this.loadMedia();
-      this.tagsString = '';
+    this.isUploading = true;
+    this.mediaService.deleteMedia(this.selectedMedia.id).subscribe({
+      next: () => {
+        this.selectedMedia = null;
+        this.feedbackMessage = 'Media deleted successfully!';
+        this.loadMedia();
+        this.tagsString = '';
+        this.isUploading = false;
+      },
+      error: () => {
+        this.feedbackMessage = 'Error deleting media.';
+        this.isUploading = false;
+      }
     });
   }
 

@@ -1,51 +1,45 @@
-<div class="content-template-page-root">
-  <!-- Brand Sidenav Placeholder (should be included by parent layout) -->
+<div style="display: flex; width: 100%; min-height: 100vh;">
   <app-content-template-sidenav
-    [contentTemplates]="contentTemplates"
+    [templateList]="templateList"
     [selectedTemplate]="selectedTemplate"
-    (selectTemplate)="selectedTemplate = $event"
-    (addTemplate)="onAddTemplate()">
-  </app-content-template-sidenav>
-  <!-- Main content placeholder -->
-  <div class="main-content">
-    <ng-container *ngIf="addingTemplate">
-      <form [formGroup]="form" (ngSubmit)="onSaveTemplate()" class="growing-template-form">
-        <app-content-template-info-form
-          [formGroup]="templateInfoGroup"
-        ></app-content-template-info-form>
-
-        <div *ngIf="templateInfoGroup.valid" class="growing-section">
-          <app-content-template-prompt-form
-            [formGroup]="promptTemplateGroup"
-          ></app-content-template-prompt-form>
-
-          <app-content-item-form
-            *ngIf="contentType && contentType !== 'text'"
-            [formGroup]="contentItemGroup"
-            [contentType]="contentType"
-          ></app-content-item-form>
-        </div>
-        <div class="form-actions">
-          <button mat-flat-button color="primary" type="submit" [disabled]="!form.valid">Save</button>
-          <button mat-button type="button" (click)="onCancel()">Cancel</button>
-        </div>
-      </form>
-    </ng-container>
-    <ng-container *ngIf="!addingTemplate">
-      <ng-container *ngIf="selectedTemplate">
-        <!-- Template details will go here -->
-        <div class="template-details-card">
-          <h2>{{ selectedTemplate.name || 'Untitled Template' }}</h2>
-          <!-- More details to be added step by step -->
+    (selectTemplate)="selectTemplate($event)"
+    (addTemplate)="openForm()"
+    style="flex-shrink: 0;"
+  ></app-content-template-sidenav>
+  <!-- Main content -->
+  <div style="flex: 1; padding: 2rem; max-width: 1000px; margin: 0 auto; box-sizing: border-box; background: #fff;">
+    <ng-container *ngIf="brandId; else emptyState">
+      <div *ngIf="feedbackMessage" class="feedback-message" style="margin-bottom: 1rem; color: #1976d2; font-weight: 500;">{{ feedbackMessage }}</div>
+      <div *ngIf="isProcessing" style="margin-bottom: 1rem; text-align: center;"><mat-spinner diameter="32"></mat-spinner></div>
+      <ng-container *ngIf="showForm">
+        <app-content-template-form
+          [templateModel]="newTemplateModel"
+          (submitForm)="submitForm($event)"
+          (cancelForm)="showForm = false"
+        ></app-content-template-form>
+      </ng-container>
+      <ng-container *ngIf="selectedTemplate && selectedTemplate.templateInfo && !showForm">
+        <app-content-template-edit
+          [templateModel]="selectedTemplate"
+          (submitEdit)="submitEditForm($event)"
+          (cancelEdit)="selectedTemplate = null"
+          (deleteEdit)="onDeleteEdit()"
+        ></app-content-template-edit>
+        <div class="meta-info">
+          <div><strong>Template Name:</strong> {{ selectedTemplate.templateInfo.name }}</div>
+          <div><strong>Last Executed:</strong> {{ selectedTemplate.lastExecutionTime | date:'short' }}</div>
         </div>
       </ng-container>
-      <ng-container *ngIf="!selectedTemplate">
-        <div class="empty-details">
-          <mat-icon class="empty-icon">description</mat-icon>
-          <h2 class="empty-title">No Content Template Selected</h2>
-          <p class="empty-desc">Select a content template from the list or create a new one to get started.</p>
-        </div>
+      <ng-container *ngIf="!selectedTemplate && !showForm">
+        <div class="empty-details">Select a template or add a new one.</div>
       </ng-container>
     </ng-container>
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <mat-icon>description</mat-icon>
+        <h2>No Brand Selected</h2>
+        <p>Select a brand first to manage content templates</p>
+      </div>
+    </ng-template>
   </div>
 </div>

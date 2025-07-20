@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 // Angular Material Components
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIconModule } from '@angular/material/icon';
+// ...existing code...
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatCardModule } from '@angular/material/card';
@@ -19,7 +19,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
 import { MatGridListModule } from '@angular/material/grid-list';
+import { MatRadioModule } from '@angular/material/radio';
 
 @NgModule({
   imports: [
@@ -41,7 +43,9 @@ import { MatGridListModule } from '@angular/material/grid-list';
     MatSelectModule,
     MatOptionModule,
     MatChipsModule,
+    MatIconModule,
     MatGridListModule,
+    MatRadioModule,
   ],
   exports: [
     MatButtonModule,
@@ -62,6 +66,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
     MatOptionModule,
     MatChipsModule,
     MatGridListModule,
+    MatRadioModule,
   ],
 })
 export class MaterialModule {}

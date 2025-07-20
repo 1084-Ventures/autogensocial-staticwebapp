@@ -1,0 +1,45 @@
+<mat-card class="content-template-settings-form">
+  <h3>Template Settings</h3>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Prompt</mat-label>
+    <textarea matInput [(ngModel)]="prompt" name="userPrompt"></textarea>
+  </mat-form-field>
+
+  <div class="variables-section">
+    <h4>Variables</h4>
+    <div *ngFor="let variable of variables; let i = index" class="variable-row" style="display: flex; align-items: flex-start; gap: 16px;">
+      <!-- Variable Name -->
+      <mat-form-field appearance="outline" class="variable-field" style="flex: 1 1 30%; min-width: 120px;">
+        <mat-label>Variable Name</mat-label>
+        <input matInput [(ngModel)]="variable.name" name="variableName{{i}}" placeholder="Enter variable name" style="width: 100%;" />
+      </mat-form-field>
+      <!-- Value Input & Chips Area -->
+      <div style="flex: 1 1 70%; min-width: 280px; display: flex; align-items: flex-start; gap: 8px;">
+        <mat-chip-grid #chipGrid style="width: 100%; align-items: flex-start;">
+          <div style="border: 1px solid #bdbdbd; border-radius: 4px; padding: 4px 8px; width: 220px; margin-bottom: 4px; display: flex; align-items: center; background: #fafafa;">
+            <input
+              matChipInput
+              #chipInput
+              [matChipInputFor]="chipGrid"
+              [matChipInputSeparatorKeyCodes]="[13,188]"
+              [matChipInputAddOnBlur]="true"
+              (matChipInputTokenEnd)="handleChipInputTokenEnd(i, $event, chipInput)"
+              (keydown.backspace)="handleChipInputBackspace(i, chipInput)"
+              (paste)="handleChipInputPaste(i, $event, chipInput)"
+              placeholder="Type value and press Enter or Comma"
+              style="width: 100%; border: none; outline: none; background: transparent;" />
+          </div>
+          <mat-chip *ngFor="let val of variable.values; let vi = index" [removable]="true" (removed)="removeVariableValue(i, vi)">
+            {{val}}
+            <button matChipRemove mat-icon-button tabindex="-1"><mat-icon>cancel</mat-icon></button>
+          </mat-chip>
+        </mat-chip-grid>
+      </div>
+      <button mat-icon-button color="warn" (click)="removeVariable(i)" aria-label="Remove Variable" style="align-self: center;">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+    <button mat-raised-button color="primary" type="button" (click)="addVariable()">Add Variable</button>
+  </div>
+
+</mat-card>

@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import fetch from "node-fetch";
+import { callCognitiveServices } from "../shared/cognitiveServicesClient";
 import type { components } from '../../generated/models';
 
 // Use generated types
@@ -10,36 +10,24 @@ export type CognitiveCaption = components["schemas"]["CognitiveCaption"];
 export type CognitiveDenseCaption = components["schemas"]["CognitiveDenseCaption"];
 export type CognitiveBrand = components["schemas"]["CognitiveBrand"];
 export type CognitivePerson = components["schemas"]["CognitivePerson"];
+export type CognitiveData = components["schemas"]["CognitiveData"];
+export type MediaAnalyze = components["schemas"]["MediaAnalyze"];
 
-// Environment variables for Azure Cognitive Services
-const COGSVCS_ENDPOINT = process.env.AZURE_COGSVCS_ENDPOINT;
-const COGSVCS_KEY = process.env.AZURE_COGSVCS_KEY;
+
 
 async function analyzeImageWithCognitiveServices(imageBase64: string, context: InvocationContext) {
-    if (!COGSVCS_ENDPOINT || !COGSVCS_KEY) {
-        throw new Error("Azure Cognitive Services endpoint or key not configured.");
-    }
     // Remove data URL prefix if present
     const base64Data = imageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
-
     // Use Azure Computer Vision v4.0 GA for improved analysis
     // Add 'denseCaptions' to the features list for region-based captions
-    const url = `${COGSVCS_ENDPOINT}/computervision/imageanalysis:analyze?api-version=2023-10-01&features=caption,tags,denseCaptions`;
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Ocp-Apim-Subscription-Key": COGSVCS_KEY,
-            "Content-Type": "application/octet-stream"
-        },
-        body: buffer
-    });
-    if (!response.ok) {
-        const errorText = await response.text();
-        context.log("Cognitive Services error:", errorText);
-        throw new Error(`Cognitive Services error: ${response.status}`);
+    const path = "/computervision/imageanalysis:analyze?api-version=2023-10-01&features=caption,tags,denseCaptions";
+    try {
+        return await callCognitiveServices(path, buffer, "application/octet-stream");
+    } catch (err: any) {
+        context.log("Cognitive Services error:", err.message);
+        throw err;
     }
-    return response.json();
 }
 
 export async function analyzeMedia(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -69,12 +57,11 @@ export async function analyzeMedia(request: HttpRequest, context: InvocationCont
     }
     try {
         const analysis = await analyzeImageWithCognitiveServices(imageBase64, context);
-        // Post-process for richer tags and better suggested name (v4.0 response)
         // Caption
         const caption: CognitiveCaption | undefined = analysis.captionResult?.text
           ? { text: analysis.captionResult.text, confidence: analysis.captionResult.confidence }
           : undefined;
-        // Tags
+        // Tags (as CognitiveTag[])
         const tags: CognitiveTag[] = Array.isArray(analysis.tagsResult?.values)
           ? analysis.tagsResult.values.map((t: any) => ({ name: t.name, confidence: t.confidence }))
           : [];
@@ -85,17 +72,13 @@ export async function analyzeMedia(request: HttpRequest, context: InvocationCont
         // Objects
         const objects: CognitiveObject[] = Array.isArray(analysis.objectsResult?.values)
           ? analysis.objectsResult.values.map((o: any) => ({
-              object: o.object,
-              confidence: o.confidence,
               rectangle: o.rectangle
             }))
           : [];
         // Dense Captions
         const denseCaptions: CognitiveDenseCaption[] = Array.isArray(analysis.denseCaptionsResult?.values)
           ? analysis.denseCaptionsResult.values.map((dc: any) => ({
-              text: dc.text,
-              confidence: dc.confidence,
-              boundingBox: dc.boundingBox
+              rectangle: dc.boundingBox
             }))
           : [];
         // Brands
@@ -104,7 +87,7 @@ export async function analyzeMedia(request: HttpRequest, context: InvocationCont
           : [];
         // People
         const people: CognitivePerson[] = Array.isArray(analysis.peopleResult?.values)
-          ? analysis.peopleResult.values.map((p: any) => ({ confidence: p.confidence, rectangle: p.rectangle }))
+          ? analysis.peopleResult.values.map((p: any) => ({ rectangle: p.rectangle }))
           : [];
         // OCR Text
         let ocrText = '';
@@ -126,22 +109,36 @@ export async function analyzeMedia(request: HttpRequest, context: InvocationCont
         }
         // Description: use caption
         const description = caption?.text || '';
+        // Compose cognitiveData as CognitiveData type
+        const cognitiveData: CognitiveData = {
+          tags: Array.isArray(analysis.tagsResult?.values)
+            ? analysis.tagsResult.values.map((t: any) => ({ name: t.name, confidence: t.confidence }))
+            : [],
+          categories,
+          objects,
+          caption,
+          denseCaptions,
+          brands,
+          people,
+          rectangles: []
+        };
+        const result: MediaAnalyze = {
+          suggestedName,
+          description,
+          tags,
+          categories,
+          objects,
+          caption,
+          denseCaptions,
+          brands,
+          people,
+          ocrText,
+          cognitiveData
+        };
         return {
             status: 200,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                suggestedName,
-                description,
-                tags,
-                categories,
-                objects,
-                caption,
-                denseCaptions,
-                brands,
-                people,
-                ocrText,
-                cognitiveData: analysis
-            })
+            body: JSON.stringify(result)
         };
     } catch (err: any) {
         context.log("[analyzeMedia] Error during analysis", err);

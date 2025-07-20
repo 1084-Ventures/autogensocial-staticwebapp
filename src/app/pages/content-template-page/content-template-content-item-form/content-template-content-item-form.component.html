@@ -1,0 +1,35 @@
+<mat-card class="content-template-content-item-form">
+
+  <h3>Content Item</h3>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Content Type</mat-label>
+    <mat-select [ngModel]="contentType" (ngModelChange)="onContentTypeChange($event)">
+      <mat-option value="text">Text</mat-option>
+      <mat-option value="images">Images</mat-option>
+      <mat-option value="video">Video</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div [ngSwitch]="contentType">
+    <div *ngSwitchCase="'text'">
+      <mat-form-field appearance="fill">
+        <mat-label>Text</mat-label>
+        <textarea matInput [(ngModel)]="textValue"></textarea>
+      </mat-form-field>
+    </div>
+    <div *ngSwitchCase="'images'">
+      <app-content-template-images-form
+        [imagesTemplate]="contentItem?.imagesTemplate"
+        (imagesTemplateChange)="onImagesTemplateChange($event)">
+      </app-content-template-images-form>
+    </div>
+    <div *ngSwitchCase="'video'">
+      <app-content-template-video-form
+        [videoTemplate]="contentItem?.videoTemplate"
+        (videoTemplateChange)="onVideoTemplateChange($event)">
+      </app-content-template-video-form>
+    </div>
+    <div *ngSwitchDefault></div>
+  </div>
+</mat-card>

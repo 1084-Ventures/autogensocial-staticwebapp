@@ -1,44 +1,26 @@
-<div class="template-info-form-outer">
-  <h2 class="form-main-title">Create Content Generation Template</h2>
-  <div [formGroup]="formGroup" class="template-info-form">
-    <div class="form-section">
-      <div class="form-section-title">Template Info</div>
 
-      <mat-form-field appearance="fill" class="form-field">
-        <mat-label>Name</mat-label>
-        <input matInput formControlName="name" required />
-        <mat-error *ngIf="formGroup.get('name')?.hasError('required')">Name is required</mat-error>
-      </mat-form-field>
+<mat-card class="content-template-info-form form-section">
+  <h3>Template Info</h3>
+  <ng-container *ngIf="info">
+    <mat-form-field appearance="outline" class="full-width form-section">
+      <mat-label>Name</mat-label>
+      <input matInput [(ngModel)]="info.name" name="name" (ngModelChange)="onFieldChange('name', $event)" required />
+    </mat-form-field>
 
+    <mat-form-field appearance="outline" class="full-width form-section">
+      <mat-label>Description</mat-label>
+      <textarea matInput [(ngModel)]="info.description" name="description" (ngModelChange)="onFieldChange('description', $event)"></textarea>
+    </mat-form-field>
 
-      <mat-form-field appearance="fill" class="form-field">
-        <mat-label>Description</mat-label>
-        <textarea matInput formControlName="description"></textarea>
-      </mat-form-field>
-
-
-      <mat-form-field appearance="fill" class="form-field">
-        <mat-label>Content Type</mat-label>
-        <mat-select formControlName="contentType" required>
-          <mat-option value="text">Text</mat-option>
-          <mat-option value="image">Image</mat-option>
-          <mat-option value="video">Video</mat-option>
-          <mat-option value="multi-image">Multi-Image</mat-option>
-        </mat-select>
-        <mat-error *ngIf="formGroup.get('contentType')?.hasError('required')">Content type is required</mat-error>
-      </mat-form-field>
-
-
-      <mat-form-field appearance="fill" class="form-field">
-        <mat-label>Social Accounts</mat-label>
-        <mat-select formControlName="socialAccounts" multiple>
-          <mat-option value="instagram">Instagram</mat-option>
-          <mat-option value="facebook">Facebook</mat-option>
-          <mat-option value="twitter">Twitter</mat-option>
-          <mat-option value="youtube">YouTube</mat-option>
-          <mat-option value="tiktok">TikTok</mat-option>
-        </mat-select>
-      </mat-form-field>
+    <div class="platform-options-section form-section" style="margin-top: 32px;">
+      <label class="mat-label" style="margin-bottom: 8px; display: block; font-weight: bold;">Social Accounts</label>
+      <div style="width: 100%;">
+        <mat-selection-list [(ngModel)]="info.socialAccounts" (ngModelChange)="onFieldChange('socialAccounts', $event)" style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 0.5rem; column-gap: 1.5rem;">
+          <mat-list-option *ngFor="let account of socialAccountOptions" [value]="account" style="min-width: 120px;">
+            {{ account }}
+          </mat-list-option>
+        </mat-selection-list>
+      </div>
     </div>
-    <!-- No actions here, handled by parent -->
-</div>
+  </ng-container>
+</mat-card>

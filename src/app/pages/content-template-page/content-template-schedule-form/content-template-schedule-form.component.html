@@ -1,0 +1,44 @@
+<mat-card class="content-template-schedule-form">
+  <h3>Schedule</h3>
+  <div class="days-of-week-section" style="display: flex; flex-direction: row; gap: 2rem; margin-bottom: 2rem;">
+    <ng-container *ngFor="let day of daysOfWeekOptions">
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <span style="font-weight: 500; margin-bottom: 0.5rem;">{{ day | titlecase }}</span>
+        <mat-checkbox
+          [checked]="schedule?.daysOfWeek?.includes(day)"
+          (change)="onDaysOfWeekChangeCheckbox(day, $event.checked)"
+        ></mat-checkbox>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="time-slots-section">
+    <h4>Time Slots</h4>
+    <div *ngFor="let slot of schedule?.timeSlots; let i = index" class="time-slot-row">
+      <mat-form-field appearance="outline" class="time-field">
+        <mat-label>Time</mat-label>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <mat-form-field appearance="outline" class="hour-field" style="width: 80px;">
+            <mat-label>Hour</mat-label>
+            <input matInput type="number" min="0" max="23" [(ngModel)]="slot.hour" name="hour{{i}}" (ngModelChange)="onTimeSlotTimeChange(i, slot)">
+          </mat-form-field>
+          <span>:</span>
+          <mat-form-field appearance="outline" class="minute-field" style="width: 80px;">
+            <mat-label>Minute</mat-label>
+            <input matInput type="number" min="0" max="59" [(ngModel)]="slot.minute" name="minute{{i}}" (ngModelChange)="onTimeSlotTimeChange(i, slot)">
+          </mat-form-field>
+        </div>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="timezone-field">
+        <mat-label>Timezone</mat-label>
+        <mat-select [(ngModel)]="slot.timezone" name="timezone{{i}}" (ngModelChange)="onTimeSlotChange(i, slot)">
+          <mat-option *ngFor="let tz of timezoneOptions" [value]="tz">{{ tz }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-icon-button color="warn" (click)="removeTimeSlot(i)" aria-label="Remove Time Slot">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+    <button mat-raised-button color="primary" type="button" (click)="addTimeSlot()">Add Time Slot</button>
+  </div>
+</mat-card>

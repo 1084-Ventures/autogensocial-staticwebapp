@@ -1,0 +1,34 @@
+<div *ngIf="videoTemplate">
+  <h4>Video Template</h4>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Set URL</mat-label>
+    <input matInput [(ngModel)]="videoTemplate.setUrl" (ngModelChange)="updateVideoTemplate({ setUrl: $event })" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Format</mat-label>
+    <input matInput [(ngModel)]="videoTemplate.format" (ngModelChange)="updateVideoTemplate({ format: $event })" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Aspect Ratio</mat-label>
+    <mat-select [(ngModel)]="videoTemplate.aspectRatio" (ngModelChange)="updateVideoTemplate({ aspectRatio: $event })">
+      <mat-option value="square">Square</mat-option>
+      <mat-option value="portrait">Portrait</mat-option>
+      <mat-option value="landscape">Landscape</mat-option>
+      <mat-option value="story">Story</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Media Type</mat-label>
+    <mat-select [(ngModel)]="videoTemplate.mediaType" (ngModelChange)="updateVideoTemplate({ mediaType: $event })">
+      <mat-option value="color">Color</mat-option>
+      <mat-option value="set">Set</mat-option>
+      <mat-option value="uploaded">Uploaded</mat-option>
+      <mat-option value="online">Online</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <app-content-template-visual-style-form
+    *ngIf="videoTemplate && videoTemplate.visualStyleObj && videoTemplate.visualStyleObj.themes && videoTemplate.visualStyleObj.themes.length > 0"
+    [visualStyle]="videoTemplate.visualStyleObj.themes[0]"
+    (visualStyleChange)="onVisualStyleChange($event)"
+  ></app-content-template-visual-style-form>
+</div>

@@ -27,7 +27,7 @@ export class MediaUploadFormComponent {
   constructor(private fb: FormBuilder, private mediaService: MediaService) {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      tags: [''],
+      tags: [''], // comma-separated string in UI, string[] for backend
       description: [''],
       // Add fields for all cognitive metadata (for hidden/patching)
       categories: [''],
@@ -83,16 +83,10 @@ export class MediaUploadFormComponent {
         next: (result: components['schemas']['MediaAnalyze']) => {
           this.form.patchValue({
             name: result.caption?.text || '',
-            tags: (result.tags || []).map(t => t.name).join(', '),
+            tags: (result.tags || []).map(t => t.name).filter(Boolean).join(', '),
             description: result.description || '',
-            categories: (result.categories || []).map(c => c.name).join(', '),
-            objects: (result.objects || []).map(o => o.rectangle ? `(${o.rectangle.x},${o.rectangle.y},${o.rectangle.width},${o.rectangle.height})` : '').join(', '),
-            brands: (result.brands || []).map(b => b.name).join(', '),
-            people: (result.people || []).length,
-            ocrText: result.ocrText || '',
-            caption: result.caption?.text || '',
-            denseCaptions: (result.denseCaptions || []).map(dc => dc.rectangle ? `(${dc.rectangle.x},${dc.rectangle.y},${dc.rectangle.width},${dc.rectangle.height})` : '').join(', '),
-            cognitiveData: JSON.stringify(result)
+            // ...other fields unchanged...
+            cognitiveData: JSON.stringify(result.cognitiveData || {})
           });
           this.analyzedCognitiveData = result;
           this.analyzing = false;
@@ -124,11 +118,18 @@ export class MediaUploadFormComponent {
     formData.append('brandId', this.brandId);
     formData.append('file', this.file);
     formData.append('name', this.form.value.name);
-    formData.append('tags', this.form.value.tags);
+    // Convert tags from comma-separated string to string[] for backend
+    const tagsArray = (this.form.value.tags || '').split(',').map((t: string) => t.trim()).filter((t: string) => !!t);
+    formData.append('tags', tagsArray.join(','));
     formData.append('description', this.form.value.description);
-    if (this.analyzedCognitiveData) {
-      formData.append('cognitiveData', JSON.stringify(this.analyzedCognitiveData));
+    // Always include cognitiveData (parsed from form or empty)
+    let cognitiveData = {};
+    try {
+      cognitiveData = this.form.value.cognitiveData ? JSON.parse(this.form.value.cognitiveData) : {};
+    } catch {
+      cognitiveData = {};
     }
+    formData.append('cognitiveData', JSON.stringify(cognitiveData));
     this.mediaService.uploadMedia(formData).subscribe({
       next: (media) => {
         this.uploading = false;

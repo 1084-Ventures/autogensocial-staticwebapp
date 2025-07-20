@@ -50,7 +50,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Analyze a media file (image or video) */
+        /** Analyze a media item (image) using AI/Cognitive Services */
         post: operations["analyzeMedia"];
         delete?: never;
         options?: never;
@@ -158,10 +158,16 @@ export interface components {
             blobUrl?: string;
             /** @enum {string} */
             mediaType?: "image" | "video";
+            usageCount?: number;
             mediaMetadata?: components["schemas"]["MediaMetadata"];
         };
         ContentGenerationTemplateDocument: components["schemas"]["BaseModel"] & {
             brandId?: string;
+            /**
+             * Format: date-time
+             * @description Last time the template was executed
+             */
+            lastExecutionTime?: string;
             templateInfo?: components["schemas"]["TemplateInfo"];
             schedule?: components["schemas"]["Schedule"];
             templateSettings?: components["schemas"]["TemplateSettings"];
@@ -180,17 +186,12 @@ export interface components {
             description?: string;
             socialAccounts?: components["schemas"]["Platform"][];
         };
-        PromptVariable: {
-            name?: string;
-            values?: string[];
-        };
         PromptTemplate: {
-            systemPrompt?: string;
             userPrompt?: string;
-            temperature?: number;
-            maxTokens?: number;
-            model?: string;
-            variables?: components["schemas"]["PromptVariable"][];
+            variables?: {
+                name?: string;
+                values?: string[];
+            }[];
         };
         VisualStyleObj: {
             themes?: components["schemas"]["VisualStyle"][];
@@ -246,19 +247,25 @@ export interface components {
             account?: components["schemas"]["SocialAccount"];
         };
         SocialAccount: {
-            /** @description Unique identifier for the social account */
-            id: string;
-            /** @description Username for the social account */
-            username: string;
-            /** @description OAuth access token */
+            /** @description Unique identifier for the account on the platform (e.g., userId, pageId, open_id) */
+            platformAccountId: string;
+            /** @description Public-facing handle (e.g., @username) */
+            handle?: string;
+            /** @description Username or login/display name for the account */
+            username?: string;
+            /** @description URL to the user's or page's profile */
+            profileUrl?: string;
+            /** @description OAuth access token for API access */
             accessToken: string;
-            /** @description URL to the user's profile */
-            profileUrl: string;
             /**
              * Format: date-time
              * @description Token expiration timestamp
              */
-            expiryDate: string;
+            expiryDate?: string;
+            /** @description Platform-specific additional fields (e.g., pageId for Facebook, refreshToken for TikTok) */
+            extra?: {
+                [key: string]: unknown;
+            };
         };
         /** @enum {string} */
         Platform: "instagram" | "facebook" | "x" | "youtube" | "tiktok";
@@ -288,17 +295,6 @@ export interface components {
              */
             contentType: "video";
         });
-        MultiImageTemplate: {
-            /** @description Array of image objects */
-            imageTemplates?: components["schemas"]["ImageTemplate"][];
-            /** @description The exact number of images required */
-            numImages?: number;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            contentType: "multi-image";
-        };
         /** @enum {string} */
         MediaType: "color" | "set" | "uploaded" | "online";
         MediaMetadata: {
@@ -308,6 +304,17 @@ export interface components {
             suggestedName?: string;
             cognitiveData: components["schemas"]["CognitiveData"];
         };
+        ImagesTemplate: {
+            /** @description Array of image objects */
+            imageTemplates?: components["schemas"]["ImageTemplate"][];
+            /** @description The exact number of images required */
+            numImages?: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            contentType: "images";
+        };
         ImageTemplate: {
             mediaType?: components["schemas"]["MediaType"];
             setUrl?: string;
@@ -315,11 +322,6 @@ export interface components {
             aspectRatio?: components["schemas"]["AspectRatio"];
             /** @description Image file format (e.g., "jpeg", "png") */
             format?: string;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            contentType: "image";
         };
         /**
          * @description Aspect ratio (e.g., "square", "portrait", "landscape", "story")
@@ -400,12 +402,11 @@ export interface components {
         };
         ContentItem: {
             /** @enum {string} */
-            contentType?: "text" | "image" | "multi-image" | "video";
+            contentType?: "text" | "images" | "video";
             text?: components["schemas"]["Text"];
-            imageTemplate?: components["schemas"]["ImageTemplate"];
             videoTemplate?: components["schemas"]["VideoTemplate"];
-            multiImageTemplate?: components["schemas"]["MultiImageTemplate"];
-        } & (components["schemas"]["Text"] | components["schemas"]["ImageTemplate"] | components["schemas"]["VideoTemplate"] | components["schemas"]["MultiImageTemplate"]);
+            imagesTemplate?: components["schemas"]["ImagesTemplate"];
+        } & (components["schemas"]["Text"] | components["schemas"]["VideoTemplate"] | components["schemas"]["ImagesTemplate"]);
         BrandInfo: {
             name?: string;
             description?: string;
@@ -723,23 +724,34 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @description Base64-encoded image data */
-                    imageBase64?: string;
+                    /** @description Base64-encoded image data (optionally with data URL prefix) */
+                    imageBase64: string;
                 };
             };
         };
         responses: {
-            /** @description Analysis results for the media file */
+            /** @description Analysis result */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MediaAnalyze"];
+                    "application/json": components["schemas"]["CognitiveData"];
                 };
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: string;
+                    };
+                };
+            };
             429: components["responses"]["RateLimitExceeded"];
         };
     };

@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { CosmosClient } from "@azure/cosmos";
+import { database } from "../shared/cosmosClient";
 import type { components } from '../../generated/models';
 
 // Use generated types
@@ -11,9 +11,7 @@ export type PaginationParams = components["parameters"]["pagination"];
 export type ErrorResponse = components["schemas"]["Error"];
 import { randomUUID } from 'crypto';
 
-const client = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING || '');
-const database = client.database(process.env.COSMOS_DB_NAME || '');
-const container = database.container(process.env.COSMOS_DB_CONTAINER_BRAND || '');
+const brandContainer = database.container(process.env.COSMOS_DB_CONTAINER_BRAND || '');
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -69,7 +67,7 @@ async function handleCreate(request: HttpRequest, userId: string): Promise<HttpR
       description: body.brandInfo.description || ''
     }
   };
-  const { resource: createdBrand } = await container.items.create(newBrand);
+  const { resource: createdBrand } = await brandContainer.items.create(newBrand);
   if (!createdBrand) {
     return createErrorResponse(500, 'Failed to create brand');
   }
@@ -131,13 +129,13 @@ async function handleDelete(request: HttpRequest, userId: string): Promise<HttpR
     query: 'SELECT * FROM c WHERE c.id = @id',
     parameters: [{ name: '@id', value: brandId }]
   };
-  const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
+  const { resources } = await brandContainer.items.query<BrandDocument>(query).fetchAll();
   const brand = resources[0];
   if (!brand || brand.userId !== userId) {
     return createErrorResponse(404, 'Brand not found', 'RESOURCE_NOT_FOUND');
   }
   try {
-    await container.item(brandId, brand.userId).delete();
+    await brandContainer.item(brandId, brand.userId).delete();
     const response: BrandResponse = { id: brandId, name: brand.brandInfo?.name };
     return createResponse(200, response);
   } catch (error) {
@@ -170,7 +168,7 @@ async function getBrandsByUserId(userId: string, pagination: PaginationParams): 
       { name: '@limit', value: limit || DEFAULT_PAGE_SIZE }
     ]
   };
-  const { resources: brands } = await container.items.query<BrandDocument>(querySpec).fetchAll();
+  const { resources: brands } = await brandContainer.items.query<BrandDocument>(querySpec).fetchAll();
   return brands;
 }
 
@@ -180,7 +178,7 @@ async function getBrandById(brandId: string, userId: string): Promise<BrandDocum
     query: 'SELECT * FROM c WHERE c.id = @id',
     parameters: [{ name: '@id', value: brandId }]
   };
-  const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
+  const { resources } = await brandContainer.items.query<BrandDocument>(query).fetchAll();
   const brand = resources[0];
   if (!brand || brand.userId !== userId) {
     return undefined;
@@ -194,7 +192,7 @@ async function updateBrand(brandId: string, userId: string, updateData: BrandUpd
     query: 'SELECT * FROM c WHERE c.id = @id',
     parameters: [{ name: '@id', value: brandId }]
   };
-  const { resources } = await container.items.query<BrandDocument>(query).fetchAll();
+  const { resources } = await brandContainer.items.query<BrandDocument>(query).fetchAll();
   const existingBrand = resources[0];
   if (!existingBrand || existingBrand.userId !== userId) {
     return undefined;
@@ -211,7 +209,7 @@ async function updateBrand(brandId: string, userId: string, updateData: BrandUpd
     },
     socialAccounts: updateData.socialAccounts || existingBrand.socialAccounts
   };
-  const { resource: savedBrand } = await container.item(brandId, existingBrand.userId).replace(updatedBrand);
+  const { resource: savedBrand } = await brandContainer.item(brandId, existingBrand.userId).replace(updatedBrand);
   return savedBrand;
 }
 

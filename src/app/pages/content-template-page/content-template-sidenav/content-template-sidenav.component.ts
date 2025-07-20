@@ -1,27 +1,28 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import type { components } from '../../../generated/models';
+
+type ContentGenerationTemplateDocument = components["schemas"]["ContentGenerationTemplateDocument"];
+
 import { CommonModule } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatButtonModule } from '@angular/material/button';
+import { MaterialModule } from '../../../material.module';
 
 @Component({
   selector: 'app-content-template-sidenav',
-  standalone: true,
-  imports: [CommonModule, MatIconModule, MatListModule, MatButtonModule],
+  imports: [CommonModule, MaterialModule],
   templateUrl: './content-template-sidenav.component.html',
   styleUrls: ['./content-template-sidenav.component.scss']
 })
 export class ContentTemplateSidenavComponent {
-  @Input() contentTemplates: any[] = [];
-  @Input() selectedTemplate: any = null;
-  @Output() selectTemplate = new EventEmitter<any>();
+  @Input() templateList: ContentGenerationTemplateDocument[] = [];
+  @Input() selectedTemplate: ContentGenerationTemplateDocument | null = null;
+  @Output() selectTemplate = new EventEmitter<ContentGenerationTemplateDocument>();
   @Output() addTemplate = new EventEmitter<void>();
 
-  onSelect(template: any) {
+  onSelect(template: ContentGenerationTemplateDocument) {
     this.selectTemplate.emit(template);
   }
 
-  onAddTemplate() {
+  onAdd() {
     this.addTemplate.emit();
   }
 }
