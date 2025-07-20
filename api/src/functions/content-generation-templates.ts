@@ -45,10 +45,16 @@ export const contentGenerationTemplatesApiHandler = async (request: HttpRequest,
             try {
                 body = await request.json();
             } catch (jsonErr) {
-                context.log('Invalid JSON in request body', jsonErr);
+                const errMsg = (jsonErr instanceof Error) ? jsonErr.message : String(jsonErr);
+                context.log('Invalid JSON in request body:', errMsg);
                 return createErrorResponse(400, 'Invalid JSON in request body', 'INVALID_JSON');
             }
             context.log('Parsed request body:', JSON.stringify(body));
+            try {
+                context.log('Parsed request body:', JSON.stringify(body));
+            } catch (e) {
+                context.log('Parsed request body: [unserializable]');
+            }
         }
         switch (request.method) {
             case 'POST':
@@ -86,35 +92,34 @@ export const contentGenerationTemplatesApiHandler = async (request: HttpRequest,
                     return createErrorResponse(404, 'Template not found or already deleted');
                 }
                 context.log(`[DELETE] Attempting to delete template. id: ${idToDelete}, partitionKey: ${brandId}`);
-                try {
-                    const response = await templateContainer.item(idToDelete, brandId).delete();
-                    context.log(`[DELETE] Cosmos DB delete response:`, JSON.stringify(response));
-                    if (!response.resource) {
-                        context.log(`[DELETE] No resource returned after delete. Returning 404.`);
-                        return createErrorResponse(404, 'Template not found or already deleted');
+                if (request.method === 'DELETE') {
+                    try {
+                        const response = await templateContainer.item(idToDelete, brandId).delete();
+                        // Log only safe properties, never the full object
+                        if (response && typeof response.statusCode !== 'undefined') {
+                            context.log(`[DELETE] Cosmos DB delete status:`, response.statusCode);
+                        }
+                        if (!response.resource) {
+                            context.log(`[DELETE] No resource returned after delete. Returning 404.`);
+                            return createErrorResponse(404, 'Template not found or already deleted');
+                        }
+                        context.log(`[DELETE] Delete successful for id: ${idToDelete}`);
+                        return createResponse(200, { id: idToDelete });
+                    } catch (error) {
+                        const errMsg = (error instanceof Error) ? error.message : String(error);
+                        context.log('[DELETE] Error during delete:', errMsg);
+                        return createErrorResponse(500, errMsg || 'Unknown error');
                     }
-                    context.log(`[DELETE] Delete successful for id: ${idToDelete}`);
-                    return createResponse(200, { id: idToDelete });
-                } catch (err) {
-                    context.log(`[DELETE] Error during delete:`, err);
-                    const error = err as any;
-                    if (error.code === 404 || error.statusCode === 404) {
-                        return createErrorResponse(404, 'Template not found or already deleted');
-                    }
-                    return createErrorResponse(500, 'Failed to delete template');
                 }
             default:
                 context.log('Unsupported HTTP method:', request.method);
                 return createErrorResponse(405, 'Method Not Allowed', 'METHOD_NOT_ALLOWED');
         }
     } catch (error) {
-        context.log('Unhandled error in content_generation_template_management:', error);
-        if (error instanceof Error) {
-            context.log('[main] Returning 500 error response');
-            return createErrorResponse(500, error.message, 'INTERNAL_ERROR');
-        }
-        context.log('[main] Returning generic 500 error response');
-        return createErrorResponse(500, 'Internal Server Error', 'INTERNAL_ERROR');
+        const errMsg = (error instanceof Error) ? error.message : String(error);
+        context.log('Unhandled error in content_generation_template_management:', errMsg);
+        context.log('[main] Returning 500 error response');
+        return createErrorResponse(500, errMsg || 'Internal Server Error', 'INTERNAL_ERROR');
     }
 }
 

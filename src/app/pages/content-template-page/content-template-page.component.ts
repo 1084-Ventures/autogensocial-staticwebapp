@@ -108,14 +108,11 @@ export class ContentTemplatePageComponent implements OnDestroy {
     });
   }
 
-  submitEditForm(form: any) {
+  submitEditForm(updatedModel: any) {
     if (!this.selectedTemplate) return;
     this.isProcessing = true;
-    const payload: ContentGenerationTemplateUpdate = {
-      ...form.value,
-      brandId: this.selectedTemplate.brandId
-    };
-    this.templateService.updateTemplate(this.selectedTemplate.id!, payload).subscribe({
+    // Use the full updated model from the edit form
+    this.templateService.updateTemplate(this.selectedTemplate.id!, updatedModel).subscribe({
       next: (updated) => {
         this.feedbackMessage = 'Template updated successfully!';
         this.loadTemplates();

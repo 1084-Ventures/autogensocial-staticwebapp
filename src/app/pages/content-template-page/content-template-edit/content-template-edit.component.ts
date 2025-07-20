@@ -29,7 +29,7 @@ export class ContentTemplateEditComponent {
   @Output() deleteEdit = new EventEmitter<void>();
 
   onSubmit() {
-    this.submitEdit.emit();
+    this.submitEdit.emit(this.templateModel);
   }
   onCancel() {
     this.cancelEdit.emit();
