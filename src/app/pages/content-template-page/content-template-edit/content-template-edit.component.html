@@ -24,8 +24,9 @@
     style="margin-bottom: 2rem; display: block;"
   ></app-content-template-content-item-form>
 
-  <div class="template-edit-actions" style="margin-top:2rem;">
+  <div class="template-edit-actions" style="margin-top:2rem; display: flex; gap: 1rem;">
     <button mat-raised-button color="primary" type="submit">Save</button>
+    <button mat-stroked-button color="warn" type="button" (click)="onDelete()">Delete</button>
     <button mat-button color="warn" type="button" (click)="onCancel()">Cancel</button>
   </div>
 </form>

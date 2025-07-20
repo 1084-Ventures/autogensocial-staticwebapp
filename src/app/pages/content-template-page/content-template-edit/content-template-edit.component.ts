@@ -26,6 +26,7 @@ export class ContentTemplateEditComponent {
   @Input() templateModel: any;
   @Output() submitEdit = new EventEmitter<void>();
   @Output() cancelEdit = new EventEmitter<void>();
+  @Output() deleteEdit = new EventEmitter<void>();
 
   onSubmit() {
     this.submitEdit.emit();
@@ -33,11 +34,16 @@ export class ContentTemplateEditComponent {
   onCancel() {
     this.cancelEdit.emit();
   }
+  onDelete() {
+    this.deleteEdit.emit();
+  }
   onInfoChange(info: any) {
     if (this.templateModel) this.templateModel.templateInfo = info;
   }
   onScheduleChange(schedule: any) {
-    if (this.templateModel) this.templateModel.schedule = schedule;
+    if (this.templateModel) {
+      this.templateModel = { ...this.templateModel, schedule: { ...schedule } };
+    }
   }
   onSettingsChange(settings: any) {
     if (this.templateModel) this.templateModel.templateSettings = settings;

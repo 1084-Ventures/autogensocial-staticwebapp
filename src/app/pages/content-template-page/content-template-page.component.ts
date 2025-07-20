@@ -129,7 +129,7 @@ export class ContentTemplatePageComponent implements OnDestroy {
     });
   }
 
-  deleteTemplate() {
+  onDeleteEdit() {
     if (!this.selectedTemplate) return;
     if (!confirm('Are you sure you want to delete this template?')) return;
     this.isProcessing = true;

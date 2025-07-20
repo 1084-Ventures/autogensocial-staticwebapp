@@ -22,7 +22,8 @@
         <app-content-template-edit
           [templateModel]="selectedTemplate"
           (submitEdit)="submitEditForm($event)"
-          (cancelEdit)="deleteTemplate()"
+          (cancelEdit)="selectedTemplate = null"
+          (deleteEdit)="onDeleteEdit()"
         ></app-content-template-edit>
         <div class="meta-info">
           <div><strong>Template Name:</strong> {{ selectedTemplate.templateInfo.name }}</div>

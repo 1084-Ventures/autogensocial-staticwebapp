@@ -1,29 +1,26 @@
 
-<mat-card class="content-template-info-form">
+<mat-card class="content-template-info-form form-section">
   <h3>Template Info</h3>
   <ng-container *ngIf="info">
-    <mat-form-field appearance="outline" class="full-width" style="margin-bottom: 24px;">
+    <mat-form-field appearance="outline" class="full-width form-section">
       <mat-label>Name</mat-label>
       <input matInput [(ngModel)]="info.name" name="name" (ngModelChange)="onFieldChange('name', $event)" required />
-      <mat-hint>Enter a descriptive name for your content template.</mat-hint>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width" style="margin-bottom: 32px;">
+    <mat-form-field appearance="outline" class="full-width form-section">
       <mat-label>Description</mat-label>
       <textarea matInput [(ngModel)]="info.description" name="description" (ngModelChange)="onFieldChange('description', $event)"></textarea>
-      <mat-hint>Provide a brief description of what this template is for.</mat-hint>
     </mat-form-field>
 
-    <div class="platform-options-section" style="margin-top: 32px;">
-      <label class="mat-label" style="margin-bottom: 8px; display: block;">Social Accounts</label>
-      <div class="platform-options-hint" style="margin-bottom: 8px;">
-        <mat-hint>Select one or more social accounts to use with this template.</mat-hint>
+    <div class="platform-options-section form-section" style="margin-top: 32px;">
+      <label class="mat-label" style="margin-bottom: 8px; display: block; font-weight: bold;">Social Accounts</label>
+      <div style="width: 100%;">
+        <mat-selection-list [(ngModel)]="info.socialAccounts" (ngModelChange)="onFieldChange('socialAccounts', $event)" style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 0.5rem; column-gap: 1.5rem;">
+          <mat-list-option *ngFor="let account of socialAccountOptions" [value]="account" style="min-width: 120px;">
+            {{ account }}
+          </mat-list-option>
+        </mat-selection-list>
       </div>
-      <mat-selection-list [(ngModel)]="info.socialAccounts" (ngModelChange)="onFieldChange('socialAccounts', $event)">
-        <mat-list-option *ngFor="let account of socialAccountOptions" [value]="account">
-          {{ account }}
-        </mat-list-option>
-      </mat-selection-list>
     </div>
   </ng-container>
 </mat-card>

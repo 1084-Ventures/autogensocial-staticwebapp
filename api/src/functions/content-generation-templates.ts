@@ -73,9 +73,21 @@ export const contentGenerationTemplatesApiHandler = async (request: HttpRequest,
                 if (!idToDelete) {
                     return createErrorResponse(400, 'Template ID is required for deletion');
                 }
-                context.log(`[DELETE] Attempting to delete template. id: ${idToDelete}, partitionKey: ${idToDelete}`);
+                // Find the brandId for the template so we can use it as the partition key
+                let brandId: string | undefined;
                 try {
-                    const response = await templateContainer.item(idToDelete, idToDelete).delete();
+                    const { resource } = await getTemplateByIdWithPartition(idToDelete);
+                    brandId = resource?.brandId;
+                } catch (err) {
+                    context.log(`[DELETE] Error fetching template for partition key:`, err);
+                }
+                if (!brandId) {
+                    context.log(`[DELETE] Could not find brandId for template id: ${idToDelete}`);
+                    return createErrorResponse(404, 'Template not found or already deleted');
+                }
+                context.log(`[DELETE] Attempting to delete template. id: ${idToDelete}, partitionKey: ${brandId}`);
+                try {
+                    const response = await templateContainer.item(idToDelete, brandId).delete();
                     context.log(`[DELETE] Cosmos DB delete response:`, JSON.stringify(response));
                     if (!response.resource) {
                         context.log(`[DELETE] No resource returned after delete. Returning 404.`);
