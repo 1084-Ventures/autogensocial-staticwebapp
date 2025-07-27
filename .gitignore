@@ -43,14 +43,11 @@ project_structure.txt
 .DS_Store
 Thumbs.db
 
-<<<<<<< HEAD
 # Azurite local files
 __azurite*
 **/__azurite*
 AzuriteConfig
-=======
 # Azure Development
 __azurite_db_*
 __blobstorage__
 __queuestorage__
->>>>>>> c3a1872385b6a6c912d0922257ddeaec5d568a16
