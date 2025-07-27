@@ -95,3 +95,5 @@ This project is designed to be deployed as an Azure Static Web App. The backend 
 - [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli)
 - [openapi-typescript](https://github.com/drwpow/openapi-typescript)
 - [Azure Static Web Apps Documentation](https://learn.microsoft.com/azure/static-web-apps/)
+
+Update to README.md
