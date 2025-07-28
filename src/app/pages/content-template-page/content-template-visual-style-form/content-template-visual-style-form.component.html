@@ -15,15 +15,7 @@
               <mat-form-field appearance="outline" style="width: 140px;">
                 <mat-label>Font Family</mat-label>
                 <mat-select [ngModel]="visualStyle.textStyle?.font?.family" (ngModelChange)="onFontFamilyChange($event)">
-                  <mat-option value="Arial">Arial</mat-option>
-                  <mat-option value="Helvetica">Helvetica</mat-option>
-                  <mat-option value="Times New Roman">Times New Roman</mat-option>
-                  <mat-option value="Georgia">Georgia</mat-option>
-                  <mat-option value="Courier New">Courier New</mat-option>
-                  <mat-option value="Verdana">Verdana</mat-option>
-                  <mat-option value="Tahoma">Tahoma</mat-option>
-                  <mat-option value="Trebuchet MS">Trebuchet MS</mat-option>
-                  <mat-option value="Impact">Impact</mat-option>
+                  <mat-option *ngFor="let font of fonts" [value]="font.name">{{ font.name }}</mat-option>
                 </mat-select>
               </mat-form-field>
               <mat-form-field appearance="outline" style="width: 100px;">

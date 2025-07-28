@@ -12,6 +12,15 @@ import type { components } from '../../../generated/models';
   styleUrls: ['./content-template-visual-style-form.component.scss']
 })
 export class ContentTemplateVisualStyleFormComponent {
+  // Fonts list matching specs/resources/fonts.json
+  fonts = [
+    { name: 'Comic Neue' },
+    { name: 'Lato' },
+    { name: 'Montserrat' },
+    { name: 'Open Sans' },
+    { name: 'Pacifico' },
+    { name: 'Roboto' }
+  ];
   onOutlineColorChange(color: string) {
     this.ensureInitialized();
     if (!this.visualStyle) return;
